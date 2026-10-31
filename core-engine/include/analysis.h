@@ -12,6 +12,7 @@
 #include "hashmap.h"
 #include "tree.h"
 #include "graph.h"
+#include "max_heap.h"
 
 #define MAX_REASON_LEN 512
 #define MAX_ACTION_LEN 512
@@ -68,6 +69,7 @@ typedef struct {
     size_t total_anomalies;
     investigative_lead_item_t *leads_head;
     size_t total_leads;
+    max_heap_t *leads_heap;         /* Binary Max-Heap priority queue for ranking leads */
     size_t nodes_processed;
     size_t edges_evaluated;
     int execution_latency_ms;
@@ -105,5 +107,7 @@ void analysis_add_lead(analysis_result_t *res, const char *lead_id, const char *
                        const char *explanation, const char *supporting_rel, const char *missing_info,
                        const char *suggested_step, float score, const char *strength_desc,
                        const int *evidence_ids, size_t num_ids);
+
+void analysis_finalize_leads(analysis_result_t *res);
 
 #endif /* CASETHREAD_ANALYSIS_H */

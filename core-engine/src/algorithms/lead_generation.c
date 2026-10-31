@@ -13,6 +13,9 @@
 
 analysis_result_t* analysis_result_create(void) {
     analysis_result_t *res = (analysis_result_t *)calloc(1, sizeof(analysis_result_t));
+    if (res) {
+        res->leads_heap = heap_create(HEAP_DEFAULT_CAPACITY);
+    }
     return res;
 }
 
@@ -38,6 +41,15 @@ void analysis_result_free(analysis_result_t *res) {
         investigative_lead_item_t *next = lead->next;
         free(lead);
         lead = next;
+    }
+
+    if (res->leads_heap) {
+        while (!heap_is_empty(res->leads_heap)) {
+            void *item = heap_extract_max(res->leads_heap, NULL);
+            if (item) free(item);
+        }
+        heap_destroy(res->leads_heap, NULL);
+        res->leads_heap = NULL;
     }
 
     free(res);
@@ -119,9 +131,41 @@ void analysis_add_lead(analysis_result_t *res, const char *lead_id, const char *
         item->num_related_evidence = count;
     }
 
-    item->next = res->leads_head;
-    res->leads_head = item;
+    /* Prioritize storage in Binary Max-Heap */
+    if (res->leads_heap) {
+        heap_insert(res->leads_heap, score, item);
+    } else {
+        item->next = res->leads_head;
+        res->leads_head = item;
+    }
     res->total_leads++;
+}
+
+void analysis_finalize_leads(analysis_result_t *res) {
+    if (!res || !res->leads_heap || heap_is_empty(res->leads_heap)) return;
+
+    investigative_lead_item_t *tail = NULL;
+    if (res->leads_head) {
+        tail = res->leads_head;
+        while (tail->next) {
+            tail = tail->next;
+        }
+    }
+
+    /* Drain Max-Heap in strictly non-increasing order of priority score into leads_head */
+    while (!heap_is_empty(res->leads_heap)) {
+        float priority = 0.0f;
+        investigative_lead_item_t *lead = (investigative_lead_item_t *)heap_extract_max(res->leads_heap, &priority);
+        if (!lead) break;
+        lead->next = NULL;
+        if (!res->leads_head) {
+            res->leads_head = lead;
+            tail = lead;
+        } else {
+            tail->next = lead;
+            tail = lead;
+        }
+    }
 }
 
 ct_status_t ct_generate_leads(const evidence_graph_t *graph, const analysis_result_t *intermediate,
@@ -210,6 +254,9 @@ ct_status_t ct_generate_leads(const evidence_graph_t *graph, const analysis_resu
         }
         gap = gap->next;
     }
+
+    // Max-Heap priority queue finalization: extracts all leads in descending score order
+    analysis_finalize_leads(out_result);
 
     return CT_SUCCESS;
 }

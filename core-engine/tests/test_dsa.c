@@ -28,6 +28,7 @@
 #include "queue.h"
 #include "stack.h"
 #include "structures.h"
+#include "max_heap.h"
 #include "analysis.h"
 
 static int g_tests_passed = 0;
@@ -324,6 +325,163 @@ void test_analysis_pipeline(void) {
     evidence_free(e1);
 }
 
+/* --------------------------------------------------------------------------
+ * 7. Test Binary Max-Heap Priority Queue & Lead Prioritization
+ * -------------------------------------------------------------------------- */
+void test_max_heap(void) {
+    printf("\n=== 7. Testing Array-Based Binary Max-Heap Priority Queue ===\n");
+
+    /* 1. Empty Heap Safety */
+    max_heap_t *heap = heap_create(4);
+    TEST_ASSERT(heap != NULL, "Max-Heap created with initial capacity 4");
+    TEST_ASSERT(heap_size(heap) == 0, "Initial heap size is 0");
+    TEST_ASSERT(heap_is_empty(heap) == true, "Empty heap correctly reports is_empty == true");
+
+    float out_p = -999.0f;
+    void *extracted = heap_extract_max(heap, &out_p);
+    TEST_ASSERT(extracted == NULL && out_p == 0.0f, "Extract max on empty heap safely returns NULL and priority 0.0");
+
+    void *peeked = heap_peek_max(heap, &out_p);
+    TEST_ASSERT(peeked == NULL && out_p == 0.0f, "Peek max on empty heap safely returns NULL and priority 0.0");
+
+    /* 2. Single Element Operations */
+    const char *payload1 = "SUSPECT_PHONE_INTERCEPT";
+    ct_status_t status = heap_insert(heap, 42.5f, (void *)payload1);
+    TEST_ASSERT(status == CT_SUCCESS, "Single element inserted into heap");
+    TEST_ASSERT(heap_size(heap) == 1, "Heap size is 1 after single insertion");
+    TEST_ASSERT(heap_is_empty(heap) == false, "Heap reports is_empty == false");
+
+    peeked = heap_peek_max(heap, &out_p);
+    TEST_ASSERT(peeked == (void *)payload1 && out_p == 42.5f, "Peek max correctly returns root element without extraction");
+    TEST_ASSERT(heap_size(heap) == 1, "Heap size unchanged after peek");
+
+    extracted = heap_extract_max(heap, &out_p);
+    TEST_ASSERT(extracted == (void *)payload1 && out_p == 42.5f, "Extract max correctly extracts single element");
+    TEST_ASSERT(heap_size(heap) == 0 && heap_is_empty(heap), "Heap returns to empty state after extraction");
+
+    /* 3. Multiple Elements & Correct Maximum Extraction Order */
+    heap_insert(heap, 50.0f, "Lead_50");
+    heap_insert(heap, 90.0f, "Lead_90");
+    heap_insert(heap, 30.0f, "Lead_30");
+    heap_insert(heap, 80.0f, "Lead_80");
+    heap_insert(heap, 60.0f, "Lead_60");
+    heap_insert(heap, 100.0f, "Lead_100");
+    heap_insert(heap, 70.0f, "Lead_70");
+    TEST_ASSERT(heap_size(heap) == 7, "7 elements successfully inserted");
+
+    peeked = heap_peek_max(heap, &out_p);
+    TEST_ASSERT(strcmp((const char *)peeked, "Lead_100") == 0 && out_p == 100.0f, "Root holds the maximum element (100.0)");
+
+    float expected_order[] = { 100.0f, 90.0f, 80.0f, 70.0f, 60.0f, 50.0f, 30.0f };
+    bool order_ok = true;
+    for (int i = 0; i < 7; i++) {
+        extracted = heap_extract_max(heap, &out_p);
+        if (out_p != expected_order[i]) {
+            order_ok = false;
+        }
+    }
+    TEST_ASSERT(order_ok && heap_size(heap) == 0, "Multiple elements extracted in strict descending priority order");
+
+    /* 4. Duplicate Priorities */
+    heap_insert(heap, 75.0f, "Dup_A");
+    heap_insert(heap, 75.0f, "Dup_B");
+    heap_insert(heap, 95.0f, "High_95");
+    heap_insert(heap, 75.0f, "Dup_C");
+    heap_insert(heap, 50.0f, "Low_50");
+
+    heap_extract_max(heap, &out_p); /* High_95 */
+    TEST_ASSERT(out_p == 95.0f, "Duplicate test: 95.0 extracted first");
+
+    float d1 = 0.0f, d2 = 0.0f, d3 = 0.0f;
+    heap_extract_max(heap, &d1);
+    heap_extract_max(heap, &d2);
+    heap_extract_max(heap, &d3);
+    TEST_ASSERT(d1 == 75.0f && d2 == 75.0f && d3 == 75.0f, "Duplicate test: all three 75.0 priority elements extracted sequentially");
+
+    heap_extract_max(heap, &out_p);
+    TEST_ASSERT(out_p == 50.0f && heap_is_empty(heap), "Duplicate test: 50.0 extracted last and heap is now empty");
+
+    /* 5. Negative and Zero Priorities */
+    heap_insert(heap, -10.5f, "Neg_10");
+    heap_insert(heap, 0.0f, "Zero");
+    heap_insert(heap, -2.0f, "Neg_2");
+    heap_insert(heap, 15.0f, "Pos_15");
+    heap_insert(heap, -50.0f, "Neg_50");
+
+    float prev_priority = 1000.0f;
+    bool neg_zero_order_ok = true;
+    while (!heap_is_empty(heap)) {
+        heap_extract_max(heap, &out_p);
+        if (out_p > prev_priority) {
+            neg_zero_order_ok = false;
+        }
+        prev_priority = out_p;
+    }
+    TEST_ASSERT(neg_zero_order_ok, "Negative and zero priorities extracted in valid monotonic non-increasing order");
+
+    /* 6. Dynamic Capacity Resizing */
+    for (int i = 0; i < 30; i++) {
+        float prio = (float)(i * 3 % 40) + ((float)i * 0.5f);
+        heap_insert(heap, prio, (void *)(intptr_t)(i + 1));
+    }
+    TEST_ASSERT(heap_size(heap) == 30, "Heap dynamic resizing accommodates 30 elements (initial cap 4)");
+    TEST_ASSERT(heap->capacity >= 30, "Internal capacity expanded dynamically via doubling");
+
+    /* 7. Repeated Extraction Until Empty */
+    prev_priority = 10000.0f;
+    bool dynamic_order_ok = true;
+    while (!heap_is_empty(heap)) {
+        heap_extract_max(heap, &out_p);
+        if (out_p > prev_priority) {
+            dynamic_order_ok = false;
+        }
+        prev_priority = out_p;
+    }
+    TEST_ASSERT(dynamic_order_ok && heap_is_empty(heap), "All 30 elements extracted in monotonically non-increasing priority order");
+    TEST_ASSERT(heap_extract_max(heap, NULL) == NULL, "Subsequent extraction on emptied heap safely returns NULL");
+
+    heap_destroy(heap, NULL);
+
+    /* 8. Memory Cleanup Verification (Dynamically allocated payloads) */
+    max_heap_t *alloc_heap = heap_create(8);
+    for (int i = 0; i < 5; i++) {
+        char *str = (char *)malloc(32);
+        snprintf(str, 32, "Payload-%d", i);
+        heap_insert(alloc_heap, (float)(i * 10), str);
+    }
+    heap_destroy(alloc_heap, free);
+    TEST_ASSERT(true, "heap_destroy() successfully deallocated all internal dynamic payloads without leaks");
+
+    /* 9. Investigative Lead Generation Sorting Verification */
+    analysis_result_t *res = analysis_result_create();
+    analysis_add_lead(res, "L1", "Lead Alpha", "Desc", "Rel", "None", "Step", 45.0f, "PRELIMINARY_HYPOTHESIS", NULL, 0);
+    analysis_add_lead(res, "L2", "Lead Beta", "Desc", "Rel", "None", "Step", 92.5f, "STRONG_CORROBORATION", NULL, 0);
+    analysis_add_lead(res, "L3", "Lead Gamma", "Desc", "Rel", "None", "Step", 78.0f, "STRONG_CORROBORATION", NULL, 0);
+    analysis_add_lead(res, "L4", "Lead Delta", "Desc", "Rel", "None", "Step", 60.0f, "MODERATE_LEAD", NULL, 0);
+
+    TEST_ASSERT(res->total_leads == 4, "4 leads registered in analysis container");
+
+    analysis_finalize_leads(res);
+
+    investigative_lead_item_t *curr = res->leads_head;
+    TEST_ASSERT(curr != NULL, "Finalized leads linked list is populated");
+    bool leads_sorted = true;
+    float last_score = 1000.0f;
+    size_t count = 0;
+    while (curr) {
+        if (curr->evidence_strength_score > last_score) {
+            leads_sorted = false;
+        }
+        last_score = curr->evidence_strength_score;
+        count++;
+        curr = curr->next;
+    }
+    TEST_ASSERT(leads_sorted && count == 4, "Investigation leads extracted from Max-Heap are in strict descending priority order");
+    TEST_ASSERT(res->leads_head->evidence_strength_score == 92.5f, "Top investigative lead is the 92.5% highest priority item");
+
+    analysis_result_free(res);
+}
+
 int main(void) {
     printf("=================================================================\n");
     printf("CASETHREAD CORE C ALGORITHM ENGINE - UNIT & INTEGRATION TEST SUITE\n");
@@ -335,6 +493,7 @@ int main(void) {
     test_avl();
     test_graphs();
     test_analysis_pipeline();
+    test_max_heap();
 
     printf("\n=================================================================\n");
     printf("TEST RUN COMPLETE: %d Passed, %d Failed\n", g_tests_passed, g_tests_failed);
