@@ -52,23 +52,9 @@ class CEngineService {
     const binaryPath = this.getEngineBinaryPath();
 
     if (!fs.existsSync(binaryPath)) {
-      console.warn(`[C-ENGINE] Binary not found at "${binaryPath}". Returning architecture placeholder.`);
-      return {
-        status: 'PENDING_ENGINE_BUILD',
-        engine_version: '1.0.0-phase1-arch',
-        message: 'C engine binary not compiled yet. Run make in core-engine/ directory or run via Docker.',
-        binary_expected_path: binaryPath,
-        input_summary: {
-          case_id: casePayload.case_id,
-          entities_count: (casePayload.entities || []).length,
-          evidence_count: (casePayload.evidence || []).length,
-          relationships_count: (casePayload.relationships || []).length
-        },
-        detected_connections: [],
-        evidence_gaps: [],
-        timeline_anomalies: [],
-        prioritized_leads: []
-      };
+      const errMsg = `[C-ENGINE CRITICAL] Binary not found at "${binaryPath}". The native C Algorithm Engine must be compiled first (run build.bat on Windows or make in core-engine/).`;
+      console.error(errMsg);
+      throw new Error(errMsg);
     }
 
     return new Promise((resolve, reject) => {

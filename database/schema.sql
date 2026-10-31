@@ -322,43 +322,64 @@ VALUES
 ('CASE-2026-0419', 'The Metro Vault Intrusion & Disappearance', 'Unauthorized breach of Metro National Depository Vault with suspicious cell signal anomalies and missing courier.', '2026-10-15 02:45:00', '450 Financial Boulevard, Downtown', 1, 'CRITICAL', 'UNDER_INVESTIGATION')
 ON DUPLICATE KEY UPDATE title=VALUES(title);
 
--- 3. Seed Suspects
+-- 3. Seed Suspects (3 Persons of Interest)
 INSERT INTO suspects (case_id, full_name, alias, age, gender, phone_number, identifying_features, last_known_address, status, notes)
 VALUES 
-(1, 'Marcus Vance', 'The Ghost', 38, 'MALE', '+1-555-0192', 'Scar across left eyebrow, dragon tattoo on right forearm', 'Industrial District Warehouse 4', 'PRIMARY_SUSPECT', 'Known specialist in security bypass systems.'),
-(1, 'Damon Vance', 'Specter', 34, 'MALE', '+1-555-0188', 'Limp on left leg', '12 Harbour St', 'PERSON_OF_INTEREST', 'Brother of Marcus Vance; owns black sedan.');
+(1, 'Marcus Vance', 'The Ghost', 38, 'MALE', '+1-555-0192', 'Scar across left eyebrow, dragon tattoo on right forearm', 'Industrial District Warehouse 4', 'PRIMARY_SUSPECT', 'Master safecracker and electronic bypass operative.'),
+(1, 'Damon Vance', 'Specter', 34, 'MALE', '+1-555-0188', 'Limp on left leg', '12 Harbour St', 'PERSON_OF_INTEREST', 'Brother of Marcus Vance; registered owner of black matte sedan.'),
+(1, 'Elena Rostova', 'Cipher', 31, 'FEMALE', '+1-555-0177', 'Platinum blonde hair, dark spectacles', '44 Skyline Executive Lofts', 'PERSON_OF_INTEREST', 'Depository security systems contractor with root encryption access keys.');
 
 -- 4. Seed Victim
 INSERT INTO victims (case_id, full_name, age, gender, contact_info, residence_address, condition_status, statement)
 VALUES 
 (1, 'Julian Mercer', 42, 'MALE', '+1-555-0111', '89 Parkview Heights', 'MISSING', 'Courier missing since 02:30 AM on night of vault breach.');
 
--- 5. Seed Witness
+-- 5. Seed Witnesses (2 Witnesses)
 INSERT INTO witnesses (case_id, full_name, contact_phone, statement, credibility_score, statement_timestamp, statement_location)
 VALUES 
-(1, 'Evelyn Shaw', '+1-555-0144', 'Observed a dark matte sedan speeding out of the loading dock at approximately 02:50 AM with headlights off.', 0.90, '2026-10-15 09:30:00', 'Corner of 4th & Pine St');
+(1, 'Evelyn Shaw', '+1-555-0144', 'Observed a dark matte sedan speeding out of the loading dock at approximately 02:50 AM with headlights off.', 0.90, '2026-10-15 09:30:00', 'Corner of 4th & Pine St'),
+(1, 'Arthur Pendelton', '+1-555-0166', 'Heard industrial drilling hum and metallic latch release sounds coming from Sub-level 2 while conducting night janitorial rounds at 02:35 AM.', 0.75, '2026-10-15 10:15:00', 'Depository Maintenance Basement');
 
--- 6. Seed Evidence (Distinguishing Fact vs Unverified Observation)
+-- 6. Seed Evidence (Distinguishing Fact vs Unverified Observation, Missing Timestamps, Disconnected Clusters & Isolated Record)
 INSERT INTO evidence (case_id, tracking_code, title, category, description, collection_location, collected_at, source, related_entity_ids, verification_status, reliability_assessment, entered_by_officer_id, metadata_json)
 VALUES 
 (1, 'EVD-CCTV-001', 'Loading Dock Camera Feed #4', 'CCTV', 'Timestamped footage showing black sedan leaving rear gate at 02:49:12 AM.', 'Metro Depository Loading Bay', '2026-10-15 04:00:00', 'Depository Security DVR Unit 2', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"camera_id": "CAM-04", "resolution": "1080p", "direction": "Northbound"}'),
 (1, 'EVD-TEL-002', 'Cell Tower Dump Sector 7', 'PHONE_RECORD', 'Inbound call to Marcus Vance burner device originating near loading dock at 02:44:00 AM.', 'Sector 7 Cell Relay', '2026-10-15 06:15:00', 'Telecom Subpoena Tower 7 Log', '[{"type":"SUSPECT","id":1}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"tower_id": "TOW-07", "duration_sec": 38, "cell_id": "402-99"}'),
 (1, 'EVD-VEH-003', 'Black Matte Sedan Registration', 'VEHICLE', 'Vehicle matching CCTV footage registered to Damon Vance.', 'DMV Database Registry', '2026-10-15 08:20:00', 'State DMV Central Database', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"license_plate": "7XYZ99", "make": "Sedan", "color": "Matte Black"}'),
-(1, 'EVD-OBS-004', 'Anonymous Tip: Sighting at Docks', 'TESTIMONY_TRANSCRIPT', 'Anonymous caller stated someone looking like Marcus Vance was loading metallic crates into a motorboat at 04:15 AM.', 'Harbour Pier 9', '2026-10-15 11:00:00', 'Police Tip Hotline', '[{"type":"SUSPECT","id":1}]', 'UNVERIFIED_OBSERVATION', 'QUESTIONABLE', 1, '{"tip_id": "TIP-8921", "audio_recorded": true}');
+(1, 'EVD-OBS-004', 'Anonymous Tip: Sighting at Docks', 'TESTIMONY_TRANSCRIPT', 'Anonymous caller stated someone looking like Marcus Vance was loading metallic crates into a motorboat at 04:15 AM.', 'Harbour Pier 9', '2026-10-15 11:00:00', 'UNKNOWN', '[{"type":"SUSPECT","id":1}]', 'UNVERIFIED_OBSERVATION', 'QUESTIONABLE', 1, '{"tip_id": "TIP-8921", "audio_recorded": true}'),
+(1, 'EVD-CCTV-005', 'Financial Blvd Street Camera #12', 'CCTV', 'High-definition traffic camera recording matte black sedan speeding north across Financial Blvd at 02:51:30 AM.', '4th & Financial Blvd Intersection', '2026-10-15 05:30:00', 'City Traffic Authority Archive', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"camera_id": "TRAFFIC-12", "speed_est_mph": 58, "plate_partial": "7XY"}'),
+(1, 'EVD-DIG-006', 'Vault Server Access Log', 'DIGITAL_DEVICE', 'Digital logs showing root cryptographic vault door override executed at 02:38:15 AM using contractor encryption credential key.', 'Depository Server Room', '2026-10-15 07:45:00', 'Vault Core Server Audit Journal', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"auth_user": "CONTRACTOR_ROOT", "ip": "10.0.4.15", "key_id": "ENC-ROSTOVA-88"}'),
+(1, 'EVD-BIO-007', 'Synthetic Glove Fiber Sample', 'BIOMETRIC', 'Rare nitrile-neoprene fiber strand recovered from vault door keypad frame with no logged timestamp.', 'Vault Door Keypad', NULL, 'Forensic Crime Scene Team Unit 1', '[]', 'CONFIRMED_FACT', 'PENDING_LAB', 1, '{"lab_ref": "BIO-LAB-2026-09"}'),
+(1, 'EVD-TEL-008', 'Encrypted VoIP Call Relay', 'PHONE_RECORD', 'VoIP encrypted burst data packet between Elena Rostova terminal and offshore proxy at 02:40:00 AM.', 'Sub-gateway Router 9', '2026-10-15 09:10:00', 'Cyber Telemetry Sniffer Log', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"protocol": "TLSv1.3", "packet_size_bytes": 1024}'),
+(1, 'EVD-ISO-009', 'Abandoned Mountain Bicycle', 'PHYSICAL', 'Blue mountain bicycle found discarded in alleyway 6 miles from crime scene. No fingerprint or camera links.', 'Alleyway behind 1400 Industrial Way', '2026-10-15 14:00:00', 'Patrol Officer Beat 14', '[]', 'UNVERIFIED_OBSERVATION', 'LOW', 1, '{"serial_number": "MN-4820", "condition": "rusted_chain"}');
 
--- 7. Seed Direct Evidence Relationships
+-- 7. Seed Direct Evidence Relationships (Creates 2 Disconnected Clusters + 1 Isolated Node)
 INSERT INTO evidence_relationships (case_id, source_type, source_id, target_type, target_id, relation_type, confidence_weight, relationship_nature, notes, discovered_by)
 VALUES 
+-- Cluster 1: Main Depository Heist Network
 (1, 'SUSPECT', 1, 'SUSPECT', 2, 'BROTHER_ASSOCIATE', 0.95, 'CONFIRMED_FACT', 'Marcus and Damon Vance have shared banking accounts and past records.', 'OFFICER_MANUAL'),
 (1, 'SUSPECT', 2, 'EVIDENCE', 3, 'OWNS_VEHICLE', 0.90, 'CONFIRMED_FACT', 'Damon Vance is legal registered owner of black sedan 7XYZ99.', 'OFFICER_MANUAL'),
-(1, 'EVIDENCE', 1, 'EVIDENCE', 3, 'VEHICLE_MATCH', 0.85, 'UNVERIFIED_OBSERVATION', 'CCTV footage visual profile matches registered vehicle.', 'OFFICER_MANUAL');
+(1, 'EVIDENCE', 1, 'EVIDENCE', 3, 'VEHICLE_MATCH', 0.85, 'UNVERIFIED_OBSERVATION', 'CCTV footage visual profile matches registered vehicle.', 'OFFICER_MANUAL'),
+(1, 'EVIDENCE', 1, 'EVIDENCE', 5, 'VEHICLE_TRANSIT', 0.90, 'CONFIRMED_FACT', 'Sedan tracked traveling north along Financial Blvd route.', 'OFFICER_MANUAL'),
+(1, 'SUSPECT', 1, 'EVIDENCE', 2, 'PHONE_CALL_ROUTING', 0.88, 'CONFIRMED_FACT', 'Burner phone registered to Marcus Vance pinged Sector 7 tower.', 'OFFICER_MANUAL'),
+(1, 'WITNESS', 1, 'EVIDENCE', 1, 'CORROBORATES_DEPARTURE', 0.80, 'CONFIRMED_FACT', 'Witness Evelyn Shaw observed vehicle departure matching CCTV timestamp.', 'OFFICER_MANUAL'),
+-- Cluster 2: Depository Security Contractor Sub-network (Disconnected from Cluster 1)
+(1, 'SUSPECT', 3, 'EVIDENCE', 6, 'CONTRACTOR_CREDENTIAL_MATCH', 0.92, 'CONFIRMED_FACT', 'Cryptographic access key ENC-ROSTOVA-88 assigned exclusively to Elena Rostova.', 'OFFICER_MANUAL'),
+(1, 'SUSPECT', 3, 'EVIDENCE', 8, 'TERMINAL_OWNER', 0.85, 'CONFIRMED_FACT', 'Elena Rostova laptop initiated encrypted proxy connection during breach.', 'OFFICER_MANUAL'),
+(1, 'WITNESS', 2, 'EVIDENCE', 6, 'CORROBORATES_AUDITORY_TIMING', 0.75, 'CONFIRMED_FACT', 'Arthur Pendelton janitorial hearing aligns with electronic override log.', 'OFFICER_MANUAL');
 
--- 8. Seed Timeline Events
+-- 8. Seed Timeline Events (Chronological with Spatiotemporal Contradictions)
 INSERT INTO investigation_timelines (case_id, event_timestamp, event_title, event_description, entity_type, entity_id, location, source_evidence_id, status, is_verified)
 VALUES 
 (1, '2026-10-15 02:30:00', 'Courier Julian Mercer Last Contact', 'Courier checked in with dispatch before entering vault access corridor.', 'VICTIM', 1, 'Depository Access Corridor', NULL, 'CONFIRMED_FACT', TRUE),
-(1, '2026-10-15 02:44:00', 'Sector 7 Cell Relay Hit', 'Burner phone associated with Marcus Vance triggered Sector 7 tower.', 'SUSPECT', 1, 'Depository Loading Dock Perimeter', 2, 'CONFIRMED_FACT', TRUE),
+(1, '2026-10-15 02:35:00', 'Custodian Reports Drilling Sounds', 'Janitor Arthur Pendelton heard high-speed drilling from Sub-level 2.', 'WITNESS', 2, 'Depository Maintenance Basement', NULL, 'CONFIRMED_FACT', TRUE),
+(1, '2026-10-15 02:38:15', 'Vault Electronic Security Bypass', 'Digital root authorization executed via contractor key ENC-ROSTOVA-88.', 'EVIDENCE', 6, 'Depository Server Room', 6, 'CONFIRMED_FACT', TRUE),
+(1, '2026-10-15 02:44:00', 'Sector 7 Cell Relay Hit', 'Burner phone associated with Marcus Vance triggered Sector 7 tower near loading dock.', 'SUSPECT', 1, 'Depository Loading Dock Perimeter', 2, 'CONFIRMED_FACT', TRUE),
+(1, '2026-10-15 02:45:00', 'Marcus Vance False Alibi Claim', 'Suspect claimed he was drinking coffee at Westside Diner (15 km away) at 02:45 AM.', 'SUSPECT', 1, 'Westside 24hr Diner', NULL, 'HYPOTHESIS', FALSE),
 (1, '2026-10-15 02:49:12', 'Black Sedan Departure', 'Sedan exits loading dock heading north with headlights off.', 'EVIDENCE', 1, 'Loading Bay Rear Gate', 1, 'CONFIRMED_FACT', TRUE),
+(1, '2026-10-15 02:51:30', 'Black Sedan Financial Blvd Sighting', 'Sedan recorded speeding north past Financial Blvd intersection.', 'EVIDENCE', 5, '4th & Financial Blvd Intersection', 5, 'CONFIRMED_FACT', TRUE),
+(1, '2026-10-15 03:01:00', 'Elena Rostova Depository Exit', 'Security badge swipe recorded at depository main lobby security turnstile.', 'SUSPECT', 3, 'Depository Main Plaza', NULL, 'CONFIRMED_FACT', TRUE),
+(1, '2026-10-15 03:02:30', 'Elena Rostova Airport Check-in Claim', 'Suspect claimed to be boarding flight at Metro East Airport (18 km away in 90 seconds - impossible speed violation).', 'SUSPECT', 3, 'Metro East Airport Terminal', NULL, 'HYPOTHESIS', FALSE),
 (1, '2026-10-15 04:15:00', 'Uncorroborated Pier Sighting', 'Tipster claims Marcus Vance was spotted loading crates into a vessel.', 'SUSPECT', 1, 'Harbour Pier 9', 4, 'UNVERIFIED_OBSERVATION', FALSE);
 
 -- 9. Seed Investigation Leads

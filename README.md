@@ -235,9 +235,22 @@ npm install
 npm run dev
 ```
 
-#### 4. Frontend Setup
+#### 5. Verification & Testing
+
+Run all automated test suites to verify C engine DSA routines, backend endpoints, and end-to-end simulation:
+
 ```bash
-cd frontend
-npm install
-npm start
+# Core C Engine Unit Tests (63 tests)
+cd core-engine
+build.bat            # Windows MSVC
+# or: make test      # Linux / GCC
+bin/test_dsa.exe
+
+# Backend Integration & E2E Tests (45 tests)
+cd ../backend
+node --test tests/integration.test.js tests/graph.test.js tests/e2e.test.js
+
+# Frontend Production Build Verification
+cd ../frontend
+npm run build
 ```

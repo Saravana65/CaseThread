@@ -9,14 +9,38 @@ const cEngineService = require('../services/cEngineService');
 exports.runInvestigationAnalysis = async (req, res, next) => {
   try {
     const caseId = parseInt(req.params.caseId, 10);
-    const officerId = req.officer ? req.officer.officer_id : 1;
 
-    // 1. Gather comprehensive case graph from MySQL
+    // 1. Enforce officer authentication (never fallback to arbitrary officer ID)
+    if (!req.officer || !req.officer.officer_id) {
+      return res.status(401).json({
+        success: false,
+        error: { code: 'AUTH_TOKEN_REQUIRED', message: 'Investigator authentication token required.' }
+      });
+    }
+
+    const officerId = req.officer.officer_id;
+
+    // 2. Gather case and verify investigator authorization
     const [cases] = await execute('SELECT * FROM cases WHERE case_id = ?', [caseId]);
-    if (cases.length === 0) {
+    if (!cases || cases.length === 0) {
       return res.status(404).json({
         success: false,
         error: { code: 'CASE_NOT_FOUND', message: `Case ID ${caseId} does not exist.` }
+      });
+    }
+
+    const currentCase = cases[0];
+    const isAuthorized = req.officer.role === 'ADMIN' ||
+                         req.officer.role === 'LEAD_OFFICER' ||
+                         currentCase.lead_officer_id === officerId;
+
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN_UNAUTHORIZED_CASE_ACCESS',
+          message: 'Access denied: You are not authorized to access or analyze another officer\'s case file.'
+        }
       });
     }
 
@@ -27,10 +51,10 @@ exports.runInvestigationAnalysis = async (req, res, next) => {
     const [relationships] = await execute('SELECT * FROM evidence_relationships WHERE case_id = ?', [caseId]);
     const [timeline] = await execute('SELECT * FROM investigation_timelines WHERE case_id = ? ORDER BY event_timestamp ASC', [caseId]);
 
-    // 2. Format structured IPC payload for C Core Engine
+    // 3. Format structured IPC payload with complete forensic metadata for C Core Engine
     const cEnginePayload = {
       case_id: caseId,
-      case_metadata: cases[0],
+      case_metadata: currentCase,
       entities: [
         ...suspects.map(s => ({ id: s.suspect_id, type: 'SUSPECT', label: s.full_name, alias: s.alias, phone: s.phone_number })),
         ...victims.map(v => ({ id: v.victim_id, type: 'VICTIM', label: v.full_name, condition: v.condition_status })),
@@ -41,7 +65,10 @@ exports.runInvestigationAnalysis = async (req, res, next) => {
         tracking_code: e.tracking_code,
         category: e.category,
         title: e.title,
-        source: e.source,
+        description: e.description,
+        location: e.collection_location || '',
+        timestamp: e.collected_at ? Math.floor(new Date(e.collected_at).getTime() / 1000) : 0,
+        source: e.source || '',
         verification_status: e.verification_status,
         reliability_assessment: e.reliability_assessment,
         metadata: e.metadata_json
@@ -53,7 +80,7 @@ exports.runInvestigationAnalysis = async (req, res, next) => {
         target_type: r.target_type,
         target_id: r.target_id,
         relation_type: r.relation_type,
-        confidence_weight: parseFloat(r.confidence_weight),
+        confidence_weight: parseFloat(r.confidence_weight || 0.5),
         relationship_nature: r.relationship_nature
       })),
       timeline: timeline.map(t => ({
@@ -61,16 +88,46 @@ exports.runInvestigationAnalysis = async (req, res, next) => {
         timestamp_epoch: Math.floor(new Date(t.event_timestamp).getTime() / 1000),
         entity_type: t.entity_type,
         entity_id: t.entity_id,
-        location: t.location,
+        location: t.location || '',
         status: t.status,
         is_verified: !!t.is_verified
       }))
     };
 
-    // 3. Dispatch to C Engine via standard input
+    // 4. Dispatch to native C Engine via standard input IPC (No mock fallback)
     const engineResults = await cEngineService.runAnalysis(cEnginePayload);
 
-    // 4. Return results (and optionally persist in results cache if available)
+    // 5. Persist synthesized C Engine leads into MySQL / Data Store
+    if (engineResults.prioritized_leads && engineResults.prioritized_leads.length > 0) {
+      for (const lead of engineResults.prioritized_leads) {
+        try {
+          // Check if similar lead already recorded
+          const [existingLeads] = await execute(
+            'SELECT lead_id FROM investigation_leads WHERE case_id = ? AND title = ?',
+            [caseId, lead.title]
+          );
+
+          if (existingLeads.length === 0) {
+            await execute(
+              `INSERT INTO investigation_leads 
+                (case_id, title, hypothesis, recommended_action, lead_status, priority_score, assigned_officer_id, source_gap_type, generated_by)
+               VALUES (?, ?, ?, ?, 'OPEN', ?, ?, 'MISSING_EVIDENCE', 'C_ENGINE_DETECTED')`,
+              [
+                caseId,
+                lead.title,
+                lead.explanation || 'Hypothesis synthesized by C Engine graph traversal.',
+                lead.suggested_step || 'Verify supporting evidence.',
+                lead.score ? parseFloat(lead.score) : 65.0,
+                officerId
+              ]
+            );
+          }
+        } catch (leadPersistErr) {
+          console.warn('[ANALYSIS] Lead persistence notice:', leadPersistErr.message);
+        }
+      }
+    }
+
     const executionLatency = engineResults.execution_latency_ms || 0;
 
     res.json({

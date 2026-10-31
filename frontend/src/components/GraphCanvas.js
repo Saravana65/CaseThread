@@ -137,7 +137,7 @@ export default function GraphCanvas({
         visibleEdges.forEach(edge => {
           const posA = next[edge.source_id];
           const posB = next[edge.target_id];
-          if (!posA || !posB) continue;
+          if (!posA || !posB) return;
 
           const dx = posB.x - posA.x;
           const dy = posB.y - posA.y;

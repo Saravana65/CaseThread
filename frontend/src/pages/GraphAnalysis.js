@@ -9,9 +9,9 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import GraphCanvas from '../components/GraphCanvas';
 
-export default function GraphAnalysis() {
+export default function GraphAnalysis({ initialCaseId }) {
   const [cases, setCases] = useState([]);
-  const [selectedCaseId, setSelectedCaseId] = useState(null);
+  const [selectedCaseId, setSelectedCaseId] = useState(initialCaseId || null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
 
