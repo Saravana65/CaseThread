@@ -1,0 +1,83 @@
+# ==============================================================================
+# CASETHREAD - Comprehensive Git Ignore
+# ==============================================================================
+
+# OS & Environment Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# Environment Variables & Secrets (NEVER COMMIT SENSITIVE KEYS)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Node.js & Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log*
+.npm/
+.eslintcache
+
+# Frontend Build Outputs
+frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/out/
+.cache/
+.parcel-cache/
+
+# C Language Build Outputs & Binaries
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.i
+*.s
+core-engine/bin/
+core-engine/build/
+core-engine/*.exe
+core-engine/*.out
+
+# Testing & Coverage
+coverage/
+*.lcov
+.nyc_output/
+tests/**/test_results.json
+
+# Docker & Database Volumes
+docker/volumes/
+database/data/
+*.sql.gz
+*.sql.bak
+
+# IDE & Editor Configurations
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~

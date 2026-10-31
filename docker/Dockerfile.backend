@@ -1,0 +1,33 @@
+# ==============================================================================
+# CASETHREAD BACKEND & C-ENGINE CONTAINER
+# Combines Node.js 20 with GCC toolchain to natively compile & run the C engine
+# ==============================================================================
+
+FROM node:20-bookworm-slim
+
+# Install C build prerequisites
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    make \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy root workspace to allow compiling core-engine alongside backend
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
+RUN npm install
+
+WORKDIR /app
+COPY . .
+
+# Build C Core DSA Engine
+WORKDIR /app/core-engine
+RUN make clean && make all
+
+WORKDIR /app/backend
+EXPOSE 5000
+
+CMD ["npm", "start"]

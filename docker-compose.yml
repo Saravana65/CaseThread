@@ -1,0 +1,66 @@
+# ==============================================================================
+# CASETHREAD SYSTEM ORCHESTRATION DOCKER COMPOSE
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: casethread-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: casethread_db
+      MYSQL_USER: casethread_user
+      MYSQL_PASSWORD: casethread_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: casethread-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_USER: casethread_user
+      DB_PASSWORD: casethread_password
+      DB_NAME: casethread_db
+      JWT_SECRET: dev_forensic_secret_key_3892
+      C_ENGINE_TIMEOUT_MS: 8000
+      CLIENT_ORIGIN: http://localhost:3000
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: casethread-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:5000/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+    driver: local
