@@ -88,6 +88,54 @@ class ApiService {
   getPastAnalyses(caseId) {
     return this.request(`/analysis/cases/${caseId}/history`);
   }
+
+  // Phase 4: C-Engine Evidence Graph Analysis APIs
+  getCaseGraph(caseId) {
+    return this.request(`/cases/${caseId}/graph`);
+  }
+
+  getGraphNodes(caseId, params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/cases/${caseId}/graph/nodes${q ? '?' + q : ''}`);
+  }
+
+  getGraphEdges(caseId, params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/cases/${caseId}/graph/edges${q ? '?' + q : ''}`);
+  }
+
+  findGraphPath(caseId, sourceId, targetId, sourceType = '', targetType = '') {
+    const q = new URLSearchParams({
+      source_id: sourceId,
+      target_id: targetId,
+      ...(sourceType && { source_type: sourceType }),
+      ...(targetType && { target_type: targetType })
+    }).toString();
+    return this.request(`/cases/${caseId}/graph/path?${q}`);
+  }
+
+  exploreGraphNode(caseId, nodeId, depth = 2, nodeType = '') {
+    const q = new URLSearchParams({
+      depth,
+      ...(nodeType && { node_type: nodeType })
+    }).toString();
+    return this.request(`/cases/${caseId}/graph/explore/${nodeId}?${q}`);
+  }
+
+  getConnectedComponents(caseId) {
+    return this.request(`/cases/${caseId}/graph/components`);
+  }
+
+  getIsolatedEvidence(caseId) {
+    return this.request(`/cases/${caseId}/graph/isolated`);
+  }
+
+  createRelationship(caseId, relData) {
+    return this.request(`/cases/${caseId}/graph/edges`, {
+      method: 'POST',
+      body: JSON.stringify(relData)
+    });
+  }
 }
 
 export const api = new ApiService();

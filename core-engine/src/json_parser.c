@@ -324,11 +324,83 @@ ct_status_t parse_and_ingest_json(case_ingestion_context_t *ctx, const char *jso
         }
     }
 
+    // 5. Ingest Targeted Graph Exploration Query (Optional)
+    const char *q_pos = strstr(json_str, "\"query\"");
+    if (q_pos) {
+        const char *obj_start = strchr(q_pos, '{');
+        if (obj_start) {
+            const char *obj_end = strchr(obj_start, '}');
+            if (obj_end) {
+                const char *act_p = find_key(obj_start, "action");
+                if (act_p && act_p < obj_end) extract_string(act_p, ctx->query.action, sizeof(ctx->query.action));
+
+                const char *sid_p = find_key(obj_start, "source_id");
+                if (sid_p && sid_p < obj_end) ctx->query.source_id = extract_int(sid_p);
+
+                const char *st_p = find_key(obj_start, "source_type");
+                if (st_p && st_p < obj_end) extract_string(st_p, ctx->query.source_type, sizeof(ctx->query.source_type));
+
+                const char *tid_p = find_key(obj_start, "target_id");
+                if (tid_p && tid_p < obj_end) ctx->query.target_id = extract_int(tid_p);
+
+                const char *tt_p = find_key(obj_start, "target_type");
+                if (tt_p && tt_p < obj_end) extract_string(tt_p, ctx->query.target_type, sizeof(ctx->query.target_type));
+
+                const char *nid_p = find_key(obj_start, "node_id");
+                if (nid_p && nid_p < obj_end) ctx->query.node_id = extract_int(nid_p);
+
+                const char *nt_p = find_key(obj_start, "node_type");
+                if (nt_p && nt_p < obj_end) extract_string(nt_p, ctx->query.node_type, sizeof(ctx->query.node_type));
+
+                const char *dep_p = find_key(obj_start, "depth");
+                if (dep_p && dep_p < obj_end) ctx->query.depth = extract_int(dep_p);
+                if (ctx->query.depth <= 0) ctx->query.depth = 2;
+            }
+        }
+    }
+
     return CT_SUCCESS;
 }
 
-void emit_analysis_json(FILE *out, const analysis_result_t *res, const evidence_graph_t *graph, int case_id) {
-    if (!out) return;
+void emit_analysis_json(FILE *out, const analysis_result_t *res, const case_ingestion_context_t *ctx) {
+    if (!out || !ctx) return;
+    const evidence_graph_t *graph = ctx->graph;
+    int case_id = ctx->case_id;
+
+    // 1. Calculate Connected Components & Classifications
+    int *comp_map = NULL;
+    int num_comp = 0;
+    size_t isolated_count = 0;
+    if (graph && graph->num_vertices > 0) {
+        comp_map = (int *)calloc(graph->num_vertices, sizeof(int));
+        if (comp_map) {
+            graph_connected_components(graph, comp_map, &num_comp);
+        }
+        for (size_t i = 0; i < graph->num_vertices; i++) {
+            if (graph->vertices[i].degree == 0) {
+                isolated_count++;
+            }
+        }
+    }
+
+    size_t count_direct = 0, count_derived = 0, count_suggested = 0, count_unverified = 0, count_disputed = 0;
+    size_t total_edges = 0;
+    if (graph) {
+        for (size_t i = 0; i < graph->num_vertices; i++) {
+            graph_edge_t *e = graph->vertices[i].edges_head;
+            while (e) {
+                if ((int)i <= e->target_vertex_id) {
+                    total_edges++;
+                    if (e->origin == EDGE_RECORDED_DIRECT) count_direct++;
+                    else if (e->origin == EDGE_ORIGIN_DATA_DERIVED) count_derived++;
+                    else if (e->origin == EDGE_ORIGIN_SUGGESTED_VERIFICATION || e->origin == EDGE_ALGORITHMIC_SUGGESTED) count_suggested++;
+                    else if (e->origin == EDGE_ORIGIN_UNVERIFIED) count_unverified++;
+                    else if (e->origin == EDGE_ORIGIN_DISPUTED) count_disputed++;
+                }
+                e = e->next;
+            }
+        }
+    }
 
     fprintf(out, "{\n");
     fprintf(out, "  \"status\": \"SUCCESS\",\n");
@@ -336,39 +408,195 @@ void emit_analysis_json(FILE *out, const analysis_result_t *res, const evidence_
     fprintf(out, "  \"case_id\": %d,\n", case_id);
     fprintf(out, "  \"metrics\": {\n");
     fprintf(out, "    \"nodes_processed\": %zu,\n", graph ? graph->num_vertices : 0);
+    fprintf(out, "    \"edges_evaluated\": %zu,\n", total_edges);
+    fprintf(out, "    \"connected_components\": %d,\n", num_comp);
+    fprintf(out, "    \"isolated_nodes_count\": %zu,\n", isolated_count);
     fprintf(out, "    \"gaps_detected\": %zu,\n", res ? res->total_gaps : 0);
     fprintf(out, "    \"anomalies_detected\": %zu,\n", res ? res->total_anomalies : 0);
     fprintf(out, "    \"leads_generated\": %zu\n", res ? res->total_leads : 0);
     fprintf(out, "  },\n");
 
-    // Connected Components
-    fprintf(out, "  \"connected_components\": [\n");
-    if (graph && graph->num_vertices > 0) {
-        int *comp_map = (int *)malloc(graph->num_vertices * sizeof(int));
-        int num_comp = 0;
-        if (comp_map && graph_connected_components(graph, comp_map, &num_comp) == CT_SUCCESS) {
-            for (int c = 1; c <= num_comp; c++) {
-                fprintf(out, "    {\n");
-                fprintf(out, "      \"component_id\": %d,\n", c);
-                fprintf(out, "      \"nodes\": [");
-                bool first = true;
-                for (size_t i = 0; i < graph->num_vertices; i++) {
-                    if (comp_map[i] == c) {
-                        if (!first) fprintf(out, ", ");
-                        fprintf(out, "{\"vertex_id\": %d, \"label\": \"%s\", \"type\": \"%s\"}",
-                                (int)i, graph->vertices[i].label, graph->vertices[i].entity_type);
-                        first = false;
-                    }
-                }
-                fprintf(out, "]\n");
-                fprintf(out, "    }%s\n", (c < num_comp) ? "," : "");
-            }
+    // Classification Summary
+    fprintf(out, "  \"classification_summary\": {\n");
+    fprintf(out, "    \"directly_documented\": %zu,\n", count_direct);
+    fprintf(out, "    \"data_derived\": %zu,\n", count_derived);
+    fprintf(out, "    \"suggested_for_verification\": %zu,\n", count_suggested);
+    fprintf(out, "    \"unverified\": %zu,\n", count_unverified);
+    fprintf(out, "    \"disputed\": %zu,\n", count_disputed);
+    fprintf(out, "    \"total_relationships\": %zu\n", total_edges);
+    fprintf(out, "  },\n");
+
+    // 2. Graph Nodes
+    fprintf(out, "  \"graph_nodes\": [\n");
+    if (graph) {
+        for (size_t i = 0; i < graph->num_vertices; i++) {
+            const graph_vertex_t *v = &graph->vertices[i];
+            int comp_id = comp_map ? comp_map[i] : 1;
+            bool is_iso = (v->degree == 0);
+            fprintf(out, "    {\n");
+            fprintf(out, "      \"node_id\": %d,\n", v->vertex_id);
+            fprintf(out, "      \"db_id\": %d,\n", v->original_db_id);
+            fprintf(out, "      \"label\": \"%s\",\n", v->label);
+            fprintf(out, "      \"entity_type\": \"%s\",\n", v->entity_type);
+            fprintf(out, "      \"verification_status\": \"%s\",\n", evidence_status_to_str(v->status));
+            fprintf(out, "      \"degree\": %d,\n", v->degree);
+            fprintf(out, "      \"component_id\": %d,\n", comp_id);
+            fprintf(out, "      \"is_isolated\": %s\n", is_iso ? "true" : "false");
+            fprintf(out, "    }%s\n", (i + 1 < graph->num_vertices) ? "," : "");
         }
-        free(comp_map);
     }
     fprintf(out, "  ],\n");
 
-    // Evidence Gaps
+    // 3. Graph Edges (Undirected unique pairs)
+    fprintf(out, "  \"graph_edges\": [\n");
+    if (graph) {
+        bool first_edge = true;
+        for (size_t i = 0; i < graph->num_vertices; i++) {
+            graph_edge_t *e = graph->vertices[i].edges_head;
+            while (e) {
+                if ((int)i <= e->target_vertex_id) {
+                    if (!first_edge) fprintf(out, ",\n");
+                    first_edge = false;
+                    int dest = e->target_vertex_id;
+                    fprintf(out, "    {\n");
+                    fprintf(out, "      \"edge_id\": %d,\n", e->edge_id);
+                    fprintf(out, "      \"source_id\": %d,\n", (int)i);
+                    fprintf(out, "      \"target_id\": %d,\n", dest);
+                    fprintf(out, "      \"source_label\": \"%s\",\n", graph->vertices[i].label);
+                    fprintf(out, "      \"target_label\": \"%s\",\n", graph->vertices[dest].label);
+                    fprintf(out, "      \"source_type\": \"%s\",\n", graph->vertices[i].entity_type);
+                    fprintf(out, "      \"target_type\": \"%s\",\n", graph->vertices[dest].entity_type);
+                    fprintf(out, "      \"relation_type\": \"%s\",\n", e->relation_type);
+                    fprintf(out, "      \"confidence_weight\": %.2f,\n", e->confidence_weight);
+                    fprintf(out, "      \"verification_status\": \"%s\",\n", evidence_status_to_str(e->status));
+                    fprintf(out, "      \"relationship_nature\": \"%s\",\n", edge_origin_to_str(e->origin));
+                    fprintf(out, "      \"source_description\": \"%s\"\n", e->source_description);
+                    fprintf(out, "    }");
+                }
+                e = e->next;
+            }
+        }
+        if (!first_edge) fprintf(out, "\n");
+    }
+    fprintf(out, "  ],\n");
+
+    // 4. Isolated Evidence Nodes
+    fprintf(out, "  \"isolated_nodes\": [\n");
+    if (graph) {
+        bool first_iso = true;
+        for (size_t i = 0; i < graph->num_vertices; i++) {
+            if (graph->vertices[i].degree == 0) {
+                if (!first_iso) fprintf(out, ",\n");
+                first_iso = false;
+                fprintf(out, "    {\"node_id\": %d, \"db_id\": %d, \"label\": \"%s\", \"entity_type\": \"%s\"}",
+                        (int)i, graph->vertices[i].original_db_id, graph->vertices[i].label, graph->vertices[i].entity_type);
+            }
+        }
+        if (!first_iso) fprintf(out, "\n");
+    }
+    fprintf(out, "  ],\n");
+
+    // 5. Connected Components
+    fprintf(out, "  \"connected_components\": [\n");
+    if (graph && comp_map && num_comp > 0) {
+        for (int c = 1; c <= num_comp; c++) {
+            fprintf(out, "    {\n");
+            fprintf(out, "      \"component_id\": %d,\n", c);
+            fprintf(out, "      \"nodes\": [");
+            bool first_node = true;
+            for (size_t i = 0; i < graph->num_vertices; i++) {
+                if (comp_map[i] == c) {
+                    if (!first_node) fprintf(out, ", ");
+                    fprintf(out, "{\"vertex_id\": %d, \"label\": \"%s\", \"type\": \"%s\"}",
+                            (int)i, graph->vertices[i].label, graph->vertices[i].entity_type);
+                    first_node = false;
+                }
+            }
+            fprintf(out, "]\n");
+            fprintf(out, "    }%s\n", (c < num_comp) ? "," : "");
+        }
+    }
+    fprintf(out, "  ],\n");
+
+    // 6. Targeted Query Execution Result (if query requested)
+    if (ctx->query.action[0] != '\0') {
+        fprintf(out, "  \"query_result\": {\n");
+        fprintf(out, "    \"action\": \"%s\",\n", ctx->query.action);
+
+        if (strcmp(ctx->query.action, "FIND_PATH") == 0) {
+            int src_v = graph_find_vertex_by_db_id(graph, ctx->query.source_id,
+                                                   ctx->query.source_type[0] ? ctx->query.source_type : NULL);
+            int tgt_v = graph_find_vertex_by_db_id(graph, ctx->query.target_id,
+                                                   ctx->query.target_type[0] ? ctx->query.target_type : NULL);
+
+            if (src_v == -1 && ctx->query.source_id >= 0 && ctx->query.source_id < (int)graph->num_vertices) {
+                src_v = ctx->query.source_id;
+            }
+            if (tgt_v == -1 && ctx->query.target_id >= 0 && ctx->query.target_id < (int)graph->num_vertices) {
+                tgt_v = ctx->query.target_id;
+            }
+
+            if (src_v != -1 && tgt_v != -1) {
+                int path[1024];
+                int path_len = 0;
+                ct_status_t p_res = graph_shortest_path(graph, src_v, tgt_v, path, &path_len);
+
+                if (p_res == CT_SUCCESS && path_len > 0) {
+                    fprintf(out, "    \"found\": true,\n");
+                    fprintf(out, "    \"path_length\": %d,\n", path_len);
+                    fprintf(out, "    \"explanation\": \"Discovered %d-hop investigative chain connecting '%s' to '%s'\",\n",
+                            path_len - 1, graph->vertices[src_v].label, graph->vertices[tgt_v].label);
+                    fprintf(out, "    \"steps\": [\n");
+                    for (int p = 0; p < path_len; p++) {
+                        int v_idx = path[p];
+                        fprintf(out, "      {\"step\": %d, \"node_id\": %d, \"label\": \"%s\", \"type\": \"%s\"}%s\n",
+                                p + 1, v_idx, graph->vertices[v_idx].label, graph->vertices[v_idx].entity_type,
+                                (p + 1 < path_len) ? "," : "");
+                    }
+                    fprintf(out, "    ]\n");
+                } else {
+                    fprintf(out, "    \"found\": false,\n");
+                    fprintf(out, "    \"message\": \"No relational path connects the selected investigation entities in the case graph.\"\n");
+                }
+            } else {
+                fprintf(out, "    \"found\": false,\n");
+                fprintf(out, "    \"message\": \"One or both entity identifiers could not be resolved in the case network.\"\n");
+            }
+        } else if (strcmp(ctx->query.action, "EXPLORE_NODE") == 0) {
+            int node_v = graph_find_vertex_by_db_id(graph, ctx->query.node_id,
+                                                    ctx->query.node_type[0] ? ctx->query.node_type : NULL);
+            if (node_v == -1 && ctx->query.node_id >= 0 && ctx->query.node_id < (int)graph->num_vertices) {
+                node_v = ctx->query.node_id;
+            }
+
+            if (node_v != -1) {
+                int sub[1024];
+                size_t sub_len = 0;
+                graph_explore_subgraph(graph, node_v, ctx->query.depth, sub, &sub_len, 1024);
+
+                fprintf(out, "    \"start_node\": %d,\n", node_v);
+                fprintf(out, "    \"start_label\": \"%s\",\n", graph->vertices[node_v].label);
+                fprintf(out, "    \"depth\": %d,\n", ctx->query.depth);
+                fprintf(out, "    \"explored_count\": %zu,\n", sub_len);
+                fprintf(out, "    \"subgraph_nodes\": [\n");
+                for (size_t s = 0; s < sub_len; s++) {
+                    int sv = sub[s];
+                    fprintf(out, "      {\"node_id\": %d, \"label\": \"%s\", \"type\": \"%s\", \"degree\": %d}%s\n",
+                            sv, graph->vertices[sv].label, graph->vertices[sv].entity_type, graph->vertices[sv].degree,
+                            (s + 1 < sub_len) ? "," : "");
+                }
+                fprintf(out, "    ]\n");
+            } else {
+                fprintf(out, "    \"found\": false,\n");
+                fprintf(out, "    \"message\": \"Target entity node could not be resolved for exploration.\"\n");
+            }
+        }
+        fprintf(out, "  },\n");
+    }
+
+    if (comp_map) free(comp_map);
+
+    // 7. Evidence Gaps
     fprintf(out, "  \"evidence_gaps\": [\n");
     if (res) {
         evidence_gap_item_t *gap = res->gaps_head;
@@ -390,7 +618,7 @@ void emit_analysis_json(FILE *out, const analysis_result_t *res, const evidence_
     }
     fprintf(out, "  ],\n");
 
-    // Timeline Anomalies
+    // 8. Timeline Anomalies
     fprintf(out, "  \"timeline_anomalies\": [\n");
     if (res) {
         timeline_anomaly_item_t *anom = res->anomalies_head;
@@ -407,7 +635,7 @@ void emit_analysis_json(FILE *out, const analysis_result_t *res, const evidence_
     }
     fprintf(out, "  ],\n");
 
-    // Prioritized Leads
+    // 9. Prioritized Leads
     fprintf(out, "  \"prioritized_leads\": [\n");
     if (res) {
         investigative_lead_item_t *lead = res->leads_head;

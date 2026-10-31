@@ -247,6 +247,19 @@ void test_graphs(void) {
     TEST_ASSERT(num_comp == 2, "Graph correctly partitions into 2 connected components (main network + isolated node)");
     TEST_ASSERT(comp_map[v_suspect1] != comp_map[v_isolated], "Isolated vertex in distinct component");
 
+    // Subgraph exploration: 2-hop neighborhood from Suspect 1 (Suspect 1 -> Suspect 2 -> Vehicle)
+    int sub[16];
+    size_t sub_len = 0;
+    ct_status_t sub_res = graph_explore_subgraph(g, v_suspect1, 2, sub, &sub_len, 16);
+    TEST_ASSERT(sub_res == CT_SUCCESS, "Subgraph exploration succeeded");
+    TEST_ASSERT(sub_len == 3, "2-hop neighborhood contains 3 vertices (Suspect1, Suspect2, Vehicle)");
+
+    // Edge lookup and origin string conversion
+    const graph_edge_t *found_edge = graph_find_edge(g, v_suspect1, v_suspect2);
+    TEST_ASSERT(found_edge != NULL, "Edge lookup found valid incident edge");
+    TEST_ASSERT(strcmp(edge_origin_to_str(EDGE_RECORDED_DIRECT), "DIRECTLY_DOCUMENTED") == 0, "Origin enum maps to DIRECTLY_DOCUMENTED");
+    TEST_ASSERT(strcmp(edge_origin_to_str(EDGE_ORIGIN_DATA_DERIVED), "DATA_DERIVED") == 0, "Origin enum maps to DATA_DERIVED");
+
     // Cycle Detection: Add edge to create loop: Suspect1 <-> CCTV
     TEST_ASSERT(graph_detect_cycle(g) == false, "Initial acyclic tree structure has no cycle");
     graph_add_edge(g, v_suspect1, v_cctv, "SIGHTED_NEAR", 0.70f, STATUS_UNVERIFIED_OBSERVATION, EDGE_ALGORITHMIC_SUGGESTED, "Possible sighting");

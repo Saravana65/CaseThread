@@ -95,17 +95,18 @@ flowchart LR
 
 ---
 
-### Phase 4: Forensic Frontend UI/UX & Visualization
-*Objective: Deliver a dark-themed, high-density digital investigation dashboard in React.*
-- Dark charcoal (`#090c10`), crimson (`#d32f2f`), amber (`#ff8c00`) forensic theme.
-- Interactive evidence relationship graph visualizer (canvas/SVG).
-- Chronological timeline inspector.
-- Priority investigative leads management board.
+### Phase 4: Forensic Frontend UI/UX & Evidence Relationship Visualization (Completed)
+*Objective: Deliver a dark-themed, high-density digital investigation dashboard in React with full C-Engine graph visualization.*
+- **C-Engine Relationship Engine:** Discovers direct and data-derived relationships (`SAME_LOCATION`, `SAME_VEHICLE`, `SHARED_PHONE`, `SHARED_CONTACT`, `SAME_PHYSICAL_EVIDENCE`, `WITNESS_ASSOCIATION`).
+- **Graph Analysis Traversals:** BFS shortest path discovery between entities, DFS connected component clustering, and neighborhood exploration.
+- **Backend Graph API (`/api/v1/cases/:id/graph`):** 8 REST endpoints for graph topology, nodes, edges, shortest paths, neighborhood exploration, connected components, and isolated leads.
+- **Interactive Graph Canvas (`GraphCanvas.js`):** Force-directed physics layout, zoom/pan, node dragging, entity color-coding, edge styling by origin, and golden path illumination.
+- **Investigation Workspace (`GraphAnalysis.js`):** Case selector, metrics ribbon, entity/origin filters, BFS shortest path trace tool, cluster highlighter, and inspector drawer.
 
 ---
 
-### Phase 5: End-to-End System Integration & Case Study Simulation
-*Objective: Validate the entire platform against realistic investigative scenarios.*
+### Phase 5: Timeline Analysis, Verification Requirements & Scenario Simulation
+*Objective: Validate the entire platform against realistic investigative scenarios and timeline contradictions.*
 - Simulation of "The Metro Vault Intrusion & Disappearance" case.
 - Verification of gap detection, timeline contradiction identification, and lead accuracy.
 

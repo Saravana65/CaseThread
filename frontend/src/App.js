@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
+import GraphAnalysis from './pages/GraphAnalysis';
 import './styles/theme.css';
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState('graph');
   const [officer, setOfficer] = useState({
     officer_id: 1,
     badge_number: 'DET-8841',
@@ -18,9 +20,18 @@ export default function App() {
 
   return (
     <div className="casethread-app" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar officer={officer} onLogout={handleLogout} />
+      <Navbar
+        officer={officer}
+        onLogout={handleLogout}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
       <main style={{ flex: 1 }}>
-        <Dashboard />
+        {activeTab === 'dashboard' ? (
+          <Dashboard onNavigateToGraph={() => setActiveTab('graph')} />
+        ) : (
+          <GraphAnalysis />
+        )}
       </main>
       <footer style={{
         backgroundColor: 'var(--bg-secondary)',

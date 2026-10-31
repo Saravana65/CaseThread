@@ -132,3 +132,51 @@ ct_status_t graph_shortest_path(const evidence_graph_t *g, int start_vertex_id, 
 
     return CT_SUCCESS;
 }
+
+ct_status_t graph_explore_subgraph(const evidence_graph_t *g, int start_vertex_id, int max_depth,
+                                   int *subgraph_vertices, size_t *subgraph_size, size_t max_vertices) {
+    if (!g || !subgraph_vertices || !subgraph_size ||
+        start_vertex_id < 0 || start_vertex_id >= (int)g->num_vertices || max_depth < 0) {
+        return CT_ERR_INVALID_INPUT;
+    }
+
+    *subgraph_size = 0;
+    int *dist = (int *)malloc(g->num_vertices * sizeof(int));
+    if (!dist) return CT_ERR_OUT_OF_MEMORY;
+
+    for (size_t i = 0; i < g->num_vertices; i++) {
+        dist[i] = -1;
+    }
+
+    queue_t *q = queue_create();
+    if (!q) {
+        free(dist);
+        return CT_ERR_OUT_OF_MEMORY;
+    }
+
+    dist[start_vertex_id] = 0;
+    queue_enqueue(q, (void *)(intptr_t)start_vertex_id);
+
+    while (!queue_is_empty(q)) {
+        int u = (int)(intptr_t)queue_dequeue(q);
+        if (*subgraph_size < max_vertices) {
+            subgraph_vertices[(*subgraph_size)++] = u;
+        }
+
+        if (dist[u] >= max_depth) continue;
+
+        graph_edge_t *edge = g->vertices[u].edges_head;
+        while (edge) {
+            int v = edge->target_vertex_id;
+            if (dist[v] == -1) {
+                dist[v] = dist[u] + 1;
+                queue_enqueue(q, (void *)(intptr_t)v);
+            }
+            edge = edge->next;
+        }
+    }
+
+    queue_destroy(q, NULL);
+    free(dist);
+    return CT_SUCCESS;
+}

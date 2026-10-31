@@ -22,20 +22,30 @@
 #include "queue.h"
 #include "stack.h"
 
-/* Edge Relationship Nature */
+/* Edge Relationship Nature / Forensic Classification */
 typedef enum {
-    EDGE_RECORDED_DIRECT = 1,      /* Explicitly documented in case files / police reports */
-    EDGE_ALGORITHMIC_SUGGESTED    /* Detected by algorithmic correlation of shared attributes */
+    EDGE_RECORDED_DIRECT = 1,           /* Explicitly documented in case files / police reports */
+    EDGE_ALGORITHMIC_SUGGESTED,         /* Detected by algorithmic correlation of shared attributes */
+    EDGE_ORIGIN_DATA_DERIVED,           /* Extracted from matching concrete data fields (phones, license plates) */
+    EDGE_ORIGIN_SUGGESTED_VERIFICATION, /* Pattern identified requiring investigator field verification */
+    EDGE_ORIGIN_UNVERIFIED,             /* Sourced from uncorroborated statement or anonymous tip */
+    EDGE_ORIGIN_DISPUTED                /* Contradicted by physical evidence or alibi */
 } edge_origin_t;
+
+const char* edge_origin_to_str(edge_origin_t origin);
+edge_origin_t edge_origin_from_str(const char *str);
 
 /* Graph Edge representing an investigative relationship */
 typedef struct graph_edge {
+    int edge_id;
+    int source_vertex_id;
     int target_vertex_id;
     char relation_type[64];         /* e.g. "SAME_LOCATION", "SAME_VEHICLE", "CALLED_NUMBER", "EXPLICIT_ASSOCIATION" */
     float confidence_weight;        /* 0.00 to 1.00 */
     verification_status_t status;   /* CONFIRMED_FACT, UNVERIFIED_OBSERVATION, HYPOTHESIS */
-    edge_origin_t origin;           /* DIRECT vs SUGGESTED */
+    edge_origin_t origin;           /* DIRECT, DATA_DERIVED, SUGGESTED, UNVERIFIED, DISPUTED */
     char source_description[MAX_SOURCE_LEN]; /* Provenance of connection */
+    int supporting_evidence_id;
     bool is_directed;
     struct graph_edge *next;        /* Adjacency list pointer */
 } graph_edge_t;
@@ -58,6 +68,7 @@ typedef struct {
     size_t num_vertices;
     size_t capacity;
     bool is_directed;
+    int next_edge_id;               /* Global sequence for unique edge IDs */
 } evidence_graph_t;
 
 /* Traversal Visitor Callback */
@@ -79,6 +90,9 @@ ct_status_t graph_bfs(const evidence_graph_t *g, int start_vertex_id, vertex_vis
 ct_status_t graph_dfs(const evidence_graph_t *g, int start_vertex_id, vertex_visitor_fn visitor, void *user_data);
 ct_status_t graph_shortest_path(const evidence_graph_t *g, int start_vertex_id, int target_vertex_id,
                                 int *path_out, int *path_len_out);
+ct_status_t graph_explore_subgraph(const evidence_graph_t *g, int start_vertex_id, int max_depth,
+                                   int *subgraph_vertices, size_t *subgraph_size, size_t max_vertices);
+const graph_edge_t* graph_find_edge(const evidence_graph_t *g, int src_id, int dest_id);
 ct_status_t graph_connected_components(const evidence_graph_t *g, int *component_map, int *num_components);
 bool graph_detect_cycle(const evidence_graph_t *g);
 

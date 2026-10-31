@@ -532,7 +532,27 @@ class MemoryStore {
       return [{ insertId: newId, affectedRows: 1 }, []];
     }
 
-    if (trimmed.startsWith('INSERT INTO EVIDENCE')) {
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_RELATIONSHIPS')) {
+      const newId = this.relationships.length + 1;
+      this.relationships.push({
+        relationship_id: newId,
+        case_id: params[0],
+        source_type: params[1],
+        source_id: params[2],
+        target_type: params[3],
+        target_id: params[4],
+        relation_type: params[5],
+        confidence_weight: params[6] !== undefined ? params[6] : 0.50,
+        relationship_nature: params[7] || 'UNVERIFIED_OBSERVATION',
+        notes: params[8] || null,
+        discovered_by: params[9] || 'OFFICER_MANUAL',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE ') || trimmed.startsWith('INSERT INTO EVIDENCE(')) {
       const newId = this.evidence.length + 1;
       const ev = {
         evidence_id: newId,
@@ -556,26 +576,6 @@ class MemoryStore {
         updated_at: new Date().toISOString()
       };
       this.evidence.push(ev);
-      return [{ insertId: newId, affectedRows: 1 }, []];
-    }
-
-    if (trimmed.startsWith('INSERT INTO EVIDENCE_RELATIONSHIPS')) {
-      const newId = this.relationships.length + 1;
-      this.relationships.push({
-        relationship_id: newId,
-        case_id: params[0],
-        source_type: params[1],
-        source_id: params[2],
-        target_type: params[3],
-        target_id: params[4],
-        relation_type: params[5],
-        confidence_weight: params[6] !== undefined ? params[6] : 0.50,
-        relationship_nature: params[7] || 'UNVERIFIED_OBSERVATION',
-        notes: params[8] || null,
-        discovered_by: params[9] || 'OFFICER_MANUAL',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
       return [{ insertId: newId, affectedRows: 1 }, []];
     }
 

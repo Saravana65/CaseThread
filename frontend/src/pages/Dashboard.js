@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigateToGraph }) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -164,14 +164,25 @@ export default function Dashboard() {
                       {selectedCase.description}
                     </p>
                   </div>
-                  <button 
-                    onClick={() => triggerAnalysis(selectedCase.case_id)}
-                    disabled={analyzing}
-                    className="btn-primary"
-                    style={{ minWidth: '180px' }}
-                  >
-                    {analyzing ? 'Executing C Engine...' : 'Run DSA Analysis'}
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <button 
+                      onClick={() => triggerAnalysis(selectedCase.case_id)}
+                      disabled={analyzing}
+                      className="btn-primary"
+                      style={{ minWidth: '180px' }}
+                    >
+                      {analyzing ? 'Executing C Engine...' : 'Run DSA Analysis'}
+                    </button>
+                    {onNavigateToGraph && (
+                      <button
+                        onClick={onNavigateToGraph}
+                        className="btn-secondary"
+                        style={{ minWidth: '180px', fontSize: '0.8rem' }}
+                      >
+                        🕸️ Explore Case Graph
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-default)' }}>

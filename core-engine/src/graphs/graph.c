@@ -8,6 +8,28 @@
 
 #define DEFAULT_GRAPH_CAPACITY 64
 
+const char* edge_origin_to_str(edge_origin_t origin) {
+    switch (origin) {
+        case EDGE_RECORDED_DIRECT: return "DIRECTLY_DOCUMENTED";
+        case EDGE_ORIGIN_DATA_DERIVED: return "DATA_DERIVED";
+        case EDGE_ORIGIN_SUGGESTED_VERIFICATION:
+        case EDGE_ALGORITHMIC_SUGGESTED: return "SUGGESTED_FOR_VERIFICATION";
+        case EDGE_ORIGIN_UNVERIFIED: return "UNVERIFIED";
+        case EDGE_ORIGIN_DISPUTED: return "DISPUTED";
+        default: return "DIRECTLY_DOCUMENTED";
+    }
+}
+
+edge_origin_t edge_origin_from_str(const char *str) {
+    if (!str) return EDGE_RECORDED_DIRECT;
+    if (strcmp(str, "DIRECTLY_DOCUMENTED") == 0 || strcmp(str, "DIRECT") == 0) return EDGE_RECORDED_DIRECT;
+    if (strcmp(str, "DATA_DERIVED") == 0) return EDGE_ORIGIN_DATA_DERIVED;
+    if (strcmp(str, "SUGGESTED_FOR_VERIFICATION") == 0 || strcmp(str, "SUGGESTED") == 0) return EDGE_ORIGIN_SUGGESTED_VERIFICATION;
+    if (strcmp(str, "UNVERIFIED") == 0) return EDGE_ORIGIN_UNVERIFIED;
+    if (strcmp(str, "DISPUTED") == 0) return EDGE_ORIGIN_DISPUTED;
+    return EDGE_RECORDED_DIRECT;
+}
+
 evidence_graph_t* graph_create(size_t initial_capacity, bool is_directed) {
     size_t cap = initial_capacity ? initial_capacity : DEFAULT_GRAPH_CAPACITY;
     evidence_graph_t *g = (evidence_graph_t *)malloc(sizeof(evidence_graph_t));
@@ -22,6 +44,7 @@ evidence_graph_t* graph_create(size_t initial_capacity, bool is_directed) {
     g->num_vertices = 0;
     g->capacity = cap;
     g->is_directed = is_directed;
+    g->next_edge_id = 0;
     return g;
 }
 
@@ -78,7 +101,10 @@ static ct_status_t add_single_directed_edge(evidence_graph_t *g, int src_id, int
     graph_edge_t *edge = (graph_edge_t *)malloc(sizeof(graph_edge_t));
     if (!edge) return CT_ERR_OUT_OF_MEMORY;
 
+    edge->edge_id = ++(g->next_edge_id);
+    edge->source_vertex_id = src_id;
     edge->target_vertex_id = dest_id;
+    edge->supporting_evidence_id = 0;
     strncpy(edge->relation_type, relation_type ? relation_type : "ASSOCIATED", sizeof(edge->relation_type) - 1);
     edge->relation_type[sizeof(edge->relation_type) - 1] = '\0';
     edge->confidence_weight = weight;
@@ -185,6 +211,16 @@ int graph_find_vertex_by_db_id(const evidence_graph_t *g, int db_id, const char 
         }
     }
     return -1;
+}
+
+const graph_edge_t* graph_find_edge(const evidence_graph_t *g, int src_id, int dest_id) {
+    if (!g || src_id < 0 || src_id >= (int)g->num_vertices) return NULL;
+    const graph_edge_t *curr = g->vertices[src_id].edges_head;
+    while (curr) {
+        if (curr->target_vertex_id == dest_id) return curr;
+        curr = curr->next;
+    }
+    return NULL;
 }
 
 void graph_destroy(evidence_graph_t *g) {

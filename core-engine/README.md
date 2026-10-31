@@ -152,6 +152,7 @@ $$\text{Priority Score} = \min\left(100, \; 30 + 10 \cdot \text{deg}(v) + \sum \
 | **Self-Balancing AVL Tree** | Range Query $[T_1, T_2]$ | $\mathcal{O}(\log N + K)$ | $\mathcal{O}(\log N + K)$ | $\mathcal{O}(K)$ | Alibi window & crime interval retrieval |
 | **Graph (Adjacency List)** | Vertex / Edge Add | $\mathcal{O}(1)$ | $\mathcal{O}(1)$ | $\mathcal{O}(V + E)$ | Associating evidence and entities |
 | **BFS Shortest Path** | Path Reconstruction | $\mathcal{O}(V + E)$ | $\mathcal{O}(V + E)$ | $\mathcal{O}(V)$ | Minimum-hop connection between entities |
+| **BFS Neighborhood Exploration** | Subgraph Retrieval | $\mathcal{O}(V + E)$ | $\mathcal{O}(V + E)$ | $\mathcal{O}(V)$ | $K$-hop local entity neighborhood discovery |
 | **DFS Components & Cycles** | Full Traversal | $\mathcal{O}(V + E)$ | $\mathcal{O}(V + E)$ | $\mathcal{O}(V)$ | Sub-network discovery & cycle detection |
 | **FIFO Queue / LIFO Stack** | Enqueue / Push / Pop | $\mathcal{O}(1)$ | $\mathcal{O}(1)$ | $\mathcal{O}(N)$ | Graph traversals and algorithm execution |
 

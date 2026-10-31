@@ -43,19 +43,27 @@ async function testIPC() {
     timeline: [
       { id: 1, timestamp: 1715000000, description: 'Vehicle spotted at Dock 9', location: 'Dock 9', entity_id: 3 },
       { id: 2, timestamp: 1715000060, description: 'Spotted at Highway Junction', location: 'Highway Junction', entity_id: 1 }
-    ]
+    ],
+    query: {
+      action: 'FIND_PATH',
+      source_id: 1,
+      source_type: 'SUSPECT',
+      target_id: 4,
+      target_type: 'LOCATION'
+    }
   };
 
   try {
     const result = await cEngineService.runAnalysis(samplePayload);
     console.log('[SUCCESS] C Engine IPC analysis succeeded!');
     console.log('Engine Version:', result.engine_version);
-    console.log('Total Execution Time:', result.execution_time_ms, 'ms');
+    console.log('Graph Nodes Count:', (result.graph_nodes || []).length);
+    console.log('Graph Edges Count:', (result.graph_edges || []).length);
+    console.log('Classification Summary:', JSON.stringify(result.classification_summary, null, 2));
+    console.log('Query Result (Shortest Path):', JSON.stringify(result.query_result, null, 2));
     console.log('Detected Gaps Count:', (result.evidence_gaps || []).length);
-    console.log('Evidence Gaps:', JSON.stringify(result.evidence_gaps, null, 2));
-    console.log('Timeline Anomalies:', JSON.stringify(result.timeline_anomalies, null, 2));
-    console.log('Investigative Leads:', JSON.stringify(result.prioritized_leads, null, 2));
-    console.log('Graph Connected Components:', result.graph_analysis ? result.graph_analysis.connected_components : 'N/A');
+    console.log('Connected Components Count:', (result.connected_components || []).length);
+    console.log('Isolated Nodes Count:', (result.isolated_nodes || []).length);
     return true;
   } catch (err) {
     console.error('[ERROR] C Engine IPC failed:', err);

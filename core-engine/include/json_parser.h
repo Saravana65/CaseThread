@@ -14,6 +14,18 @@
 #include "graph.h"
 #include "analysis.h"
 
+/* Target Query Action for Graph Exploration */
+typedef struct {
+    char action[32];            /* "FULL_ANALYSIS", "FIND_PATH", "EXPLORE_NODE" */
+    int source_id;
+    char source_type[32];
+    int target_id;
+    char target_type[32];
+    int node_id;
+    char node_type[32];
+    int depth;
+} graph_query_t;
+
 typedef struct {
     int case_id;
     evidence_record_t *evidence_list;
@@ -21,12 +33,13 @@ typedef struct {
     evidence_graph_t *graph;
     avl_tree_t *timeline_avl;
     bst_t *timeline_bst;
+    graph_query_t query;
 } case_ingestion_context_t;
 
 case_ingestion_context_t* context_create(void);
 void context_destroy(case_ingestion_context_t *ctx);
 
 ct_status_t parse_and_ingest_json(case_ingestion_context_t *ctx, const char *json_str);
-void emit_analysis_json(FILE *out, const analysis_result_t *res, const evidence_graph_t *graph, int case_id);
+void emit_analysis_json(FILE *out, const analysis_result_t *res, const case_ingestion_context_t *ctx);
 
 #endif /* CASETHREAD_JSON_PARSER_H */

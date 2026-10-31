@@ -20,6 +20,7 @@ const evidenceRoutes = require('./routes/evidenceRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
 const leadRoutes = require('./routes/leadRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
+const graphRoutes = require('./routes/graphRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -73,6 +74,7 @@ app.use('/api/v1/evidence', evidenceRoutes);
 app.use('/api/v1/timeline', timelineRoutes);
 app.use('/api/v1/leads', leadRoutes);
 app.use('/api/v1/analysis', analysisRoutes);
+app.use('/api/v1', graphRoutes);
 
 // Catch-all 404 handler
 app.use((req, res) => {

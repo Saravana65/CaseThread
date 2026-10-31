@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
                 result->total_gaps, result->total_anomalies, result->total_leads);
 
     // Emit structured JSON output to stdout
-    emit_analysis_json(stdout, result, ctx->graph, ctx->case_id);
+    emit_analysis_json(stdout, result, ctx);
 
     // Memory Cleanup
     analysis_result_free(result);
