@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
+import AddEvidenceModal from './AddEvidenceModal';
 
-export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzing, onExploreGraph }) {
+/**
+ * @component CaseDetailsPanel
+ * @description Master forensic case dossier displaying suspects, victims, witnesses, evidence items, and timelines.
+ * Provides controls for running C-Engine DSA analysis, opening the graph canvas, and ingesting evidence.
+ */
+export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzing, onExploreGraph, onRefreshCase }) {
   const [activeSubTab, setActiveSubTab] = useState('overview');
+  const [isAddEvidenceOpen, setIsAddEvidenceOpen] = useState(false);
 
   if (!caseData) {
     return (
@@ -16,6 +23,12 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
     lead_officer_name, lead_officer_badge,
     suspects = [], victims = [], witnesses = [], evidence = [], timelines = []
   } = caseData;
+
+  const handleEvidenceAdded = () => {
+    if (onRefreshCase && caseData?.case_id) {
+      onRefreshCase(caseData.case_id);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -44,6 +57,13 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
 
           {/* Action Triggers */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setIsAddEvidenceOpen(true)}
+              className="btn-secondary"
+              style={{ minWidth: '150px' }}
+            >
+              📦 Ingest Evidence
+            </button>
             <button
               onClick={() => onTriggerAnalysis && onTriggerAnalysis(caseData.case_id)}
               disabled={analyzing}
@@ -100,7 +120,7 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
       </div>
 
       {/* Sub-Navigation Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-default)', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-default)', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
         {[
           { key: 'overview', label: `📋 Overview (${suspects.length + victims.length + witnesses.length + evidence.length})` },
           { key: 'suspects', label: `👤 Persons of Interest (${suspects.length})` },
@@ -278,49 +298,94 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
 
       {/* Tab 5: Evidence Catalog Complete */}
       {activeSubTab === 'evidence' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1rem' }}>
-          {evidence.map(e => {
-            const isFact = e.verification_status === 'CONFIRMED_FACT';
-            return (
-              <div key={e.evidence_id} className="forensic-card" style={{ borderLeft: `4px solid ${isFact ? 'var(--status-verified)' : 'var(--status-high)'}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                  <div>
-                    <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-orange)', fontWeight: '700' }}>
-                      {e.tracking_code}
-                    </span>
-                    <h4 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', marginTop: '0.1rem' }}>
-                      {e.title}
-                    </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            backgroundColor: 'var(--bg-input)',
+            padding: '0.75rem 1rem',
+            borderRadius: '4px',
+            border: '1px solid var(--border-default)',
+            flexWrap: 'wrap',
+            gap: '0.5rem'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                Forensic Evidence Repository
+              </span>
+              <span className="badge badge-high" style={{ marginLeft: '0.6rem' }}>
+                {evidence.length} Registered Items
+              </span>
+            </div>
+            <button
+              onClick={() => setIsAddEvidenceOpen(true)}
+              className="btn-primary"
+              style={{
+                fontSize: '0.75rem',
+                padding: '0.4rem 0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                backgroundColor: 'var(--accent-orange)',
+                borderColor: '#e65100'
+              }}
+            >
+              <span>➕</span>
+              <span>Ingest Evidence Record</span>
+            </button>
+          </div>
+
+          {evidence.length === 0 ? (
+            <div className="forensic-card" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+              No evidence items registered yet for this case. Click &ldquo;Ingest Evidence Record&rdquo; above to add forensic artifacts.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1rem' }}>
+              {evidence.map(e => {
+                const isFact = e.verification_status === 'CONFIRMED_FACT';
+                return (
+                  <div key={e.evidence_id} className="forensic-card" style={{ borderLeft: `4px solid ${isFact ? 'var(--status-verified)' : 'var(--status-high)'}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                      <div>
+                        <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--accent-orange)', fontWeight: '700' }}>
+                          {e.tracking_code}
+                        </span>
+                        <h4 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', marginTop: '0.1rem' }}>
+                          {e.title}
+                        </h4>
+                      </div>
+                      <span className={`badge ${isFact ? 'badge-verified' : 'badge-unverified'}`}>
+                        {e.verification_status ? e.verification_status.replace(/_/g, ' ') : 'UNVERIFIED'}
+                      </span>
+                    </div>
+
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.6rem' }}>
+                      {e.description}
+                    </p>
+
+                    <div style={{
+                      backgroundColor: 'var(--bg-input)',
+                      padding: '0.6rem',
+                      borderRadius: '4px',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '0.4rem',
+                      fontSize: '0.72rem',
+                      color: 'var(--text-muted)',
+                      border: '1px solid var(--border-subtle)'
+                    }}>
+                      <div><strong>Category:</strong> <span style={{ color: 'var(--text-primary)' }}>{e.category}</span></div>
+                      <div><strong>Reliability:</strong> <span style={{ color: 'var(--text-primary)' }}>{e.reliability_assessment || 'N/A'}</span></div>
+                      <div><strong>Source:</strong> <span style={{ color: e.source === 'UNKNOWN' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{e.source || 'UNKNOWN'}</span></div>
+                      <div><strong>Collected:</strong> <span style={{ color: !e.collected_at ? 'var(--accent-red)' : 'var(--text-primary)' }}>{e.collected_at ? new Date(e.collected_at).toLocaleDateString() : 'MISSING'}</span></div>
+                      <div style={{ gridColumn: 'span 2' }}><strong>Location:</strong> <span style={{ color: 'var(--text-primary)' }}>{e.collection_location || 'Not logged'}</span></div>
+                    </div>
                   </div>
-                  <span className={`badge ${isFact ? 'badge-verified' : 'badge-unverified'}`}>
-                    {e.verification_status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.6rem' }}>
-                  {e.description}
-                </p>
-
-                <div style={{
-                  backgroundColor: 'var(--bg-input)',
-                  padding: '0.6rem',
-                  borderRadius: '4px',
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '0.4rem',
-                  fontSize: '0.72rem',
-                  color: 'var(--text-muted)',
-                  border: '1px solid var(--border-subtle)'
-                }}>
-                  <div><strong>Category:</strong> <span style={{ color: 'var(--text-primary)' }}>{e.category}</span></div>
-                  <div><strong>Reliability:</strong> <span style={{ color: 'var(--text-primary)' }}>{e.reliability_assessment}</span></div>
-                  <div><strong>Source:</strong> <span style={{ color: e.source === 'UNKNOWN' ? 'var(--accent-red)' : 'var(--text-primary)' }}>{e.source || 'UNKNOWN'}</span></div>
-                  <div><strong>Collected:</strong> <span style={{ color: !e.collected_at ? 'var(--accent-red)' : 'var(--text-primary)' }}>{e.collected_at ? new Date(e.collected_at).toLocaleDateString() : 'MISSING'}</span></div>
-                  <div style={{ gridColumn: 'span 2' }}><strong>Location:</strong> <span style={{ color: 'var(--text-primary)' }}>{e.collection_location || 'Not logged'}</span></div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -362,6 +427,15 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
           </table>
         </div>
       )}
+
+      {/* Add Evidence Modal */}
+      <AddEvidenceModal
+        isOpen={isAddEvidenceOpen}
+        onClose={() => setIsAddEvidenceOpen(false)}
+        caseId={caseData.case_id}
+        caseNumber={case_number}
+        onEvidenceAdded={handleEvidenceAdded}
+      />
     </div>
   );
 }

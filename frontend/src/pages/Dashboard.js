@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import CreateCaseModal from '../components/CreateCaseModal';
 
 export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseId }) {
   const [cases, setCases] = useState([]);
@@ -7,6 +8,7 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
   const [selectedCase, setSelectedCase] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     loadCases();
@@ -45,6 +47,13 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
       }
     } catch (err) {
       console.error('Failed loading case details:', err);
+    }
+  };
+
+  const handleCaseCreated = async (newCase) => {
+    await loadCases();
+    if (newCase && newCase.case_id) {
+      loadCaseDetails(newCase.case_id);
     }
   };
 
@@ -150,11 +159,28 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
       <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '1.5rem', alignItems: 'start' }}>
         {/* Left Column: Incident Case Roster */}
         <section>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h2 style={{ fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>
               Active Case Roster
             </h2>
-            <span className="badge badge-high">{cases.length} Files</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="badge badge-high">{cases.length} Files</span>
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="btn-primary"
+                style={{
+                  fontSize: '0.72rem',
+                  padding: '0.3rem 0.65rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem'
+                }}
+                title="Open New Investigation Case"
+              >
+                <span>➕</span>
+                <span>New Case</span>
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -390,6 +416,12 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
           )}
         </section>
       </div>
+
+      <CreateCaseModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCaseCreated={handleCaseCreated}
+      />
     </div>
   );
 }

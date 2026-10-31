@@ -40,6 +40,9 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401 && endpoint !== '/auth/login') {
+          this.setToken(null);
+        }
         throw new Error(data.error?.message || `Request failed with status ${response.status}`);
       }
 
@@ -76,6 +79,18 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(caseData)
     });
+  }
+
+  // Evidence
+  addEvidence(evidenceData) {
+    return this.request('/evidence', {
+      method: 'POST',
+      body: JSON.stringify(evidenceData)
+    });
+  }
+
+  getEvidenceByCase(caseId) {
+    return this.request(`/evidence/case/${caseId}`);
   }
 
   // C Algorithm Engine Analysis

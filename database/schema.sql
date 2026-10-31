@@ -312,7 +312,7 @@ CREATE TABLE evidence_audit_logs (
 -- DET-9912: Detective2026! (bcrypt: $2a$12$4e9L7mKjQzW1x.y9P8oN7eM6u5T4r3E2w1Q0z9X8y7W6v5U4t3S2r)
 INSERT INTO officers (badge_number, full_name, email, password_hash, department, rank_designation, role)
 VALUES 
-('DET-8841', 'Det. Alexander Cross', 'a.cross@casethread.police.gov', '$2a$12$6sI5RfxU9p.9hN9jZqL7yepv3o28CeqT8lH.C2kZJk7t3gXF9H.pS', 'Major Crimes Division', 'Senior Detective', 'LEAD_OFFICER'),
+('DET-8841', 'Det. Alexander Cross', 'a.cross@casethread.police.gov', '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO', 'Major Crimes Division', 'Senior Detective', 'LEAD_OFFICER'),
 ('DET-9912', 'Det. Sarah Lin', 's.lin@casethread.police.gov', '$2a$12$4e9L7mKjQzW1x.y9P8oN7eM6u5T4r3E2w1Q0z9X8y7W6v5U4t3S2r', 'Cyber & Forensic Telemetry Unit', 'Forensic Investigator', 'INVESTIGATOR')
 ON DUPLICATE KEY UPDATE full_name=VALUES(full_name);
 
