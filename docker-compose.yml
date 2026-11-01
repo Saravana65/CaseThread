@@ -1,12 +1,12 @@
 # ==============================================================================
-# CASETHREAD SYSTEM ORCHESTRATION DOCKER COMPOSE (PRODUCTION READY)
+# CASETHREAD SYSTEM ORCHESTRATION DOCKER COMPOSE (HARDENED PRODUCTION)
 # ==============================================================================
 
 services:
   database:
     image: mysql:8.0
     container_name: casethread-mysql
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME:-casethread_db}
@@ -44,11 +44,19 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
       C_ENGINE_TIMEOUT_MS: ${C_ENGINE_TIMEOUT_MS:-8000}
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:3000}
+      EVIDENCE_VAULT_PATH: /app/storage/vault
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-50}
     volumes:
       - evidence_vault:/app/storage/vault
     depends_on:
       database:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/v1/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   frontend:
     build:
@@ -58,10 +66,15 @@ services:
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
-    environment:
-      REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://localhost:5000/api/v1}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   db_data:

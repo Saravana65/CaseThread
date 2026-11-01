@@ -74,6 +74,11 @@ function validateConfig(env = process.env) {
     if (env.CLIENT_ORIGIN === '*') {
       errors.push('CLIENT_ORIGIN cannot be wildcard "*" in production when credentials are enabled.');
     }
+
+    // 6. Evidence Vault & Storage Limits
+    if (env.MAX_FILE_SIZE_MB && (isNaN(Number(env.MAX_FILE_SIZE_MB)) || Number(env.MAX_FILE_SIZE_MB) <= 0)) {
+      errors.push('MAX_FILE_SIZE_MB must be a positive number.');
+    }
   }
 
   return {

@@ -44,6 +44,28 @@ class CEngineService {
   }
 
   /**
+   * Evaluates native binary operational readiness for health checks.
+   * @returns {{ status: string, binary: string, available: boolean, error?: string }}
+   */
+  checkEngineReadiness() {
+    const binaryPath = this.getEngineBinaryPath();
+    const exists = fs.existsSync(binaryPath);
+    if (!exists) {
+      return {
+        status: 'DOWN',
+        binary: path.basename(binaryPath),
+        available: false,
+        error: 'Engine binary not compiled or missing on disk'
+      };
+    }
+    return {
+      status: 'UP',
+      binary: path.basename(binaryPath),
+      available: true
+    };
+  }
+
+  /**
    * Dispatches case payload to C Algorithm Engine via stdin and awaits stdout response.
    * @param {Object} casePayload Structured investigation data for DSA processing
    * @returns {Promise<Object>} Processed results containing gaps, graph paths, and leads

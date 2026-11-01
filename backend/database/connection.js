@@ -80,6 +80,18 @@ async function testConnection() {
 }
 
 /**
+ * Closes the MySQL pool cleanly during graceful shutdown.
+ */
+async function closePool() {
+  if (pool) {
+    try {
+      await pool.end();
+      isConnected = false;
+    } catch (e) {}
+  }
+}
+
+/**
  * Executes a parameterized SQL statement with automatic fallback support.
  * In production: strictly uses MySQL; zero MemoryStore fallback.
  * @param {string} sql Parameterized SQL query
@@ -2759,6 +2771,7 @@ module.exports = {
   query,
   withTransaction,
   testConnection,
+  closePool,
   memoryStore,
   isMemoryStoreAllowed
 };

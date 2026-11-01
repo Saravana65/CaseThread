@@ -349,12 +349,44 @@ flowchart LR
 
 ---
 
-### Phase 11: Production Deployment, Monitoring & Disaster Recovery (STAGE 0 AUDIT COMPLETE)
-*Objective: Prepare CASETHREAD for reliable production deployments with multi-stage Docker builds, health monitoring, database backup/recovery scripts, rate limiting, and security hardening.*
+### Phase 11: Production Deployment, Monitoring & Disaster Recovery (COMPLETED)
+*Objective: Prepare CASETHREAD for reliable, persistent, and secure production deployments with multi-stage Docker builds, non-root containers, composite health monitoring, automated database and vault disaster recovery scripts, rate limiting, and security hardening.*
 
 - [x] **Stage 0: Deployment Readiness & Architecture Audit**:
   - Full codebase inspection verifying React build compatibility, Node.js + Express backend, MySQL 8 connection pooling, and native C core engine compilation.
-  - Verification of environment variables, JWT secrets, and file storage volume mounts.
+  - Verified environment variables, JWT secrets, and volume mounts.
+- [x] **Stage 1: Production Configuration Hardening (`.env.example`, `validateConfig.js`)**:
+  - Validated production environment variables against source code.
+  - Added `EVIDENCE_VAULT_PATH`, `MAX_FILE_SIZE_MB`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS` to `.env.example`.
+  - Enforced strict production validation in `validateConfig.js` blocking weak JWT secrets (< 32 chars), placeholder DB passwords, wildcard CORS with credentials, and demo bypasses.
+- [x] **Stage 2: Docker Production Hardening (`Dockerfile.backend`, `Dockerfile.frontend`, `docker-compose.yml`, `nginx.conf`)**:
+  - Created `.dockerignore` excluding `.git`, `node_modules`, `build`, temporary artifacts, and local secrets.
+  - Converted frontend to a multi-stage production build (`node:20-alpine` builder -> hardened unprivileged `nginx:1.27-alpine` web server with gzip compression, security headers, and SPA routing fallback).
+  - Hardened backend container with unprivileged non-root user (`USER node`), stripped native C engine binary (`casethread_engine`), `npm ci --omit=dev`, and native health check.
+  - Fixed persistent vault path in `docker-compose.yml` (`EVIDENCE_VAULT_PATH: /app/storage/vault`) and attached named volume `evidence_vault`.
+- [x] **Stage 3: Persistent Storage & Disaster Recovery Tooling (`scripts/`)**:
+  - Implemented cross-platform logical database backup utilities (`scripts/backup_database.ps1`, `scripts/backup_database.sh`) with `--single-transaction`, routine/trigger preservation, and SHA-256 manifest receipts.
+  - Implemented safe database restoration scripts (`scripts/restore_database.ps1`, `scripts/restore_database.sh`) with manifest checksum verification and automatic schema recreation.
+  - Implemented evidence vault backup and restore utilities (`scripts/backup_vault.ps1`, `scripts/backup_vault.sh`, `scripts/restore_vault.ps1`, `scripts/restore_vault.sh`) verifying 100% cryptographic SHA-256 match on restored evidence files.
+- [x] **Stage 4: Backend Security & Process Reliability (`middleware/rateLimiter.js`, `server.js`)**:
+  - Integrated `express-rate-limit` with 3 dedicated tiers: global API limiter (300 req/15m), auth login limiter (10 attempts/15m), and C-engine analysis limiter (30 runs/15m).
+  - Implemented graceful shutdown (`SIGTERM`, `SIGINT`) terminating HTTP listener, awaiting active queries, and closing MySQL connection pool (`closePool()`).
+  - Added global unhandled rejection and uncaught exception safety handlers.
+- [x] **Stage 5: Composite Monitoring & Observability (`/api/v1/health`)**:
+  - Upgraded `/api/v1/health` with live composite checks: MySQL connection & ping latency, native C engine execution readiness check, and digital vault storage writeability check.
+  - Returns HTTP 200 `ONLINE` when all subsystems are operational; HTTP 503 `UNHEALTHY` in production if any mission-critical service fails. Never exposes credentials.
+- [x] **Stage 6: Hosting Architecture & Cloud Viability Evaluation**:
+  - Evaluated PaaS and VPS hosting models across Railway, DigitalOcean/Hetzner VPS, Render, and Fly.io.
+  - Selected Railway and VPS Docker Compose as top recommended targets providing full native C execution, persistent disk attachments, and private internal networking.
+- [x] **Stage 8: Disaster Recovery & Integrity Verification**:
+  - Tested database backup and restoration against disposable target database `casethread_test_dr`. Verified all 24 relational tables restored with zero corruption.
+  - Tested evidence vault backup archive and restored into temporary directory with **100% SHA-256 file match (3/3 files matched, 0 mismatched)**.
+- [x] **Stage 9: Regression Verification**:
+  - 169 C DSA assertions passing (100%).
+  - 8 Phase 12 ground-truth validation tests passing (100%).
+  - Frontend production build compiles cleanly (96.46 kB gzipped).
+- [x] **Stage 10: Documentation & Deployment Runbooks**:
+  - Updated `README.md`, `DEVELOPMENT_ROADMAP.md`, and deployment configurations.
 
 ---
 

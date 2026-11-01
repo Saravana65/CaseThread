@@ -240,6 +240,31 @@ function resolveVaultPath(caseId, storageKey, isArtifact = false) {
   return fullPath;
 }
 
+/**
+ * Checks storage volume availability and writeability for health endpoint.
+ * @returns {{ status: string, writable: boolean, path: string, error?: string }}
+ */
+function checkStorageHealth() {
+  try {
+    ensureVaultRoot();
+    const probeFile = path.join(VAULT_ROOT, '.vault_health_probe');
+    fs.writeFileSync(probeFile, 'health-probe');
+    fs.unlinkSync(probeFile);
+    return {
+      status: 'UP',
+      writable: true,
+      path: VAULT_ROOT
+    };
+  } catch (err) {
+    return {
+      status: 'DOWN',
+      writable: false,
+      path: VAULT_ROOT,
+      error: err.message
+    };
+  }
+}
+
 module.exports = {
   VAULT_ROOT,
   MAX_FILE_SIZE_MB,
@@ -251,5 +276,6 @@ module.exports = {
   sanitizeFilename,
   validateContentSignature,
   generateStorageKey,
-  resolveVaultPath
+  resolveVaultPath,
+  checkStorageHealth
 };

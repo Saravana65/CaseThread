@@ -1,33 +1,55 @@
 # ==============================================================================
-# CASETHREAD BACKEND & C-ENGINE CONTAINER
+# CASETHREAD BACKEND & C-ENGINE CONTAINER (HARDENED PRODUCTION)
 # Combines Node.js 20 with GCC toolchain to natively compile & run the C engine
 # ==============================================================================
 
 FROM node:20-bookworm-slim
 
-# Install C build prerequisites
+# Install C build prerequisites and curl for health checks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     make \
     libc6-dev \
+    binutils \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy root workspace to allow compiling core-engine alongside backend
+# Copy and build native C Core DSA Engine
+COPY core-engine/ ./core-engine/
+WORKDIR /app/core-engine
+RUN make clean && make all && \
+    strip --strip-unneeded bin/casethread_engine && \
+    chmod +x bin/casethread_engine
+
+# Setup Node.js backend
+WORKDIR /app
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend
-RUN npm install
+RUN npm ci --omit=dev
 
+# Copy backend source
 WORKDIR /app
-COPY . .
+COPY backend/ ./backend/
 
-# Build C Core DSA Engine
-WORKDIR /app/core-engine
-RUN make clean && make all
+# Setup persistent storage vault directory and set permissions
+RUN mkdir -p /app/storage/vault && \
+    chown -R node:node /app
 
 WORKDIR /app/backend
+
+# Switch to unprivileged user for security
+USER node
+
 EXPOSE 5000
 
-CMD ["npm", "start"]
+ENV NODE_ENV=production \
+    PORT=5000 \
+    EVIDENCE_VAULT_PATH=/app/storage/vault
+
+HEALTHCHECK --interval=20s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:5000/api/v1/health || exit 1
+
+CMD ["node", "server.js"]

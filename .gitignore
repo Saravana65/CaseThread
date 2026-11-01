@@ -69,6 +69,7 @@ docker/volumes/
 database/data/
 backend/storage/
 benchmarks/
+backups/
 *.sql.gz
 *.sql.bak
 

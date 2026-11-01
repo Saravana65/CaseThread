@@ -1,0 +1,47 @@
+# ==============================================================================
+# CASETHREAD DOCKER BUILD IGNORE
+# ==============================================================================
+
+.git
+.gitignore
+.gitattributes
+README.md
+DEVELOPMENT_ROADMAP.md
+
+# Node.js
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.npm
+
+# Local Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Build Artifacts & Binaries
+frontend/build
+frontend/dist
+frontend/.cache
+backend/storage/vault/cases
+benchmarks
+core-engine/bin/*.exe
+core-engine/bin/*.obj
+core-engine/*.exe
+core-engine/*.obj
+*.o
+*.obj
+
+# Docker & Database Volumes
+docker/volumes
+database/data
+*.sql.gz
+*.sql.bak
+
+# Documentation & Scratch
+docs/
+scratch/
