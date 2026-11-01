@@ -1,9 +1,10 @@
 import React from 'react';
 
-export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOpenReport }) {
+export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOpenReport, unreadCount = 0 }) {
   const navItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
     { id: 'dossier', label: '📂 Case Dossier', icon: '📂' },
+    { id: 'collaboration', label: '🤝 Collaboration', icon: '🤝' },
     { id: 'vault', label: '🗄️ Evidence Vault', icon: '🗄️' },
     { id: 'geospatial', label: '🗺️ Geo Intelligence', icon: '🗺️' },
     { id: 'integrity', label: '🛡️ Evidence Integrity', icon: '🛡️' },
@@ -103,6 +104,33 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
                 <span>📄</span> Export Report
               </button>
             )}
+            <button
+              onClick={() => onTabChange && onTabChange('collaboration')}
+              className="btn-secondary"
+              style={{
+                fontSize: '0.7rem',
+                padding: '0.35rem 0.7rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+              title="Open Investigation Notifications"
+            >
+              <span>🔔</span>
+              {unreadCount > 0 && (
+                <span style={{
+                  backgroundColor: 'var(--accent-red)',
+                  color: '#fff',
+                  fontSize: '0.6rem',
+                  fontWeight: '800',
+                  borderRadius: '10px',
+                  padding: '0.1rem 0.4rem',
+                  lineHeight: 1
+                }}>
+                  {unreadCount}
+                </span>
+              )}
+            </button>
             <button 
               onClick={onLogout}
               className="btn-secondary"

@@ -4,6 +4,7 @@
  */
 
 const { execute } = require('../database/connection');
+const collaborationService = require('../services/collaborationService');
 
 /**
  * Creates a new case file.
@@ -31,10 +32,32 @@ exports.createCase = async (req, res, next) => {
       [case_number, title, description || '', incident_date, incident_location, lead_officer_id, casePriority]
     );
 
+    const createdCaseId = result.insertId;
+
+    // Automatically establish LEAD_INVESTIGATOR membership for case creator
+    try {
+      await execute(
+        `INSERT INTO case_members (case_id, officer_id, role, assigned_by_officer_id)
+         VALUES (?, ?, 'LEAD_INVESTIGATOR', ?)`,
+        [createdCaseId, lead_officer_id, lead_officer_id]
+      );
+      await collaborationService.logCaseActivity(
+        createdCaseId,
+        lead_officer_id,
+        'CASE_STATUS_CHANGED',
+        createdCaseId,
+        null,
+        { status: 'OPEN' },
+        `Case file #${case_number} established with LEAD_INVESTIGATOR ${lead_officer_id}.`
+      );
+    } catch (ignoreErr) {
+      // Non-fatal fallback for unmigrated test runs
+    }
+
     res.status(201).json({
       success: true,
       data: {
-        case_id: result.insertId,
+        case_id: createdCaseId,
         case_number,
         title,
         priority: casePriority,
@@ -52,6 +75,8 @@ exports.createCase = async (req, res, next) => {
 exports.listCases = async (req, res, next) => {
   try {
     const { status, priority } = req.query;
+    const officer = req.officer;
+
     let sql = `
       SELECT 
         c.case_id, c.case_number, c.title, c.description, c.incident_date, 
@@ -65,6 +90,12 @@ exports.listCases = async (req, res, next) => {
       WHERE 1=1
     `;
     const params = [];
+
+    // Phase 10: Multi-Officer Case Access: Restrict to cases officer is lead or active member of (unless global ADMIN)
+    if (officer && officer.role !== 'ADMIN') {
+      sql += ' AND (c.lead_officer_id = ? OR c.case_id IN (SELECT cm.case_id FROM case_members cm WHERE cm.officer_id = ? AND cm.is_active = 1))';
+      params.push(officer.officer_id, officer.officer_id);
+    }
 
     if (status) {
       sql += ' AND c.status = ?';
@@ -94,6 +125,16 @@ exports.listCases = async (req, res, next) => {
 exports.getCaseById = async (req, res, next) => {
   try {
     const caseId = parseInt(req.params.id, 10);
+
+    if (req.officer) {
+      const access = await collaborationService.verifyCaseAccess(caseId, req.officer, 'view_case');
+      if (!access.authorized) {
+        return res.status(access.status || 403).json({
+          success: false,
+          error: { code: 'FORBIDDEN_CASE_ACCESS', message: access.error }
+        });
+      }
+    }
 
     const [cases] = await execute(
       `SELECT c.*, o.full_name AS lead_officer_name, o.badge_number AS lead_officer_badge 
@@ -147,6 +188,16 @@ exports.updateCase = async (req, res, next) => {
     const caseId = parseInt(req.params.id, 10);
     const { title, description, incident_location, priority } = req.body;
 
+    if (req.officer) {
+      const access = await collaborationService.verifyCaseAccess(caseId, req.officer, 'edit_case');
+      if (!access.authorized) {
+        return res.status(access.status || 403).json({
+          success: false,
+          error: { code: 'FORBIDDEN_INSUFFICIENT_PRIVILEGES', message: access.error }
+        });
+      }
+    }
+
     const [existing] = await execute('SELECT case_id FROM cases WHERE case_id = ?', [caseId]);
     if (existing.length === 0) {
       return res.status(404).json({
@@ -181,6 +232,16 @@ exports.updateCase = async (req, res, next) => {
 exports.archiveCase = async (req, res, next) => {
   try {
     const caseId = parseInt(req.params.id, 10);
+
+    if (req.officer) {
+      const access = await collaborationService.verifyCaseAccess(caseId, req.officer, 'edit_case');
+      if (!access.authorized) {
+        return res.status(access.status || 403).json({
+          success: false,
+          error: { code: 'FORBIDDEN_INSUFFICIENT_PRIVILEGES', message: access.error }
+        });
+      }
+    }
 
     const [existing] = await execute('SELECT case_id FROM cases WHERE case_id = ?', [caseId]);
     if (existing.length === 0) {

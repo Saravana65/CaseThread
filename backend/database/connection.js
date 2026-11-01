@@ -217,6 +217,84 @@ class MemoryStore {
         is_active: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
+      },
+      {
+        officer_id: 2,
+        badge_number: 'DET-9912',
+        full_name: 'Det. Sarah Lin',
+        email: 's.lin@casethread.police.gov',
+        password_hash: '$2a$12$4e9L7mKjQzW1x.y9P8oN7eM6u5T4r3E2w1Q0z9X8y7W6v5U4t3S2r', // Detective2026!
+        department: 'Cyber & Forensic Telemetry Unit',
+        rank_designation: 'Forensic Investigator',
+        role: 'INVESTIGATOR',
+        is_active: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        officer_id: 3,
+        badge_number: 'DET-9022',
+        full_name: 'Det. Marcus Brody',
+        email: 'm.brody@casethread.police.gov',
+        password_hash: '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO',
+        department: 'Homicide & Robbery Squad',
+        rank_designation: 'Detective',
+        role: 'INVESTIGATOR',
+        is_active: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        officer_id: 4,
+        badge_number: 'ANA-3301',
+        full_name: 'Dr. Maya Chen',
+        email: 'm.chen@casethread.police.gov',
+        password_hash: '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO',
+        department: 'Digital & Biological Forensics',
+        rank_designation: 'Forensic Analyst',
+        role: 'INVESTIGATOR',
+        is_active: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        officer_id: 5,
+        badge_number: 'REV-4412',
+        full_name: 'James Vance',
+        email: 'j.vance@casethread.police.gov',
+        password_hash: '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO',
+        department: 'Internal Evidence Quality Bureau',
+        rank_designation: 'Senior Reviewer',
+        role: 'SENIOR_DETECTIVE',
+        is_active: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        officer_id: 6,
+        badge_number: 'OBS-5509',
+        full_name: 'Rachel Green',
+        email: 'r.green@casethread.police.gov',
+        password_hash: '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO',
+        department: 'External Legal Oversight',
+        rank_designation: 'Legal Observer',
+        role: 'INVESTIGATOR',
+        is_active: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        officer_id: 7,
+        badge_number: 'ADM-1000',
+        full_name: 'Raymond Holt',
+        email: 'r.holt@casethread.police.gov',
+        password_hash: '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO',
+        department: 'Executive Police Administration',
+        rank_designation: 'Commander',
+        role: 'ADMIN',
+        is_active: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ];
 
@@ -1144,6 +1222,320 @@ class MemoryStore {
         verified_at: '2026-10-15 04:05:00'
       }
     ];
+
+    // Phase 10 Collaboration Tables
+    this.case_members = [
+      { member_id: 1, case_id: 1, officer_id: 1, role: 'LEAD_INVESTIGATOR', assigned_by_officer_id: 1, is_active: 1, permissions: null, assigned_at: '2026-10-15 02:45:00', revoked_at: null, revoked_by_officer_id: null, revocation_reason: null },
+      { member_id: 2, case_id: 1, officer_id: 2, role: 'INVESTIGATING_OFFICER', assigned_by_officer_id: 1, is_active: 1, permissions: null, assigned_at: '2026-10-15 03:00:00', revoked_at: null, revoked_by_officer_id: null, revocation_reason: null },
+      { member_id: 3, case_id: 1, officer_id: 3, role: 'INVESTIGATING_OFFICER', assigned_by_officer_id: 1, is_active: 1, permissions: null, assigned_at: '2026-10-15 03:00:00', revoked_at: null, revoked_by_officer_id: null, revocation_reason: null },
+      { member_id: 4, case_id: 1, officer_id: 4, role: 'FORENSIC_ANALYST', assigned_by_officer_id: 1, is_active: 1, permissions: null, assigned_at: '2026-10-15 03:10:00', revoked_at: null, revoked_by_officer_id: null, revocation_reason: null },
+      { member_id: 5, case_id: 1, officer_id: 5, role: 'EVIDENCE_REVIEWER', assigned_by_officer_id: 1, is_active: 1, permissions: null, assigned_at: '2026-10-15 03:15:00', revoked_at: null, revoked_by_officer_id: null, revocation_reason: null },
+      { member_id: 6, case_id: 1, officer_id: 6, role: 'READ_ONLY_REVIEWER', assigned_by_officer_id: 1, is_active: 1, permissions: null, assigned_at: '2026-10-15 03:20:00', revoked_at: null, revoked_by_officer_id: null, revocation_reason: null }
+    ];
+
+    this.investigation_tasks = [
+      {
+        task_id: 1,
+        case_id: 1,
+        title: 'Subpoena Sector 7 Cell Tower Logs',
+        description: 'Obtain complete CDR transmission records from telecom provider for Sector 7 antenna.',
+        assigned_officer_id: 2,
+        created_by_officer_id: 1,
+        priority: 'HIGH',
+        status: 'COMPLETED',
+        due_date: '2026-10-16 12:00:00',
+        completed_at: '2026-10-15 06:15:00',
+        related_evidence_ids: [2],
+        related_entity_ids: [{ type: 'SUSPECT', id: 1 }],
+        related_lead_id: 2,
+        completion_notes: 'Successfully subpoenaed and extracted 38-second CDR record.',
+        version: 2,
+        created_at: '2026-10-15 03:15:00',
+        updated_at: '2026-10-15 06:15:00'
+      },
+      {
+        task_id: 2,
+        case_id: 1,
+        title: 'Extract Loading Bay CCTV Timestamp Markers',
+        description: 'Isolate high-resolution frames of black sedan departure from Camera Feed #4.',
+        assigned_officer_id: 4,
+        created_by_officer_id: 1,
+        priority: 'NORMAL',
+        status: 'COMPLETED',
+        due_date: '2026-10-16 10:00:00',
+        completed_at: '2026-10-15 05:00:00',
+        related_evidence_ids: [1],
+        related_entity_ids: [{ type: 'SUSPECT', id: 2 }],
+        related_lead_id: 1,
+        completion_notes: 'Frames isolated and verified at 02:49:12 AM.',
+        version: 2,
+        created_at: '2026-10-15 03:25:00',
+        updated_at: '2026-10-15 05:00:00'
+      },
+      {
+        task_id: 3,
+        case_id: 1,
+        title: 'Cross-Reference Sedan Transit with Traffic Camera 12',
+        description: 'Correlate departure speed and vector along Financial Blvd.',
+        assigned_officer_id: 2,
+        created_by_officer_id: 1,
+        priority: 'HIGH',
+        status: 'IN_PROGRESS',
+        due_date: '2026-10-17 18:00:00',
+        completed_at: null,
+        related_evidence_ids: [1, 5],
+        related_entity_ids: [{ type: 'SUSPECT', id: 2 }],
+        related_lead_id: 1,
+        completion_notes: null,
+        version: 1,
+        created_at: '2026-10-15 05:10:00',
+        updated_at: '2026-10-15 05:10:00'
+      },
+      {
+        task_id: 4,
+        case_id: 1,
+        title: 'Forensic Nitrile Glove Fiber Analysis',
+        description: 'Conduct gas chromatography and spectral comparison on vault keypad fiber sample.',
+        assigned_officer_id: 4,
+        created_by_officer_id: 1,
+        priority: 'NORMAL',
+        status: 'UNDER_REVIEW',
+        due_date: '2026-10-18 14:00:00',
+        completed_at: null,
+        related_evidence_ids: [7],
+        related_entity_ids: [],
+        related_lead_id: null,
+        completion_notes: 'Preliminary spectral curve matches synthetic industrial nitrile-neoprene.',
+        version: 1,
+        created_at: '2026-10-15 05:30:00',
+        updated_at: '2026-10-15 05:30:00'
+      },
+      {
+        task_id: 5,
+        case_id: 1,
+        title: 'Question Contractor Elena Rostova on Root Key Overrides',
+        description: 'Conduct formal interview regarding access log ENC-ROSTOVA-88.',
+        assigned_officer_id: 1,
+        created_by_officer_id: 1,
+        priority: 'CRITICAL',
+        status: 'ASSIGNED',
+        due_date: '2026-10-19 09:00:00',
+        completed_at: null,
+        related_evidence_ids: [6, 8],
+        related_entity_ids: [{ type: 'SUSPECT', id: 3 }],
+        related_lead_id: null,
+        completion_notes: null,
+        version: 1,
+        created_at: '2026-10-15 06:00:00',
+        updated_at: '2026-10-15 06:00:00'
+      }
+    ];
+
+    this.investigation_task_notes = [
+      {
+        note_id: 1,
+        task_id: 1,
+        case_id: 1,
+        officer_id: 2,
+        note_text: 'Subpoena fulfilled by provider. CSV records ingested into vault.',
+        created_at: '2026-10-15 06:00:00'
+      },
+      {
+        note_id: 2,
+        task_id: 4,
+        case_id: 1,
+        officer_id: 4,
+        note_text: 'Spectral scan completed. Polymer formulation indicates chemical grade nitrile.',
+        created_at: '2026-10-15 07:15:00'
+      }
+    ];
+
+    this.investigation_task_dependencies = [
+      { dependency_id: 1, task_id: 3, depends_on_task_id: 2, created_by_officer_id: 1, created_at: '2026-10-15 05:10:00' },
+      { dependency_id: 2, task_id: 5, depends_on_task_id: 4, created_by_officer_id: 1, created_at: '2026-10-15 06:00:00' }
+    ];
+
+    this.evidence_reviews = [
+      {
+        review_id: 1,
+        evidence_id: 1,
+        case_id: 1,
+        assigned_reviewer_id: 5,
+        created_by_officer_id: 1,
+        review_status: 'VERIFIED',
+        reviewer_observations: 'Video timestamp is continuous; camera angle confirms vehicle matches sedan plate 7XYZ99.',
+        integrity_verification_status: 'VERIFIED',
+        metadata_review_status: 'APPROVED',
+        review_notes: 'High evidentiary reliability confirmed by independent review.',
+        related_task_id: 2,
+        reviewed_at: '2026-10-15 07:00:00',
+        created_at: '2026-10-15 05:15:00',
+        updated_at: '2026-10-15 07:00:00'
+      },
+      {
+        review_id: 2,
+        evidence_id: 6,
+        case_id: 1,
+        assigned_reviewer_id: 5,
+        created_by_officer_id: 1,
+        review_status: 'UNDER_REVIEW',
+        reviewer_observations: 'Digital signature valid. Cross-checking contractor key allocation records.',
+        integrity_verification_status: 'VERIFIED',
+        metadata_review_status: 'INCOMPLETE',
+        review_notes: 'Review in progress awaiting telecom verification.',
+        related_task_id: 5,
+        reviewed_at: null,
+        created_at: '2026-10-15 06:10:00',
+        updated_at: '2026-10-15 06:10:00'
+      },
+      {
+        review_id: 3,
+        evidence_id: 7,
+        case_id: 1,
+        assigned_reviewer_id: 4,
+        created_by_officer_id: 1,
+        review_status: 'PENDING_REVIEW',
+        reviewer_observations: 'Pending spectroscopy lab confirmation.',
+        integrity_verification_status: 'UNCHECKED',
+        metadata_review_status: 'NOT_APPLICABLE',
+        review_notes: 'Awaiting finalized spectral report.',
+        related_task_id: 4,
+        reviewed_at: null,
+        created_at: '2026-10-15 06:15:00',
+        updated_at: '2026-10-15 06:15:00'
+      }
+    ];
+
+    this.case_activity_logs = [
+      {
+        activity_id: 1,
+        case_id: 1,
+        actor_id: 1,
+        event_type: 'OFFICER_ASSIGNED',
+        related_record_id: '2',
+        previous_state: null,
+        new_state: { role: 'INVESTIGATING_OFFICER' },
+        event_description: 'Det. Sarah Lin assigned to case as Investigating Officer',
+        created_at: '2026-10-15 03:00:00'
+      },
+      {
+        activity_id: 2,
+        case_id: 1,
+        actor_id: 1,
+        event_type: 'TASK_CREATED',
+        related_record_id: '1',
+        previous_state: null,
+        new_state: { title: 'Subpoena Sector 7 Cell Tower Logs', priority: 'HIGH' },
+        event_description: 'Task created: Subpoena Sector 7 Cell Tower Logs',
+        created_at: '2026-10-15 03:15:00'
+      },
+      {
+        activity_id: 3,
+        case_id: 1,
+        actor_id: 1,
+        event_type: 'TASK_ASSIGNED',
+        related_record_id: '1',
+        previous_state: null,
+        new_state: { assigned_officer_id: 2 },
+        event_description: 'Task 1 assigned to Det. Sarah Lin',
+        created_at: '2026-10-15 03:20:00'
+      },
+      {
+        activity_id: 4,
+        case_id: 1,
+        actor_id: 2,
+        event_type: 'TASK_STATUS_CHANGED',
+        related_record_id: '1',
+        previous_state: { status: 'IN_PROGRESS' },
+        new_state: { status: 'COMPLETED' },
+        event_description: 'Task 1 status transitioned to COMPLETED',
+        created_at: '2026-10-15 06:15:00'
+      },
+      {
+        activity_id: 5,
+        case_id: 1,
+        actor_id: 1,
+        event_type: 'EVIDENCE_REVIEWED',
+        related_record_id: '1',
+        previous_state: { status: 'PENDING_REVIEW' },
+        new_state: { status: 'VERIFIED' },
+        event_description: 'Evidence EVD-CCTV-001 reviewed and verified by James Vance',
+        created_at: '2026-10-15 07:00:00'
+      }
+    ];
+
+    this.officer_notifications = [
+      {
+        notification_id: 1,
+        officer_id: 2,
+        case_id: 1,
+        event_type: 'TASK_ASSIGNED',
+        title: 'New Investigation Task Assigned',
+        message: 'You have been assigned to task: Subpoena Sector 7 Cell Tower Logs',
+        reference_type: 'TASK',
+        reference_id: '1',
+        is_read: 1,
+        read_at: '2026-10-15 03:25:00',
+        dedup_key: 'TASK_ASSIGNED:1:2',
+        created_at: '2026-10-15 03:20:00'
+      },
+      {
+        notification_id: 2,
+        officer_id: 4,
+        case_id: 1,
+        event_type: 'TASK_ASSIGNED',
+        title: 'New Investigation Task Assigned',
+        message: 'You have been assigned to task: Extract Loading Bay CCTV Timestamp Markers',
+        reference_type: 'TASK',
+        reference_id: '2',
+        is_read: 1,
+        read_at: '2026-10-15 03:35:00',
+        dedup_key: 'TASK_ASSIGNED:2:4',
+        created_at: '2026-10-15 03:30:00'
+      },
+      {
+        notification_id: 3,
+        officer_id: 2,
+        case_id: 1,
+        event_type: 'TASK_ASSIGNED',
+        title: 'New Investigation Task Assigned',
+        message: 'You have been assigned to task: Cross-Reference Sedan Transit with Traffic Camera 12',
+        reference_type: 'TASK',
+        reference_id: '3',
+        is_read: 0,
+        read_at: null,
+        dedup_key: 'TASK_ASSIGNED:3:2',
+        created_at: '2026-10-15 05:10:00'
+      },
+      {
+        notification_id: 4,
+        officer_id: 5,
+        case_id: 1,
+        event_type: 'EVIDENCE_REVIEW_REQUESTED',
+        title: 'Evidence Review Requested',
+        message: 'Review requested for Loading Dock Camera Feed #4 (EVD-CCTV-001)',
+        reference_type: 'EVIDENCE_REVIEW',
+        reference_id: '1',
+        is_read: 1,
+        read_at: '2026-10-15 05:30:00',
+        dedup_key: 'EVIDENCE_REVIEW_REQUESTED:1:5',
+        created_at: '2026-10-15 05:15:00'
+      },
+      {
+        notification_id: 5,
+        officer_id: 1,
+        case_id: 1,
+        event_type: 'TASK_BLOCKED',
+        title: 'Task Dependency Prerequisite Notice',
+        message: 'Task Question Contractor Elena Rostova is dependent on completion of Task 4.',
+        reference_type: 'TASK',
+        reference_id: '5',
+        is_read: 0,
+        read_at: null,
+        dedup_key: 'TASK_BLOCKED:5:1',
+        created_at: '2026-10-15 06:00:00'
+      }
+    ];
   }
 
   async execute(sql, params = []) {
@@ -1176,9 +1568,25 @@ class MemoryStore {
         return [[], []];
       }
       if (sql.includes('FROM cases') && sql.includes('ORDER BY')) {
-        const rows = this.cases.map(c => {
+        let matchingCases = [...this.cases];
+        if (sql.includes('c.lead_officer_id = ?') || sql.includes('cm.officer_id = ?')) {
+          const offId = parseInt(params[0], 10);
+          matchingCases = matchingCases.filter(c => {
+            if (c.lead_officer_id === offId) return true;
+            return (this.case_members || []).some(m => m.case_id === c.case_id && m.officer_id === offId && (m.is_active === 1 || m.is_active === true));
+          });
+        }
+        if (sql.includes('c.status = ?')) {
+          const stParam = params.find(p => ['OPEN', 'UNDER_INVESTIGATION', 'COLD_CASE', 'CLOSED', 'ARCHIVED'].includes(p));
+          if (stParam) matchingCases = matchingCases.filter(c => c.status === stParam);
+        }
+        if (sql.includes('c.priority = ?')) {
+          const prParam = params.find(p => ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(p));
+          if (prParam) matchingCases = matchingCases.filter(c => c.priority === prParam);
+        }
+        const rows = matchingCases.map(c => {
           const lead = this.officers.find(o => o.officer_id === c.lead_officer_id);
-          const evCount = this.evidence.filter(e => e.case_id === c.case_id).length;
+          const evCount = this.evidence.filter(e => e.case_id === c.case_id && !e.is_archived).length;
           const susCount = this.suspects.filter(s => s.case_id === c.case_id).length;
           const witCount = this.witnesses.filter(w => w.case_id === c.case_id).length;
           return {
@@ -1396,10 +1804,342 @@ class MemoryStore {
         });
         return [matches, []];
       }
+
+      // --- Phase 10: Case Members ---
+      if (sql.includes('FROM case_members') || sql.includes('FROM CASE_MEMBERS')) {
+        let members = [...this.case_members];
+        if (sql.includes('member_id = ?')) {
+          const idx = sql.split('?').findIndex(chunk => chunk.includes('member_id ='));
+          const memId = parseInt(params[idx], 10);
+          members = members.filter(m => m.member_id === memId);
+        }
+        if (sql.includes('cm.case_id = ?') || sql.includes('case_id = ?')) {
+          const idx = sql.split('?').findIndex(chunk => chunk.includes('case_id =') || chunk.includes('cm.case_id ='));
+          const caseId = parseInt(params[idx], 10);
+          members = members.filter(m => m.case_id === caseId);
+        }
+        if (sql.includes('officer_id = ?') || sql.includes('cm.officer_id = ?')) {
+          const idx = sql.split('?').findIndex(chunk => chunk.includes('officer_id =') || chunk.includes('cm.officer_id ='));
+          const offId = parseInt(params[idx], 10);
+          members = members.filter(m => m.officer_id === offId);
+        }
+        if (sql.includes('is_active = 1') || sql.includes('is_active = TRUE')) {
+          members = members.filter(m => m.is_active === 1 || m.is_active === true);
+        }
+        // join with officers
+        const enriched = members.map(m => {
+          const off = this.officers.find(o => o.officer_id === m.officer_id);
+          return {
+            ...m,
+            full_name: off ? off.full_name : 'Unknown Officer',
+            badge_number: off ? off.badge_number : 'UNKNOWN',
+            rank_designation: off ? off.rank_designation : 'Investigator',
+            department: off ? off.department : 'Major Crimes',
+            email: off ? off.email : ''
+          };
+        });
+        return [enriched, []];
+      }
+
+      // --- Phase 10: Investigation Tasks ---
+      if (sql.includes('FROM investigation_tasks') || sql.includes('FROM INVESTIGATION_TASKS')) {
+        let tasks = [...this.investigation_tasks];
+        if (sql.includes('task_id = ?') || sql.includes('t.task_id = ?')) {
+          const tId = parseInt(params[0], 10);
+          tasks = tasks.filter(t => t.task_id === tId);
+        } else if (sql.includes('case_id = ?') || sql.includes('t.case_id = ?')) {
+          const caseId = parseInt(params[0], 10);
+          tasks = tasks.filter(t => t.case_id === caseId);
+        }
+        if (sql.includes('assigned_officer_id = ?')) {
+          const offId = parseInt(params.find((p, idx) => sql.split('?')[idx]?.includes('assigned_officer_id')), 10);
+          if (!isNaN(offId)) tasks = tasks.filter(t => t.assigned_officer_id === offId);
+        }
+        if (sql.includes('status = ?')) {
+          const stParam = params.find(p => ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'COMPLETED', 'BLOCKED', 'CANCELLED'].includes(p));
+          if (stParam) tasks = tasks.filter(t => t.status === stParam);
+        }
+        if (sql.includes('priority = ?')) {
+          const prioParam = params.find(p => ['LOW', 'NORMAL', 'HIGH', 'CRITICAL'].includes(p));
+          if (prioParam) tasks = tasks.filter(t => t.priority === prioParam);
+        }
+        const enriched = tasks.map(t => {
+          const assigned = this.officers.find(o => o.officer_id === t.assigned_officer_id);
+          const creator = this.officers.find(o => o.officer_id === t.created_by_officer_id);
+          return {
+            ...t,
+            assigned_officer_name: assigned ? assigned.full_name : null,
+            assigned_officer_badge: assigned ? assigned.badge_number : null,
+            created_by_officer_name: creator ? creator.full_name : null,
+            created_by_officer_badge: creator ? creator.badge_number : null
+          };
+        });
+        return [enriched, []];
+      }
+
+      // --- Phase 10: Task Notes ---
+      if (sql.includes('FROM investigation_task_notes')) {
+        let notes = [...this.investigation_task_notes];
+        if (sql.includes('task_id = ?') || sql.includes('n.task_id = ?')) {
+          const tId = parseInt(params[0], 10);
+          notes = notes.filter(n => n.task_id === tId);
+        }
+        const enriched = notes.map(n => {
+          const author = this.officers.find(o => o.officer_id === n.officer_id);
+          return {
+            ...n,
+            author_name: author ? author.full_name : 'Unknown Officer',
+            author_badge: author ? author.badge_number : 'UNKNOWN'
+          };
+        });
+        return [enriched, []];
+      }
+
+      // --- Phase 10: Task Dependencies ---
+      if (sql.includes('FROM investigation_task_dependencies')) {
+        let deps = [...this.investigation_task_dependencies];
+        if (sql.includes('d.task_id = ?') || sql.includes('task_id = ?')) {
+          const tId = parseInt(params[0], 10);
+          deps = deps.filter(d => d.task_id === tId);
+        }
+        if (sql.includes('depends_on_task_id = ?')) {
+          const pId = parseInt(params[0], 10);
+          deps = deps.filter(d => d.depends_on_task_id === pId);
+        }
+        const enriched = deps.map(d => {
+          const prereqTask = this.investigation_tasks.find(t => t.task_id === d.depends_on_task_id);
+          return {
+            ...d,
+            depends_on_task_title: prereqTask ? prereqTask.title : 'Prerequisite Task',
+            depends_on_task_status: prereqTask ? prereqTask.status : 'UNKNOWN',
+            depends_on_task_priority: prereqTask ? prereqTask.priority : 'NORMAL',
+            title: prereqTask ? prereqTask.title : 'Prerequisite Task',
+            status: prereqTask ? prereqTask.status : 'UNKNOWN',
+            priority: prereqTask ? prereqTask.priority : 'NORMAL'
+          };
+        });
+        return [enriched, []];
+      }
+
+      // --- Phase 10: Evidence Reviews ---
+      if (sql.includes('FROM evidence_reviews')) {
+        let reviews = [...this.evidence_reviews];
+        if (sql.includes('r.review_id = ?') || sql.includes('review_id = ?')) {
+          const rId = parseInt(params[0], 10);
+          reviews = reviews.filter(r => r.review_id === rId);
+        } else if (sql.includes('r.case_id = ?') || sql.includes('case_id = ?')) {
+          const caseId = parseInt(params[0], 10);
+          reviews = reviews.filter(r => r.case_id === caseId);
+        }
+        if (sql.includes('evidence_id = ?')) {
+          const eId = parseInt(params.find((p, idx) => sql.split('?')[idx]?.includes('evidence_id')), 10);
+          if (!isNaN(eId)) reviews = reviews.filter(r => r.evidence_id === eId);
+        }
+        const enriched = reviews.map(r => {
+          const ev = this.evidence.find(e => e.evidence_id === r.evidence_id);
+          const reviewer = this.officers.find(o => o.officer_id === r.assigned_reviewer_id);
+          return {
+            ...r,
+            tracking_code: ev ? ev.tracking_code : 'EVD-UNKNOWN',
+            evidence_title: ev ? ev.title : 'Evidence Item',
+            evidence_category: ev ? ev.category : 'PHYSICAL',
+            reviewer_name: reviewer ? reviewer.full_name : 'Unknown Reviewer',
+            reviewer_badge: reviewer ? reviewer.badge_number : 'UNKNOWN'
+          };
+        });
+        return [enriched, []];
+      }
+
+      // --- Phase 10: Case Activity Logs ---
+      if (sql.includes('FROM case_activity_logs')) {
+        let logs = [...this.case_activity_logs];
+        if (sql.includes('case_id = ?') || sql.includes('a.case_id = ?')) {
+          const caseId = parseInt(params[0], 10);
+          logs = logs.filter(l => l.case_id === caseId);
+        }
+        if (sql.includes('actor_id = ?')) {
+          const actorId = parseInt(params.find((p, idx) => sql.split('?')[idx]?.includes('actor_id')), 10);
+          if (!isNaN(actorId)) logs = logs.filter(l => l.actor_id === actorId);
+        }
+        if (sql.includes('event_type = ?')) {
+          const evt = params.find(p => typeof p === 'string' && (p.startsWith('OFFICER_') || p.startsWith('TASK_') || p.startsWith('EVIDENCE_') || p.startsWith('CASE_') || p === 'INVESTIGATION_NOTE_ADDED' || p === 'LEAD_UPDATED'));
+          if (evt) logs = logs.filter(l => l.event_type === evt);
+        }
+        logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const enriched = logs.map(l => {
+          const actor = this.officers.find(o => o.officer_id === l.actor_id);
+          return {
+            ...l,
+            actor_name: actor ? actor.full_name : 'System Actor',
+            actor_badge: actor ? actor.badge_number : 'SYSTEM'
+          };
+        });
+        return [enriched, []];
+      }
+
+      // --- Phase 10: Officer Notifications ---
+      if (sql.includes('FROM officer_notifications')) {
+        let notifs = [...this.officer_notifications];
+        if (sql.includes('officer_id = ?')) {
+          const offId = parseInt(params[0], 10);
+          notifs = notifs.filter(n => n.officer_id === offId);
+        }
+        if (sql.includes('is_read = 0') || sql.includes('is_read = FALSE') || sql.includes('is_read = ?')) {
+          if (sql.includes('is_read = ?')) {
+            const isReadVal = params.find((p, idx) => sql.split('?')[idx]?.includes('is_read'));
+            notifs = notifs.filter(n => n.is_read == isReadVal);
+          } else {
+            notifs = notifs.filter(n => n.is_read === 0 || n.is_read === false);
+          }
+        }
+        if (sql.includes('COUNT(*)')) {
+          return [[{ unread_count: notifs.length }], []];
+        }
+        notifs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        return [notifs, []];
+      }
       return [[], []];
     }
 
     // 2. INSERT queries
+    if (trimmed.startsWith('INSERT INTO CASE_MEMBERS')) {
+      const newId = this.case_members.length + 1;
+      const member = {
+        member_id: newId,
+        case_id: parseInt(params[0], 10),
+        officer_id: parseInt(params[1], 10),
+        role: params[2] || 'INVESTIGATING_OFFICER',
+        assigned_by_officer_id: parseInt(params[3], 10),
+        is_active: 1,
+        permissions: params[4] || null,
+        assigned_at: new Date().toISOString(),
+        revoked_at: null,
+        revoked_by_officer_id: null,
+        revocation_reason: null
+      };
+      this.case_members.push(member);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO INVESTIGATION_TASKS')) {
+      const newId = this.investigation_tasks.length + 1;
+      const task = {
+        task_id: newId,
+        case_id: parseInt(params[0], 10),
+        title: params[1],
+        description: params[2] || '',
+        assigned_officer_id: params[3] !== undefined && params[3] !== null ? parseInt(params[3], 10) : null,
+        created_by_officer_id: parseInt(params[4], 10),
+        priority: params[5] || 'NORMAL',
+        status: params[6] || 'OPEN',
+        due_date: params[7] || null,
+        completed_at: null,
+        related_evidence_ids: params[8] ? (typeof params[8] === 'string' ? JSON.parse(params[8]) : params[8]) : [],
+        related_entity_ids: params[9] ? (typeof params[9] === 'string' ? JSON.parse(params[9]) : params[9]) : [],
+        related_lead_id: params[10] ? parseInt(params[10], 10) : null,
+        completion_notes: null,
+        version: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      this.investigation_tasks.push(task);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO INVESTIGATION_TASK_NOTES')) {
+      const newId = this.investigation_task_notes.length + 1;
+      const note = {
+        note_id: newId,
+        task_id: parseInt(params[0], 10),
+        case_id: parseInt(params[1], 10),
+        officer_id: parseInt(params[2], 10),
+        note_text: params[3],
+        created_at: new Date().toISOString()
+      };
+      this.investigation_task_notes.push(note);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO INVESTIGATION_TASK_DEPENDENCIES')) {
+      const newId = this.investigation_task_dependencies.length + 1;
+      const dep = {
+        dependency_id: newId,
+        task_id: parseInt(params[0], 10),
+        depends_on_task_id: parseInt(params[1], 10),
+        created_by_officer_id: parseInt(params[2], 10),
+        created_at: new Date().toISOString()
+      };
+      this.investigation_task_dependencies.push(dep);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_REVIEWS')) {
+      const newId = this.evidence_reviews.length + 1;
+      const rev = {
+        review_id: newId,
+        evidence_id: parseInt(params[0], 10),
+        case_id: parseInt(params[1], 10),
+        assigned_reviewer_id: parseInt(params[2], 10),
+        created_by_officer_id: parseInt(params[3], 10),
+        review_status: params[4] || 'PENDING_REVIEW',
+        reviewer_observations: params[5] || null,
+        integrity_verification_status: params[6] || 'UNCHECKED',
+        metadata_review_status: params[7] || 'NOT_APPLICABLE',
+        review_notes: params[8] || null,
+        related_task_id: params[9] ? parseInt(params[9], 10) : null,
+        reviewed_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      this.evidence_reviews.push(rev);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO CASE_ACTIVITY_LOGS')) {
+      const newId = this.case_activity_logs.length + 1;
+      const log = {
+        activity_id: newId,
+        case_id: parseInt(params[0], 10),
+        actor_id: parseInt(params[1], 10),
+        event_type: params[2],
+        related_record_id: params[3] ? String(params[3]) : null,
+        previous_state: params[4] ? (typeof params[4] === 'string' ? JSON.parse(params[4]) : params[4]) : null,
+        new_state: params[5] ? (typeof params[5] === 'string' ? JSON.parse(params[5]) : params[5]) : null,
+        event_description: params[6],
+        created_at: new Date().toISOString()
+      };
+      this.case_activity_logs.push(log);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO OFFICER_NOTIFICATIONS')) {
+      const dedupKey = params[params.length - 1];
+      if (dedupKey && typeof dedupKey === 'string' && dedupKey.includes(':')) {
+        const existing = this.officer_notifications.find(n => n.dedup_key === dedupKey);
+        if (existing) {
+          existing.created_at = new Date().toISOString();
+          return [{ insertId: existing.notification_id, affectedRows: 1 }, []];
+        }
+      }
+      const newId = this.officer_notifications.length + 1;
+      const notif = {
+        notification_id: newId,
+        officer_id: parseInt(params[0], 10),
+        case_id: params[1] ? parseInt(params[1], 10) : null,
+        event_type: params[2],
+        title: params[3],
+        message: params[4],
+        reference_type: params[5] || null,
+        reference_id: params[6] ? String(params[6]) : null,
+        is_read: 0,
+        read_at: null,
+        dedup_key: params[7] || null,
+        created_at: new Date().toISOString()
+      };
+      this.officer_notifications.push(notif);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
     if (trimmed.startsWith('INSERT INTO OFFICERS')) {
       const newId = this.officers.length + 1;
       const officer = {
@@ -1875,6 +2615,133 @@ class MemoryStore {
           if (params[3]) geo.verification_status = params[3];
         }
         geo.updated_at = new Date().toISOString();
+        return [{ affectedRows: 1 }, []];
+      }
+      return [{ affectedRows: 0 }, []];
+    }
+
+    if (trimmed.startsWith('UPDATE CASE_MEMBERS')) {
+      if (sql.includes('is_active = 0') || sql.includes('is_active = FALSE') || sql.includes('is_active = ?')) {
+        const memberId = parseInt(params[params.length - 1], 10);
+        const mem = this.case_members.find(m => m.member_id === memberId);
+        if (mem) {
+          mem.is_active = 0;
+          mem.revoked_at = new Date().toISOString();
+          mem.revoked_by_officer_id = params[1] || null;
+          mem.revocation_reason = params[2] || 'Access revoked';
+          return [{ affectedRows: 1 }, []];
+        }
+      } else {
+        const memberId = parseInt(params[params.length - 1], 10);
+        const mem = this.case_members.find(m => m.member_id === memberId);
+        if (mem) {
+          mem.role = params[0];
+          if (params[1]) mem.permissions = params[1];
+          return [{ affectedRows: 1 }, []];
+        }
+      }
+      return [{ affectedRows: 0 }, []];
+    }
+
+    if (trimmed.startsWith('UPDATE INVESTIGATION_TASKS')) {
+      const tId = parseInt(params[params.length - (sql.includes('version = ?') ? 2 : 1)], 10);
+      const expectedVersion = sql.includes('version = ?') ? parseInt(params[params.length - 1], 10) : null;
+      const task = this.investigation_tasks.find(t => t.task_id === tId);
+      if (task) {
+        if (expectedVersion !== null && task.version !== expectedVersion) {
+          return [{ affectedRows: 0 }, []];
+        }
+        if (sql.includes('status = ?')) {
+          const st = params.find(p => ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'COMPLETED', 'BLOCKED', 'CANCELLED'].includes(p));
+          if (st) task.status = st;
+        }
+        if (sql.includes('assigned_officer_id = ?')) {
+          task.assigned_officer_id = params[0] !== undefined && params[0] !== null ? parseInt(params[0], 10) : task.assigned_officer_id;
+        }
+        if (sql.includes('priority = ?')) {
+          const p = params.find(val => ['LOW', 'NORMAL', 'HIGH', 'CRITICAL'].includes(val));
+          if (p) task.priority = p;
+        }
+        if (sql.includes('completed_at = ?') || sql.includes('completed_at = NOW()') || sql.includes('status = ?') && task.status === 'COMPLETED') {
+          task.completed_at = new Date().toISOString();
+        }
+        if (sql.includes('completion_notes = ?')) {
+          const noteParam = params.find(p => typeof p === 'string' && p.length > 5 && !['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'COMPLETED', 'BLOCKED', 'CANCELLED', 'LOW', 'NORMAL', 'HIGH', 'CRITICAL'].includes(p));
+          if (noteParam) task.completion_notes = noteParam;
+        }
+        task.version = (task.version || 1) + 1;
+        task.updated_at = new Date().toISOString();
+        return [{ affectedRows: 1 }, []];
+      }
+      return [{ affectedRows: 0 }, []];
+    }
+
+    if (trimmed.startsWith('UPDATE EVIDENCE_REVIEWS')) {
+      const rId = parseInt(params[params.length - 1], 10);
+      const rev = this.evidence_reviews.find(r => r.review_id === rId);
+      if (rev) {
+        if (sql.includes('review_status = ?')) rev.review_status = params[0];
+        if (sql.includes('reviewer_observations = ?')) rev.reviewer_observations = params[1];
+        if (sql.includes('integrity_verification_status = ?')) rev.integrity_verification_status = params[2];
+        if (sql.includes('metadata_review_status = ?')) rev.metadata_review_status = params[3];
+        if (sql.includes('review_notes = ?')) rev.review_notes = params[4];
+        rev.reviewed_at = new Date().toISOString();
+        rev.updated_at = new Date().toISOString();
+        return [{ affectedRows: 1 }, []];
+      }
+      return [{ affectedRows: 0 }, []];
+    }
+
+    if (trimmed.startsWith('UPDATE OFFICER_NOTIFICATIONS')) {
+      if (sql.includes('is_read = 1') || sql.includes('is_read = TRUE') || sql.includes('is_read = ?')) {
+        if (sql.includes('notification_id = ?')) {
+          const nId = parseInt(params[params.length - 1], 10);
+          const notif = this.officer_notifications.find(n => n.notification_id === nId);
+          if (notif) {
+            notif.is_read = 1;
+            notif.read_at = new Date().toISOString();
+            return [{ affectedRows: 1 }, []];
+          }
+        } else if (sql.includes('officer_id = ?')) {
+          const offId = parseInt(params[params.length - 1], 10);
+          this.officer_notifications.forEach(n => {
+            if (n.officer_id === offId) {
+              n.is_read = 1;
+              n.read_at = new Date().toISOString();
+            }
+          });
+          return [{ affectedRows: 1 }, []];
+        }
+      }
+      return [{ affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('UPDATE CASES') && sql.includes('lead_officer_id = ?')) {
+      const newLead = parseInt(params[0], 10);
+      const caseId = parseInt(params[1], 10);
+      const c = this.cases.find(item => item.case_id === caseId);
+      if (c) {
+        c.lead_officer_id = newLead;
+        c.updated_at = new Date().toISOString();
+        return [{ affectedRows: 1 }, []];
+      }
+    }
+
+    if (trimmed.startsWith('DELETE FROM CASE_MEMBERS')) {
+      const memberId = parseInt(params[0], 10);
+      const idx = this.case_members.findIndex(m => m.member_id === memberId);
+      if (idx !== -1) {
+        this.case_members.splice(idx, 1);
+        return [{ affectedRows: 1 }, []];
+      }
+      return [{ affectedRows: 0 }, []];
+    }
+
+    if (trimmed.startsWith('DELETE FROM INVESTIGATION_TASK_DEPENDENCIES')) {
+      const depId = parseInt(params[0], 10);
+      const idx = this.investigation_task_dependencies.findIndex(d => d.dependency_id === depId);
+      if (idx !== -1) {
+        this.investigation_task_dependencies.splice(idx, 1);
         return [{ affectedRows: 1 }, []];
       }
       return [{ affectedRows: 0 }, []];

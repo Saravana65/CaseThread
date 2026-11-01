@@ -289,6 +289,140 @@ class ApiService {
       body: JSON.stringify(reviewData)
     });
   }
+
+  // Phase 10: Multi-Officer Collaboration & Investigation Workflow
+  getCaseMembers(caseId) {
+    return this.request(`/cases/${caseId}/members`);
+  }
+
+  addCaseMember(caseId, data) {
+    return this.request(`/cases/${caseId}/members`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  updateCaseMember(caseId, memberId, data) {
+    return this.request(`/cases/${caseId}/members/${memberId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  }
+
+  removeCaseMember(caseId, memberId, reason = '') {
+    return this.request(`/cases/${caseId}/members/${memberId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason })
+    });
+  }
+
+  transferCaseLeadership(caseId, data) {
+    return this.request(`/cases/${caseId}/transfer-leadership`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  getCaseTasks(caseId, params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/cases/${caseId}/tasks${q ? '?' + q : ''}`);
+  }
+
+  createTask(caseId, data) {
+    return this.request(`/cases/${caseId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  getTaskById(taskId) {
+    return this.request(`/tasks/${taskId}`);
+  }
+
+  updateTask(taskId, data) {
+    return this.request(`/tasks/${taskId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  }
+
+  assignTask(taskId, data) {
+    return this.request(`/tasks/${taskId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  addTaskNote(taskId, data) {
+    return this.request(`/tasks/${taskId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  completeTask(taskId, data) {
+    return this.request(`/tasks/${taskId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  addTaskDependency(taskId, data) {
+    return this.request(`/tasks/${taskId}/dependencies`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  removeTaskDependency(taskId, depId) {
+    return this.request(`/tasks/${taskId}/dependencies/${depId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  getCaseReviews(caseId) {
+    return this.request(`/cases/${caseId}/reviews`);
+  }
+
+  requestEvidenceReview(evidenceId, data) {
+    return this.request(`/evidence/${evidenceId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  submitEvidenceReview(reviewId, data) {
+    return this.request(`/reviews/${reviewId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  }
+
+  getCaseActivity(caseId, params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/cases/${caseId}/activity${q ? '?' + q : ''}`);
+  }
+
+  getNotifications(params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/notifications${q ? '?' + q : ''}`);
+  }
+
+  markNotificationRead(notificationId) {
+    return this.request(`/notifications/${notificationId}/read`, {
+      method: 'PATCH'
+    });
+  }
+
+  markAllNotificationsRead() {
+    return this.request('/notifications/read-all', {
+      method: 'POST'
+    });
+  }
+
+  getWorkflowAnalytics(caseId) {
+    return this.request(`/cases/${caseId}/workflow-analytics`);
+  }
 }
 
 export const api = new ApiService();

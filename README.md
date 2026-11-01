@@ -316,7 +316,7 @@ build.bat && bin/test_dsa.exe && bin/test_quadtree.exe
 bin/benchmark_dsa.exe
 bin/benchmark_quadtree.exe
 
-# 3. Backend Test Matrix (122 tests across 15 suites)
+# 3. Backend Test Matrix (143 tests across 16 suites)
 cd ../backend
 node --test tests/production_safety.test.js \
             tests/frontend_workflow.test.js \
@@ -325,7 +325,8 @@ node --test tests/production_safety.test.js \
             tests/e2e.test.js \
             tests/forensic_integrity.test.js \
             tests/evidence_vault.test.js \
-            tests/geospatial.test.js
+            tests/geospatial.test.js \
+            tests/collaboration.test.js
 
 # 4. Frontend Production Build Verification
 cd ../frontend
@@ -526,3 +527,207 @@ Empirical benchmark execution conducted via `core-engine/bin/benchmark_quadtree.
 | `POST` | `/api/v1/cases/:caseId/geospatial/points` | Manually record or associate coordinates with an evidence record. |
 | `GET` | `/api/v1/evidence/:evidenceId/location` | Retrieve coordinate history and EXIF extractions for a specific evidence item. |
 | `POST` | `/api/v1/cases/:caseId/geospatial/points/:id/review` | Officer review and sign-off on recorded geospatial coordinates. |
+
+---
+
+## 14. Multi-Officer Collaboration & Investigation Workflow Management (Phase 10)
+
+Phase 10 upgrades CASETHREAD from single-lead case management into a collaborative multi-officer forensic investigation workspace. Multiple authorized officers across specialized forensic divisions can collaborate on active cases, assign and sequence investigation tasks via Directed Acyclic Graphs (DAG), review vault evidence, document progress notes, track activity timelines, and monitor case operational health.
+
+### 14.1 Multi-Officer Collaboration Architecture
+
+```mermaid
+flowchart TD
+    subgraph TEAM ["Case Team & Membership (case_members)"]
+        LEAD["Lead Investigator (Full Control)"]
+        IO["Investigating Officer"]
+        FA["Forensic Analyst"]
+        ER["Evidence Reviewer"]
+        RO["Read-Only Reviewer"]
+    end
+
+    subgraph WORKFLOW ["Investigation Task DAG (investigation_tasks)"]
+        TB["Task Board & State Machine"]
+        DAG["Task Dependencies DAG (BFS Cycle Detection)"]
+        OCC["Optimistic Concurrency Control (version v1 -> v2)"]
+    end
+
+    subgraph EVIDENCE_REV ["Evidence Review Queue (evidence_reviews)"]
+        REV["Human Observations & Opinions"]
+        TRUTH["Original SHA-256 Fingerprint (Strictly Immutable)"]
+    end
+
+    subgraph TELEMETRY ["Coordination & Telemetry"]
+        LOGS["Activity Timeline (case_activity_logs)"]
+        NOTIF["Internal Notifications (officer_notifications)"]
+        METRICS["Operational Workload Analytics (/workflow-analytics)"]
+    end
+
+    TEAM -->|Assigns / Works On| WORKFLOW
+    TEAM -->|Inspects / Submits| EVIDENCE_REV
+    WORKFLOW -->|Emits Events| TELEMETRY
+    EVIDENCE_REV -->|Emits Events| TELEMETRY
+    REV -.->|Preserves| TRUTH
+```
+
+### 14.2 Role-Based Access Control (RBAC) & Case Membership
+
+Case membership is decoupled from global officer accounts via the normalized `case_members` table. Each officer operates under a specific role per case, with strict case-level isolation enforced at the database and API layers:
+
+```mermaid
+classDiagram
+    class RolePermissions {
+        +String role
+        +Boolean can_edit_case
+        +Boolean can_manage_members
+        +Boolean can_manage_tasks
+        +Boolean can_review_evidence
+        +Boolean can_view_case
+    }
+    class LEAD_INVESTIGATOR {
+        +can_edit_case: true
+        +can_manage_members: true
+        +can_manage_tasks: true
+        +can_review_evidence: true
+        +can_view_case: true
+    }
+    class INVESTIGATING_OFFICER {
+        +can_edit_case: false
+        +can_manage_members: false
+        +can_manage_tasks: true
+        +can_review_evidence: true
+        +can_view_case: true
+    }
+    class FORENSIC_ANALYST {
+        +can_edit_case: false
+        +can_manage_members: false
+        +can_manage_tasks: true
+        +can_review_evidence: true
+        +can_view_case: true
+    }
+    class EVIDENCE_REVIEWER {
+        +can_edit_case: false
+        +can_manage_members: false
+        +can_manage_tasks: false
+        +can_review_evidence: true
+        +can_view_case: true
+    }
+    class READ_ONLY_REVIEWER {
+        +can_edit_case: false
+        +can_manage_members: false
+        +can_manage_tasks: false
+        +can_review_evidence: false
+        +can_view_case: true
+    }
+    RolePermissions <|-- LEAD_INVESTIGATOR
+    RolePermissions <|-- INVESTIGATING_OFFICER
+    RolePermissions <|-- FORENSIC_ANALYST
+    RolePermissions <|-- EVIDENCE_REVIEWER
+    RolePermissions <|-- READ_ONLY_REVIEWER
+```
+
+| Role | Edit Case Dossier | Manage Members / Lead Handover | Create / Update Tasks | Submit Evidence Reviews | Read Case Records |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **`LEAD_INVESTIGATOR`** | Yes | Yes | Yes | Yes | Yes |
+| **`INVESTIGATING_OFFICER`** | No | No | Yes | Yes | Yes |
+| **`FORENSIC_ANALYST`** | No | No | Yes | Yes | Yes |
+| **`EVIDENCE_REVIEWER`** | No | No | No | Yes | Yes |
+| **`READ_ONLY_REVIEWER`** | No | No | No | No | Yes |
+
+- **Lead Delegation & Transfer:** Primary case leadership can be transferred by the current lead to another active officer, atomically swapping roles and logging an audit event.
+- **Revocation with Cause:** Members can only be removed by the lead, requiring a documented revocation reason.
+- **Cross-Case Isolation:** Officers not assigned to a case receive HTTP 403 Forbidden on all access attempts.
+
+### 14.3 Investigation Task DAG & Cycle Detection
+
+Investigations involve ordered workflows where certain investigative steps depend on prior findings (e.g. DNA extraction must precede laboratory profiling). Dependencies are modeled as a Directed Acyclic Graph (DAG) in `investigation_task_dependencies`.
+
+```mermaid
+flowchart LR
+    A["Task A: Secure Crime Scene & Ingest CCTV"] --> B["Task B: Extract Suspect License Plates"]
+    B --> C["Task C: Interview Vehicle Owner"]
+    D["Task D: Recover Latent Fingerprints"] --> E["Task E: AFIS Database Cross-Check"]
+    C --> F["Task F: Formulate Warrant Application"]
+    E --> F
+
+    style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style B fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style C fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style D fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style E fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style F fill:#1e293b,stroke:#10b981,stroke-width:2px,color:#fff
+```
+
+- **Breadth-First Search (BFS) Cycle Detection:**
+  Adding a dependency $(D \to P)$, meaning Task $D$ requires Task $P$, introduces a cycle if and only if $P \rightsquigarrow D$ already exists. The system executes a BFS from $P$ searching for $D$. If $D$ is reachable from $P$, the request is rejected with HTTP 400 `CIRCULAR_DEPENDENCY_DETECTED`.
+- **Mandatory Prerequisite Enforcement:**
+  A task cannot be marked `COMPLETED` until all prerequisite tasks are in `COMPLETED` status. Attempting to complete a task with pending dependencies is rejected with HTTP 400 `TASK_DEPENDENCIES_UNMET`.
+
+### 14.4 Task Lifecycle State Machine & Concurrency Control
+
+```mermaid
+stateDiagram-v2
+    [*] --> OPEN: Task Created
+    OPEN --> ASSIGNED: Assigned to Officer
+    ASSIGNED --> IN_PROGRESS: Investigation Started
+    IN_PROGRESS --> UNDER_REVIEW: Work Submitted
+    UNDER_REVIEW --> COMPLETED: Lead Approves (Prereqs Met)
+    IN_PROGRESS --> BLOCKED: Prerequisite Stalled / Lead Missing
+    BLOCKED --> IN_PROGRESS: Obstacle Resolved
+    OPEN --> CANCELLED: Deemed Irrelevant
+    ASSIGNED --> CANCELLED: Deemed Irrelevant
+    IN_PROGRESS --> CANCELLED: Deemed Irrelevant
+    COMPLETED --> [*]
+    CANCELLED --> [*]
+```
+
+- **Optimistic Concurrency Control:**
+  Each task row contains a `version` integer column. Updates require the expected version (`WHERE task_id = ? AND version = ?`) and atomically increment to `version + 1`. If two detectives modify a task concurrently, the second operation fails with HTTP 409 Conflict (`CONCURRENT_MODIFICATION_DETECTED`), protecting against overwrite race conditions.
+
+### 14.5 Segregation of Forensic Truth vs Human Review Opinion
+
+In judicial investigations, physical and digital evidence must never be altered by subjective opinion. CASETHREAD strictly segregates immutable forensic facts from investigator reviews:
+
+```mermaid
+flowchart TD
+    subgraph TRUTH ["Physical & Digital Ground Truth (Strictly Immutable)"]
+        EV["evidence Table"]
+        EVF["evidence_files Vault Table"]
+        HASH["Raw SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"]
+    end
+
+    subgraph OPINION ["Human Investigative Opinions (evidence_reviews Table)"]
+        REV["Review Record #42"]
+        OBS["Investigator Observation: 'Slight glare visible on driver face'"]
+        STAT["Review Status: VERIFIED"]
+        OFF["Reviewer: Detective Sarah Jenkins (Badge #104)"]
+        NOTE["Verification Note: 'Cross-checked with store lighting specs'"]
+    end
+
+    OPINION -.->|References Without Modifying| TRUTH
+```
+
+- Original evidence records, SHA-256 file fingerprints, and EXIF extraction logs remain permanently immutable.
+- Detective observations, clarification requests, and reliability assessments reside in `evidence_reviews` with author officer attribution and timestamps.
+
+### 14.6 Collaboration REST API Reference
+
+All endpoints require standard `Authorization: Bearer <JWT>` authentication and verify active case membership:
+
+| Method | Endpoint | Allowed Roles | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/cases/:caseId/members` | All Members | List all active team members assigned to a case with joined officer profiles. |
+| `POST` | `/api/v1/cases/:caseId/members` | `LEAD_INVESTIGATOR` | Assign an authorized officer to the case with an assigned role. |
+| `DELETE` | `/api/v1/cases/:caseId/members/:memberId` | `LEAD_INVESTIGATOR` | Revoke officer case access with documented audit reason. |
+| `POST` | `/api/v1/cases/:caseId/transfer-lead` | `LEAD_INVESTIGATOR` | Transfer primary case leadership to another active team member. |
+| `GET` | `/api/v1/cases/:caseId/tasks` | All Members | List investigation tasks with status, priority, and assignee filters. |
+| `POST` | `/api/v1/cases/:caseId/tasks` | Non Read-Only | Create a new investigation task with optional linked evidence and due date. |
+| `GET` | `/api/v1/tasks/:taskId` | All Members | Retrieve task details, chronological notes, and prerequisite dependencies. |
+| `PUT` | `/api/v1/tasks/:taskId` | Non Read-Only | Update task status, assignee, priority, or details with optimistic locking (`version`). |
+| `POST` | `/api/v1/tasks/:taskId/notes` | Non Read-Only | Append a timestamped progress note to an investigation task. |
+| `POST` | `/api/v1/tasks/:taskId/dependencies` | Non Read-Only | Add prerequisite task dependency with BFS cycle detection. |
+| `POST` | `/api/v1/cases/:caseId/evidence-reviews` | Non Read-Only | Request formal evidence review assignment for an officer. |
+| `POST` | `/api/v1/evidence-reviews/:reviewId` | Non Read-Only | Submit review observations, integrity sign-off, and notes without altering evidence hashes. |
+| `GET` | `/api/v1/cases/:caseId/activity` | All Members | Retrieve chronological activity audit trail across 11 case-level event types. |
+| `GET` | `/api/v1/notifications` | Authenticated Officer | List personal unread and historical notifications with bulk mark-as-read. |
+| `GET` | `/api/v1/cases/:caseId/workflow-analytics` | All Members | Retrieve real database workload metrics (completion %, overdue, blocked, avg hours). |

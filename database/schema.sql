@@ -554,6 +554,180 @@ CREATE TABLE evidence_geospatial (
     INDEX idx_geo_verification (verification_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+-- ------------------------------------------------------------------------------
+-- 15. Table: case_members (Multi-Officer Case Membership & Access Control)
+-- ------------------------------------------------------------------------------
+CREATE TABLE case_members (
+    member_id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    officer_id INT NOT NULL,
+    role ENUM('LEAD_INVESTIGATOR', 'INVESTIGATING_OFFICER', 'FORENSIC_ANALYST', 'EVIDENCE_REVIEWER', 'READ_ONLY_REVIEWER') NOT NULL DEFAULT 'INVESTIGATING_OFFICER',
+    assigned_by_officer_id INT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    permissions JSON COMMENT 'Optional granular permission overrides',
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    revoked_at TIMESTAMP NULL,
+    revoked_by_officer_id INT NULL,
+    revocation_reason TEXT NULL,
+    CONSTRAINT fk_cm_case FOREIGN KEY (case_id) REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_cm_officer FOREIGN KEY (officer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_cm_assigner FOREIGN KEY (assigned_by_officer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_cm_case (case_id),
+    INDEX idx_cm_officer (officer_id),
+    INDEX idx_cm_role (role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 16. Table: investigation_tasks (Investigation Task Lifecycle Management)
+-- ------------------------------------------------------------------------------
+CREATE TABLE investigation_tasks (
+    task_id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    assigned_officer_id INT NULL,
+    created_by_officer_id INT NOT NULL,
+    priority ENUM('LOW', 'NORMAL', 'HIGH', 'CRITICAL') NOT NULL DEFAULT 'NORMAL',
+    status ENUM('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'COMPLETED', 'BLOCKED', 'CANCELLED') NOT NULL DEFAULT 'OPEN',
+    due_date DATETIME NULL,
+    completed_at DATETIME NULL,
+    related_evidence_ids JSON COMMENT 'Array of evidence_id integers',
+    related_entity_ids JSON COMMENT 'Array of {type, id} objects',
+    related_lead_id INT NULL,
+    completion_notes TEXT NULL,
+    version INT NOT NULL DEFAULT 1 COMMENT 'Optimistic concurrency control version',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_it_case FOREIGN KEY (case_id) REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_it_assigned FOREIGN KEY (assigned_officer_id) REFERENCES officers(officer_id) ON DELETE SET NULL,
+    CONSTRAINT fk_it_creator FOREIGN KEY (created_by_officer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_it_lead FOREIGN KEY (related_lead_id) REFERENCES investigation_leads(lead_id) ON DELETE SET NULL,
+    INDEX idx_it_case (case_id),
+    INDEX idx_it_assigned (assigned_officer_id),
+    INDEX idx_it_status (status),
+    INDEX idx_it_priority (priority),
+    INDEX idx_it_due_date (due_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 17. Table: investigation_task_notes (Task Progress Logs & Updates)
+-- ------------------------------------------------------------------------------
+CREATE TABLE investigation_task_notes (
+    note_id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    case_id INT NOT NULL,
+    officer_id INT NOT NULL,
+    note_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_itn_task FOREIGN KEY (task_id) REFERENCES investigation_tasks(task_id) ON DELETE CASCADE,
+    CONSTRAINT fk_itn_case FOREIGN KEY (case_id) REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_itn_officer FOREIGN KEY (officer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_itn_task (task_id),
+    INDEX idx_itn_case (case_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 18. Table: investigation_task_dependencies (Task Dependency Graph & Workflow DAG)
+-- ------------------------------------------------------------------------------
+CREATE TABLE investigation_task_dependencies (
+    dependency_id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL COMMENT 'The dependent task (blocked until prerequisite completes)',
+    depends_on_task_id INT NOT NULL COMMENT 'The prerequisite task',
+    created_by_officer_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_itd_task FOREIGN KEY (task_id) REFERENCES investigation_tasks(task_id) ON DELETE CASCADE,
+    CONSTRAINT fk_itd_prereq FOREIGN KEY (depends_on_task_id) REFERENCES investigation_tasks(task_id) ON DELETE CASCADE,
+    CONSTRAINT fk_itd_creator FOREIGN KEY (created_by_officer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_itd_task (task_id),
+    INDEX idx_itd_prereq (depends_on_task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 19. Table: evidence_reviews (Evidence Review Workflow & Forensic Verification Queue)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_reviews (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    assigned_reviewer_id INT NOT NULL,
+    created_by_officer_id INT NOT NULL,
+    review_status ENUM('PENDING_REVIEW', 'UNDER_REVIEW', 'VERIFIED', 'REQUIRES_CLARIFICATION', 'FLAGGED_FOR_RECHECK') NOT NULL DEFAULT 'PENDING_REVIEW',
+    reviewer_observations TEXT NULL,
+    integrity_verification_status ENUM('VERIFIED', 'FAILED', 'UNCHECKED', 'DISCREPANCY_DETECTED') NOT NULL DEFAULT 'UNCHECKED',
+    metadata_review_status ENUM('APPROVED', 'INCOMPLETE', 'FLAGGED', 'NOT_APPLICABLE') NOT NULL DEFAULT 'NOT_APPLICABLE',
+    review_notes TEXT NULL,
+    related_task_id INT NULL,
+    reviewed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_er_evidence FOREIGN KEY (evidence_id) REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_er_case FOREIGN KEY (case_id) REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_er_reviewer FOREIGN KEY (assigned_reviewer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_er_creator FOREIGN KEY (created_by_officer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_er_task FOREIGN KEY (related_task_id) REFERENCES investigation_tasks(task_id) ON DELETE SET NULL,
+    INDEX idx_er_evidence (evidence_id),
+    INDEX idx_er_case (case_id),
+    INDEX idx_er_reviewer (assigned_reviewer_id),
+    INDEX idx_er_status (review_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 20. Table: case_activity_logs (Unified Chronological Investigation Event Ledger)
+-- ------------------------------------------------------------------------------
+CREATE TABLE case_activity_logs (
+    activity_id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    actor_id INT NOT NULL,
+    event_type ENUM(
+        'OFFICER_ASSIGNED',
+        'OFFICER_REMOVED',
+        'TASK_CREATED',
+        'TASK_ASSIGNED',
+        'TASK_STATUS_CHANGED',
+        'EVIDENCE_REVIEWED',
+        'EVIDENCE_FLAGGED',
+        'INVESTIGATION_NOTE_ADDED',
+        'LEAD_UPDATED',
+        'CASE_STATUS_CHANGED',
+        'CASE_LEADERSHIP_TRANSFERRED'
+    ) NOT NULL,
+    related_record_id VARCHAR(100) NULL,
+    previous_state JSON NULL,
+    new_state JSON NULL,
+    event_description TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_cal_case FOREIGN KEY (case_id) REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_cal_actor FOREIGN KEY (actor_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_cal_case (case_id),
+    INDEX idx_cal_actor (actor_id),
+    INDEX idx_cal_event_type (event_type),
+    INDEX idx_cal_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 21. Table: officer_notifications (Internal Investigation Notification Queue)
+-- ------------------------------------------------------------------------------
+CREATE TABLE officer_notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    officer_id INT NOT NULL,
+    case_id INT NULL,
+    event_type VARCHAR(60) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    reference_type VARCHAR(50) NULL,
+    reference_id VARCHAR(100) NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    read_at TIMESTAMP NULL,
+    dedup_key VARCHAR(160) NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_on_officer FOREIGN KEY (officer_id) REFERENCES officers(officer_id) ON DELETE CASCADE,
+    INDEX idx_on_officer (officer_id),
+    INDEX idx_on_is_read (is_read),
+    INDEX idx_on_dedup (dedup_key),
+    INDEX idx_on_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- INITIAL SEED DATA (For Verification & Development)
 -- ==============================================================================
 
@@ -564,7 +738,12 @@ CREATE TABLE evidence_geospatial (
 INSERT INTO officers (badge_number, full_name, email, password_hash, department, rank_designation, role)
 VALUES 
 ('DET-8841', 'Det. Alexander Cross', 'a.cross@casethread.police.gov', '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO', 'Major Crimes Division', 'Senior Detective', 'LEAD_OFFICER'),
-('DET-9912', 'Det. Sarah Lin', 's.lin@casethread.police.gov', '$2a$12$4e9L7mKjQzW1x.y9P8oN7eM6u5T4r3E2w1Q0z9X8y7W6v5U4t3S2r', 'Cyber & Forensic Telemetry Unit', 'Forensic Investigator', 'INVESTIGATOR')
+('DET-9912', 'Det. Sarah Lin', 's.lin@casethread.police.gov', '$2a$12$4e9L7mKjQzW1x.y9P8oN7eM6u5T4r3E2w1Q0z9X8y7W6v5U4t3S2r', 'Cyber & Forensic Telemetry Unit', 'Forensic Investigator', 'INVESTIGATOR'),
+('DET-9022', 'Det. Marcus Brody', 'm.brody@casethread.police.gov', '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO', 'Homicide & Robbery Squad', 'Detective', 'INVESTIGATOR'),
+('ANA-3301', 'Dr. Maya Chen', 'm.chen@casethread.police.gov', '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO', 'Digital & Biological Forensics', 'Forensic Analyst', 'INVESTIGATOR'),
+('REV-4412', 'James Vance', 'j.vance@casethread.police.gov', '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO', 'Internal Evidence Quality Bureau', 'Senior Reviewer', 'SENIOR_DETECTIVE'),
+('OBS-5509', 'Rachel Green', 'r.green@casethread.police.gov', '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO', 'External Legal Oversight', 'Legal Observer', 'INVESTIGATOR'),
+('ADM-1000', 'Raymond Holt', 'r.holt@casethread.police.gov', '$2a$12$jg0EbxHjj7cfgQixKAZrZeGnjunrxPT//OvKMeLU5sIGinc7Bw8CO', 'Executive Police Administration', 'Commander', 'ADMIN')
 ON DUPLICATE KEY UPDATE full_name=VALUES(full_name);
 
 -- 2. Demo Investigation Case
@@ -670,3 +849,54 @@ VALUES
 (5, 4, 1, 'EVIDENCE', NULL, 40.70500000, -74.01800000, 2.00, 50.00, 'WGS84', 'OFFICER_ENTERED', 'Harbour Pier 9 Cargo Terminal Berth 4', '2026-10-15 04:15:00', '+00:00', 'Witness Tip Location Estimation', 'UNVERIFIED_OBSERVATION', FALSE),
 (6, 1, 1, 'EVIDENCE', NULL, 40.71285000, -74.00595000, 11.00, 4.20, 'WGS84', 'EXIF_GPS', 'Depository Alleyway Approach', '2026-10-15 02:48:00', '+00:00', 'EXIF metadata extraction from patrol photo', 'UNVERIFIED_OBSERVATION', FALSE);
 
+
+
+-- 14. Seed Case Members (Stage 1 Multi-Officer Case Access)
+INSERT INTO case_members (case_id, officer_id, role, assigned_by_officer_id, is_active)
+VALUES
+(1, 1, 'LEAD_INVESTIGATOR', 1, TRUE),
+(1, 2, 'INVESTIGATING_OFFICER', 1, TRUE),
+(1, 3, 'INVESTIGATING_OFFICER', 1, TRUE),
+(1, 4, 'FORENSIC_ANALYST', 1, TRUE),
+(1, 5, 'EVIDENCE_REVIEWER', 1, TRUE),
+(1, 6, 'READ_ONLY_REVIEWER', 1, TRUE);
+
+-- 15. Seed Investigation Tasks (Stage 2 Task Management)
+INSERT INTO investigation_tasks (task_id, case_id, title, description, assigned_officer_id, created_by_officer_id, priority, status, due_date, completed_at, related_evidence_ids, related_entity_ids, related_lead_id, completion_notes, version)
+VALUES
+(1, 1, 'Subpoena Sector 7 Cell Tower Logs', 'Obtain complete CDR transmission records from telecom provider for Sector 7 antenna.', 2, 1, 'HIGH', 'COMPLETED', '2026-10-16 12:00:00', '2026-10-15 06:15:00', '[2]', '[{"type":"SUSPECT","id":1}]', 2, 'Successfully subpoenaed and extracted 38-second CDR record.', 2),
+(2, 1, 'Extract Loading Bay CCTV Timestamp Markers', 'Isolate high-resolution frames of black sedan departure from Camera Feed #4.', 4, 1, 'NORMAL', 'COMPLETED', '2026-10-16 10:00:00', '2026-10-15 05:00:00', '[1]', '[{"type":"SUSPECT","id":2}]', 1, 'Frames isolated and verified at 02:49:12 AM.', 2),
+(3, 1, 'Cross-Reference Sedan Transit with Traffic Camera 12', 'Correlate departure speed and vector along Financial Blvd.', 2, 1, 'HIGH', 'IN_PROGRESS', '2026-10-17 18:00:00', NULL, '[1,5]', '[{"type":"SUSPECT","id":2}]', 1, NULL, 1),
+(4, 1, 'Forensic Nitrile Glove Fiber Analysis', 'Conduct gas chromatography and spectral comparison on vault keypad fiber sample.', 4, 1, 'NORMAL', 'UNDER_REVIEW', '2026-10-18 14:00:00', NULL, '[7]', '[]', NULL, 'Preliminary spectral curve matches synthetic industrial nitrile-neoprene.', 1),
+(5, 1, 'Question Contractor Elena Rostova on Root Key Overrides', 'Conduct formal interview regarding access log ENC-ROSTOVA-88.', 1, 1, 'CRITICAL', 'ASSIGNED', '2026-10-19 09:00:00', NULL, '[6,8]', '[{"type":"SUSPECT","id":3}]', NULL, NULL, 1);
+
+-- 16. Seed Task Dependencies (Stage 3 Task Dependencies DAG)
+INSERT INTO investigation_task_dependencies (task_id, depends_on_task_id, created_by_officer_id)
+VALUES
+(3, 2, 1), -- Task 3 (Transit cross-reference) depends on Task 2 (CCTV extraction)
+(5, 4, 1); -- Task 5 (Contractor interview) depends on Task 4 (Fiber analysis)
+
+-- 17. Seed Evidence Reviews (Stage 4 Evidence Review Workflow)
+INSERT INTO evidence_reviews (review_id, evidence_id, case_id, assigned_reviewer_id, created_by_officer_id, review_status, reviewer_observations, integrity_verification_status, metadata_review_status, review_notes, related_task_id, reviewed_at)
+VALUES
+(1, 1, 1, 5, 1, 'VERIFIED', 'Video timestamp is continuous; camera angle confirms vehicle matches sedan plate 7XYZ99.', 'VERIFIED', 'APPROVED', 'High evidentiary reliability confirmed by independent review.', 2, '2026-10-15 07:00:00'),
+(2, 6, 1, 5, 1, 'UNDER_REVIEW', 'Digital signature valid. Cross-checking contractor key allocation records.', 'VERIFIED', 'INCOMPLETE', 'Review in progress awaiting telecom verification.', 5, NULL),
+(3, 7, 1, 4, 1, 'PENDING_REVIEW', 'Pending spectroscopy lab confirmation.', 'UNCHECKED', 'NOT_APPLICABLE', 'Awaiting finalized spectral report.', 4, NULL);
+
+-- 18. Seed Case Activity Logs (Stage 5 Investigation Activity Timeline)
+INSERT INTO case_activity_logs (activity_id, case_id, actor_id, event_type, related_record_id, previous_state, new_state, event_description, created_at)
+VALUES
+(1, 1, 1, 'OFFICER_ASSIGNED', '2', NULL, '{"role":"INVESTIGATING_OFFICER"}', 'Det. Sarah Lin assigned to case as Investigating Officer', '2026-10-15 03:00:00'),
+(2, 1, 1, 'TASK_CREATED', '1', NULL, '{"title":"Subpoena Sector 7 Cell Tower Logs","priority":"HIGH"}', 'Task created: Subpoena Sector 7 Cell Tower Logs', '2026-10-15 03:15:00'),
+(3, 1, 1, 'TASK_ASSIGNED', '1', NULL, '{"assigned_officer_id":2}', 'Task 1 assigned to Det. Sarah Lin', '2026-10-15 03:20:00'),
+(4, 1, 2, 'TASK_STATUS_CHANGED', '1', '{"status":"IN_PROGRESS"}', '{"status":"COMPLETED"}', 'Task 1 status transitioned to COMPLETED', '2026-10-15 06:15:00'),
+(5, 1, 1, 'EVIDENCE_REVIEWED', '1', '{"status":"PENDING_REVIEW"}', '{"status":"VERIFIED"}', 'Evidence EVD-CCTV-001 reviewed and verified by James Vance', '2026-10-15 07:00:00');
+
+-- 19. Seed Officer Notifications (Stage 6 Internal Notification System)
+INSERT INTO officer_notifications (notification_id, officer_id, case_id, event_type, title, message, reference_type, reference_id, is_read, dedup_key, created_at)
+VALUES
+(1, 2, 1, 'TASK_ASSIGNED', 'New Investigation Task Assigned', 'You have been assigned to task: Subpoena Sector 7 Cell Tower Logs', 'TASK', '1', TRUE, 'TASK_ASSIGNED:1:2', '2026-10-15 03:20:00'),
+(2, 4, 1, 'TASK_ASSIGNED', 'New Investigation Task Assigned', 'You have been assigned to task: Extract Loading Bay CCTV Timestamp Markers', 'TASK', '2', TRUE, 'TASK_ASSIGNED:2:4', '2026-10-15 03:30:00'),
+(3, 2, 1, 'TASK_ASSIGNED', 'New Investigation Task Assigned', 'You have been assigned to task: Cross-Reference Sedan Transit with Traffic Camera 12', 'TASK', '3', FALSE, 'TASK_ASSIGNED:3:2', '2026-10-15 05:10:00'),
+(4, 5, 1, 'EVIDENCE_REVIEW_REQUESTED', 'Evidence Review Requested', 'Review requested for Loading Dock Camera Feed #4 (EVD-CCTV-001)', 'EVIDENCE_REVIEW', '1', TRUE, 'EVIDENCE_REVIEW_REQUESTED:1:5', '2026-10-15 05:15:00'),
+(5, 1, 1, 'TASK_BLOCKED', 'Task Dependency Prerequisite Notice', 'Task Question Contractor Elena Rostova is dependent on completion of Task 4.', 'TASK', '5', FALSE, 'TASK_BLOCKED:5:1', '2026-10-15 06:00:00');

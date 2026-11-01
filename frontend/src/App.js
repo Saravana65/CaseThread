@@ -10,6 +10,7 @@ import InvestigativeLeadsPanel from './components/InvestigativeLeadsPanel';
 import EvidenceIntegrityPanel from './components/EvidenceIntegrityPanel';
 import EvidenceVaultPanel from './components/EvidenceVaultPanel';
 import GeospatialMapPanel from './components/GeospatialMapPanel';
+import CollaborationPanel from './components/CollaborationPanel';
 import ReportExportModal from './components/ReportExportModal';
 import api from './services/api';
 import './styles/theme.css';
@@ -23,6 +24,7 @@ export default function App() {
   const [officer, setOfficer] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const checkActiveSession = useCallback(async () => {
     const token = api.getToken();
@@ -173,6 +175,7 @@ export default function App() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onOpenReport={() => setReportModalOpen(true)}
+        unreadCount={unreadNotifications}
       />
 
       <main style={{ flex: 1, padding: '1rem 0' }}>
@@ -195,6 +198,14 @@ export default function App() {
               onOpenReport={() => setReportModalOpen(true)}
             />
           </div>
+        )}
+
+        {activeTab === 'collaboration' && (
+          <CollaborationPanel
+            caseId={selectedCaseId}
+            officer={officer}
+            onNotificationCountChange={setUnreadNotifications}
+          />
         )}
 
         {activeTab === 'vault' && (
