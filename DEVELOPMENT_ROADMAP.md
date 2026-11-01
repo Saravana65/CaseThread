@@ -12,7 +12,7 @@ flowchart LR
     P2 --> P3["Phase 3: C Core DSA Engine (COMPLETED)"]
     P3 --> P4["Phase 4: Forensic Frontend UI (COMPLETED)"]
     P4 --> P5["Phase 5: E2E Case Simulation (COMPLETED)"]
-    P5 --> P6["Phase 6: Deployment & Benchmarks (NEXT)"]
+    P5 --> P6["Phase 6: Production Hardening & Benchmarks (COMPLETED)"]
 ```
 
 ---
@@ -56,85 +56,94 @@ flowchart LR
   - Chronological Timelines: `/api/v1/timeline` (event tracking, chronological ordering)
   - Investigation Leads: `/api/v1/leads` (priority scoring, status transitions)
   - C Engine Bridge Preparation: `cEngineService.js` (IPC JSON streaming via child process)
-- [x] **Comprehensive Automated Testing**:
-  - Built-in test suite (`backend/tests/integration.test.js`) covering 28 test cases across 8 suites (100% passing).
 
 ---
 
-### Phase 3: C Core DSA Engine Implementation & Unit Testing (NEXT)
+### Phase 3: C Core DSA Engine Implementation & Unit Testing (COMPLETED)
 *Objective: Build and verify custom data structures and forensic algorithms in pure C.*
 
 #### Milestone 3.1: Separate-Chaining Hash Map
-- Implement `hashmap_create`, `hashmap_put`, `hashmap_get`, `hashmap_remove`, and `hashmap_destroy`.
-- DJB2 / FNV-1a hashing function with dynamic capacity resizing at load factor $\ge 0.75$.
-- Unit test suite (`tests/test_hashmap.c`) verifying collision handling, search, and boundary limits.
-- Target Complexity: Average $O(1)$ lookup and insertion.
+- [x] Implement `hashmap_create`, `hashmap_put`, `hashmap_get`, `hashmap_remove`, and `hashmap_destroy`.
+- [x] DJB2 hashing function with dynamic capacity resizing at load factor $\ge 0.75$.
+- [x] Unit test suite verifying collision handling, search, and boundary limits.
+- [x] Complexity: Average $O(1)$ lookup, insertion, and deletion.
 
 #### Milestone 3.2: Self-Balancing AVL Tree
-- Implement AVL tree with rotation logic (Left, Right, Left-Right, Right-Left) maintaining balance factor in $[-1, 1]$.
-- In-order traversal yielding ordered temporal events.
-- Range query function: retrieve all timeline incidents occurring between timestamp $t_1$ and $t_2$.
-- Unit test suite (`tests/test_tree.c`) with edge-case unbalanced sequence insertions.
-- Target Complexity: Guaranteed $O(\log N)$ search/insertion, $O(\log N + K)$ range queries.
+- [x] Implement AVL tree with rotation logic (Left, Right, Left-Right, Right-Left) maintaining balance factor in $[-1, 1]$.
+- [x] In-order traversal yielding chronologically ordered temporal events.
+- [x] Range query function: retrieve all timeline incidents occurring between timestamp $t_1$ and $t_2$.
+- [x] Complexity: Guaranteed $O(\log N)$ search/insertion, $O(\log N + K)$ range queries.
 
 #### Milestone 3.3: Adjacency-List Evidence Graph & Traversals
-- Dynamic adjacency-list graph supporting typed vertices (suspect, vehicle, CCTV, location) and weighted edges.
-- Breadth-First Search (BFS): Shortest associative link discovery between entities.
-- Depth-First Search (DFS): Cycle detection (circular contradictions) and connected component clustering.
-- Unit test suite (`tests/test_graph.c`) on complex multi-hop evidence graphs.
-- Target Complexity: $O(V + E)$ traversal time.
+- [x] Dynamic adjacency-list graph supporting typed vertices (suspect, vehicle, CCTV, location) and weighted edges.
+- [x] Breadth-First Search (BFS): Shortest associative link discovery between entities.
+- [x] Depth-First Search (DFS): Cycle detection (circular contradictions) and connected component clustering.
+- [x] Complexity: $O(V + E)$ traversal time.
 
-#### Milestone 3.4: Forensic Intelligence Reasoning Modules
-- **Evidence Gap Detection:** Identifies isolated high-priority entities, missing corroborating sightings, and chain-of-custody breaks.
-- **Timeline Anomaly Analyzer:** Identifies impossible physical travel velocities between consecutive sightings.
-- **Priority Lead Generator:** Employs a Max-Heap to rank investigative actions by composite priority score.
+#### Milestone 3.4: Binary Max-Heap Priority Queue
+- [x] Array-based binary Max-Heap (`max_heap.c`, `max_heap.h`) with dynamic capacity doubling.
+- [x] `heap_insert()`, `heap_extract_max()`, `heap_peek_max()`, `heapify_up()`, and `heapify_down()`.
+- [x] Composite lead scoring: 40% Confidence + 30% Normalized Centrality + 30% Gap Criticality.
+- [x] Guaranteed highest priority lead at root; strict descending extraction order.
 
-#### Milestone 3.5: IPC JSON Serialization & CLI Driver
-- Integrate lightweight JSON parsing (`cJSON`) to deserialize input from `stdin` and serialize output to `stdout`.
-- Verify memory leak freedom using Valgrind / AddressSanitizer.
+#### Milestone 3.5: IPC JSON Serialization & Unit Verification
+- [x] Robust custom JSON parsing streaming between stdin and stdout without external heavy libraries.
+- [x] 91 unit tests passing with zero memory leaks (`core-engine/bin/test_dsa.exe`).
 
 ---
 
-### Phase 4: Forensic Frontend UI/UX & Evidence Relationship Visualization (Completed)
+### Phase 4: Forensic Frontend UI/UX & Evidence Relationship Visualization (COMPLETED)
 *Objective: Deliver a dark-themed, high-density digital investigation dashboard in React with full C-Engine graph visualization.*
-- **C-Engine Relationship Engine:** Discovers direct and data-derived relationships (`SAME_LOCATION`, `SAME_VEHICLE`, `SHARED_PHONE`, `SHARED_CONTACT`, `SAME_PHYSICAL_EVIDENCE`, `WITNESS_ASSOCIATION`).
-- **Graph Analysis Traversals:** BFS shortest path discovery between entities, DFS connected component clustering, and neighborhood exploration.
-- **Backend Graph API (`/api/v1/cases/:id/graph`):** 8 REST endpoints for graph topology, nodes, edges, shortest paths, neighborhood exploration, connected components, and isolated leads.
-- **Interactive Graph Canvas (`GraphCanvas.js`):** Force-directed physics layout, zoom/pan, node dragging, entity color-coding, edge styling by origin, and golden path illumination.
-- **Investigation Workspace (`GraphAnalysis.js`):** Case selector, metrics ribbon, entity/origin filters, BFS shortest path trace tool, cluster highlighter, and inspector drawer.
+- [x] **C-Engine Relationship Engine:** Discovers direct and data-derived relationships (`SAME_LOCATION`, `SAME_VEHICLE`, `SHARED_PHONE`, `SHARED_CONTACT`, `SAME_PHYSICAL_EVIDENCE`, `WITNESS_ASSOCIATION`).
+- [x] **Graph Analysis Traversals:** BFS shortest path discovery between entities, DFS connected component clustering, and neighborhood exploration.
+- [x] **Backend Graph API (`/api/v1/cases/:id/graph`):** 8 REST endpoints for graph topology, nodes, edges, shortest paths, neighborhood exploration, connected components, and isolated leads.
+- [x] **Interactive Graph Canvas (`GraphCanvas.js`):** Force-directed physics layout, zoom/pan, node dragging, entity color-coding, edge styling by origin, and golden path illumination.
+- [x] **Investigation Workspace (`GraphAnalysis.js`):** Case selector, metrics ribbon, entity/origin filters, BFS shortest path trace tool, cluster highlighter, and inspector drawer.
 
 ---
 
 ### Phase 5: Timeline Analysis, Verification Requirements & Realistic Case Simulation (COMPLETED)
 *Objective: Full end-to-end integration and algorithmic validation across all tiers against a realistic forensic scenario.*
-- [x] **Pre-Integration Audit**: Verified compilation, all 11 DSA modules, BFS/DFS correctness, gap detection, timeline analysis, standard I/O IPC, MySQL/MemoryStore, JWT authentication, and interactive React frontend.
 - [x] **Backend & C Engine Pipeline Hardening**:
   - Eliminated mock/architecture placeholder responses. Real binary execution validated with zero exit-code failures.
   - Strict officer session authorization and cross-case isolation (403 FORBIDDEN).
   - Complete evidence provenance marshaling (`location`, `timestamp`, `metadata`).
   - Automatic database persistence of C-engine generated investigative leads (`investigation_leads` with `generated_by = 'C_ENGINE_DETECTED'`).
-- [x] **Complete Forensic Frontend Integration (No Raw JSON)**:
-  - `Dashboard.js`: Total cases, active investigations, evidence counts, top gaps, prioritized leads, recent telemetry activity feed.
-  - `CaseDetailsPanel.js`: Case file dossier with tabbed breakdowns for suspects, victims, witnesses, evidence catalog, and chronological events.
-  - `EvidenceGapPanel.js`: Filterable gap cards with category, reason, suggested verification action, priority, and resolution status toggle.
-  - `TimelinePanel.js`: Chronological event ledger with AVL-tree spatiotemporal anomaly alerts (*IMPOSSIBLE_TRAVEL_SPEED*, *OVERLAPPING_EVENT_UNVERIFIED*).
-  - `InvestigativeLeadsPanel.js`: Prioritized lead cards with composite strength meter, hypothesis, supporting relationships, and workflow status dropdowns.
-  - `GraphAnalysis.js`: Force-directed canvas with BFS shortest path illumination and connected component clustering.
-- [x] **Realistic Fictional Investigation Simulation ("The Metro Vault Intrusion & Disappearance")**:
-  - Full multi-entity case: 1 victim (Julian Mercer), 3 suspects (Marcus Vance, Damon Vance, Elena Rostova), 2 witnesses (Evelyn Shaw, Arthur Pendelton), 9 diverse evidence records (CCTV, phone records, vehicle, digital logs, unverified tips, biometric fiber sample, isolated bicycle).
-  - Disconnected clusters (Depository Heist team vs Insider Security contractor) and 1 completely isolated node.
-  - Spatiotemporal contradiction: 18 km in 90 seconds impossible travel velocity.
-  - Alibi contradiction: Marcus Vance claimed diner coffee vs loading dock cell tower ping.
-- [x] **End-to-End Test Suite**:
-  - 10 comprehensive E2E tests in `backend/tests/e2e.test.js` passing 100%.
-  - 45 total backend tests across 10 suites passing 100%.
-  - 63 C DSA tests passing 100%.
-  - Production React build compiled successfully with 0 errors.
+- [x] **Complete Forensic Frontend Integration**:
+  - `Dashboard.js`: Metrics ribbon, active cases, evidence counts, top gaps, prioritized leads, telemetry feed.
+  - `CaseDetailsPanel.js`: Dossier breakdowns for suspects, victims, witnesses, evidence catalog, and chronological events.
+  - `EvidenceGapPanel.js`: Filterable gap cards with category, reason, suggested action, and resolution toggle.
+  - `TimelinePanel.js`: Chronological event ledger with AVL-tree spatiotemporal anomaly alerts.
+  - `InvestigativeLeadsPanel.js`: Prioritized lead cards with composite strength score.
+- [x] **Officer Workflows**:
+  - Secure `LoginForm` with show/hide password, badge formatting, session restoration, and demo credentials isolation.
+  - `CreateCaseModal`: Case number uniqueness validation, server-derived lead officer context.
+  - `AddEvidenceModal`: Full 11-category classification, ground-truth partitions (`CONFIRMED_FACT`, `UNVERIFIED_OBSERVATION`, `HYPOTHESIS`), chain of custody, and JSON telemetry metadata.
 
 ---
 
-### Phase 6: Containerization, Performance Benchmarking & Academic Documentation (NEXT)
-*Objective: Production readiness, automated deployment, and academic deliverables.*
-- Multi-container deployment verification with `docker-compose up`.
-- Empirical Big-O benchmarks: measure C engine execution latency and RAM consumption.
-- Final academic report and documentation.
+### Phase 6: Production Hardening, Database Safety & Empirical Benchmarks (COMPLETED)
+*Objective: Production security, database persistence guarantees, and verified algorithmic benchmarking.*
+- [x] **Production Database Safety**:
+  - MemoryStore strictly disabled when `NODE_ENV === 'production'`.
+  - Removed all automatic fallbacks (connection refused, connection lost) in production.
+  - Production fails fast at startup if MySQL is unreachable.
+  - Transaction handling (`withTransaction`) rejects rather than silently falling back to in-memory storage.
+- [x] **Security Hardening**:
+  - Removed hardcoded credentials and secrets from `docker-compose.yml`.
+  - Added `.env.example` template with production secrets guidance; `.env` strictly ignored by Git.
+  - Set `NODE_ENV=production` in Docker orchestration.
+  - Startup validation (`validateConfig.js`) enforcing $\ge 32$-character JWT secrets, valid database credentials, and blocking demo toggles.
+  - CORS restricted to configured whitelist origins (`CLIENT_ORIGIN`).
+  - Sanitized log outputs to prevent password leakage.
+- [x] **System Health Check (`/api/v1/health`)**:
+  - Returns HTTP 503 and `status: 'UNHEALTHY'` when MySQL is disconnected in production; never reports `ONLINE`.
+  - Docker Compose uses `condition: service_healthy` on MySQL before launching backend.
+- [x] **C DSA Engine Benchmarks (`core-engine/tests/benchmark_dsa.c`)**:
+  - Implemented high-resolution benchmarking across Hash Map, AVL Tree, Graph (BFS/DFS), and Binary Max-Heap across scales up to $N = 10,000$.
+  - Generated empirical CSV dataset (`core-engine/benchmarks/benchmark_results.csv`).
+  - Documented scaling curves and hardware characteristics in `core-engine/benchmarks/README.md`.
+- [x] **Full Automated Testing**:
+  - 69 backend tests passing across 12 suites (100% pass).
+  - 91 C DSA unit tests passing across 7 sections (100% pass).
+  - Optimized production React bundle built with 0 errors.

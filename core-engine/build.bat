@@ -13,10 +13,14 @@ cl /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:bin\casethread_engine.exe /Iinc
 echo Compiling test_dsa.exe...
 cl /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:bin\test_dsa.exe /Iinclude tests\test_dsa.c src\structures\*.c src\hashmap\*.c src\trees\*.c src\graphs\*.c src\algorithms\*.c src\evidence.c
 
+echo Compiling benchmark_dsa.exe...
+cl /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:bin\benchmark_dsa.exe /Iinclude tests\benchmark_dsa.c src\structures\*.c src\hashmap\*.c src\trees\*.c src\graphs\*.c src\algorithms\*.c src\evidence.c
+
 if exist *.obj del *.obj
 
 echo ==============================================================================
 echo BUILD COMPLETED SUCCESSFULLY
-echo Binary: bin\casethread_engine.exe
-echo Tests:  bin\test_dsa.exe
+echo Binary:     bin\casethread_engine.exe
+echo Tests:      bin\test_dsa.exe
+echo Benchmark:  bin\benchmark_dsa.exe
 echo ==============================================================================

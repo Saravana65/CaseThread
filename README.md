@@ -87,7 +87,7 @@ The core algorithm engine is developed in **C** to demonstrate rigorous, manual 
 | **Adjacency-List Graph** | `core-engine/src/graphs/` | Relational network where vertices are entities/evidence and edges are weighted associations. | Storage: $O(V + E)$<br>Edge Lookup: $O(\text{deg}(V))$ | $O(V + E)$ |
 | **Breadth-First Search (BFS)** | `core-engine/src/graphs/` | Computes unweighted shortest associative hops between suspect and victim or scene. | $O(V + E)$ | $O(V)$ |
 | **Depth-First Search (DFS)** | `core-engine/src/graphs/` | Discovers connected cliques, isolated evidence clusters, and circular relationship cycles. | $O(V + E)$ | $O(V)$ |
-| **Max-Heap / Priority Queue** | `core-engine/src/algorithms/` | Ranks generated investigative leads by algorithmic priority score based on weight and centrality. | Insert/Extract: $O(\log K)$<br>Peek: $O(1)$ | $O(K)$ |
+| **Binary Max-Heap / Priority Queue** | `core-engine/src/structures/` | Dynamically resizable binary heap maintaining root maximum lead priority score for investigative recommendation extraction. | Insert/Extract: $O(\log K)$<br>Peek: $O(1)$ | $O(K)$ |
 
 ---
 
@@ -189,19 +189,69 @@ The relational database is normalized and indexed for high-concurrency investiga
 
 ---
 
-## 7. Setup & Execution Guide
+## 7. Security & Production Hardening
+
+CASETHREAD incorporates enterprise-grade production safety standards:
+
+1. **Strict Production Database Enforcement (Zero-Fallback Policy):**
+   - MemoryStore is **strictly restricted** to unit tests (`NODE_ENV === 'test'`) and explicitly flagged local testing (`ALLOW_MEMORY_STORE === 'true'`).
+   - In production (`NODE_ENV === 'production'`), fallback to in-memory state is completely eliminated.
+   - If MySQL is unreachable, crashes, or drops connections, the application terminates or reports `UNHEALTHY` (HTTP 503) rather than silently losing investigative data.
+   - Transactions (`withTransaction`) fail fast on connection loss and never masquerade as successful.
+2. **Runtime Configuration Validation (`validateConfig`):**
+   - Backend startup performs strict validation of cryptographic and operational secrets.
+   - Requires `JWT_SECRET` $\ge 32$ characters, rejecting default/insecure keys (`"secret"`, `"password"`, etc.).
+   - Rejects wildcard CORS (`*`) in production; requires explicit `CLIENT_ORIGIN` whitelisting.
+   - Blocks demo credentials (`ENABLE_DEMO_CREDENTIALS`) and in-memory stores in production.
+3. **Environment-Driven Orchestration:**
+   - Secrets and passwords are completely removed from `docker-compose.yml` and injected via `.env`.
+   - Backend Docker service waits on MySQL readiness via `condition: service_healthy` before initializing.
+4. **Resilient Health Diagnostics:**
+   - `/api/v1/health` probes the live database connection and reflects true database health (`status: 'HEALTHY'` vs `'UNHEALTHY'`).
+
+---
+
+## 8. Empirical C DSA Benchmarks
+
+The core C engine contains an empirical benchmarking suite (`core-engine/tests/benchmark_dsa.c`) measuring throughput and latency across $N \in [100, 10000]$ operations:
+
+| Component | Operation | Scale ($N$) | Total Time ($\mu$s) | Mean Latency | Throughput (ops/sec) | Complexity |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Separate-Chaining Hash Map** | Sequential Insert | 10,000 | 2,752 $\mu$s | 0.28 $\mu$s | 3.63 M ops/s | $O(1)$ avg |
+| **Separate-Chaining Hash Map** | Exact Lookup | 10,000 | 1,550 $\mu$s | 0.16 $\mu$s | 6.45 M ops/s | $O(1)$ avg |
+| **Self-Balancing AVL Tree** | Chronological Insert | 10,000 | 3,115 $\mu$s | 0.31 $\mu$s | 3.21 M ops/s | $O(\log N)$ |
+| **Self-Balancing AVL Tree** | Timestamp Search | 10,000 | 172 $\mu$s | 0.02 $\mu$s | 58.07 M ops/s | $O(\log N)$ |
+| **Self-Balancing AVL Tree** | Range Query (25%) | 10,000 | 104 $\mu$s | 104 $\mu$s | 9.61 K queries/s | $O(\log N + K)$ |
+| **Binary Max-Heap** | Priority Insert | 10,000 | 1,180 $\mu$s | 0.12 $\mu$s | 8.47 M ops/s | $O(\log N)$ |
+| **Binary Max-Heap** | Root Peek Max | 10,000 | 23 $\mu$s | 0.002 $\mu$s | 442.48 M ops/s | $O(1)$ |
+| **Binary Max-Heap** | Extract Max (Heapify) | 10,000 | 1,908 $\mu$s | 0.19 $\mu$s | 5.24 M ops/s | $O(\log N)$ |
+| **Adjacency-List Graph** | BFS Shortest Path | 1,000 $V$ | 24 $\mu$s | 24 $\mu$s | 41.67 K queries/s | $O(V + E)$ |
+| **Adjacency-List Graph** | DFS Connected Cliques | 1,000 $V$ | 77 $\mu$s | 77 $\mu$s | 12.99 K traversals/s | $O(V + E)$ |
+
+Full benchmark data and asymptotic scaling curves are available in [`core-engine/benchmarks/README.md`](file:///core-engine/benchmarks/README.md).
+
+---
+
+## 9. Setup & Execution Guide
 
 ### Option A: Complete System via Docker Compose (Recommended)
 
-Docker Compose builds the C compiler toolchain, backend, frontend, and MySQL database automatically:
+Docker Compose coordinates MySQL 8.0, the native C compiler toolchain, the Node.js orchestrator, and the React client:
 
 ```bash
-# 1. Clone the repository
+# 1. Clone repository
 git clone https://github.com/Saravana65/CaseThread.git
 cd CaseThread
 
-# 2. Launch all services
-docker-compose up --build
+# 2. Configure production secrets
+cp .env.example .env
+# Edit .env and supply secure MYSQL_ROOT_PASSWORD, DB_PASSWORD, and JWT_SECRET (>= 32 chars)
+
+# 3. Validate configuration
+docker-compose config
+
+# 4. Launch all services
+docker-compose up --build -d
 ```
 - **Frontend Dashboard:** [http://localhost:3000](http://localhost:3000)
 - **Backend API:** [http://localhost:5000/api/v1/health](http://localhost:5000/api/v1/health)
@@ -217,13 +267,20 @@ Import the schema into a running MySQL 8.0 instance:
 mysql -u root -p < database/schema.sql
 ```
 
-#### 2. C Core Engine Compilation
-Compile the native algorithm engine using GCC or Clang:
+#### 2. C Core Engine Compilation & Benchmarking
+Compile the native algorithm engine using GCC or MSVC:
 ```bash
 cd core-engine
-make clean && make all
-# Verify the compiled binary
-./bin/casethread_engine --version
+
+# Build binary and unit tests
+build.bat            # Windows MSVC
+# or: make all test  # Linux / GCC
+
+# Run C engine unit tests (91 assertions across 7 modules)
+bin/test_dsa.exe     # or: ./bin/test_dsa
+
+# Run empirical DSA benchmark suite
+bin/benchmark_dsa.exe # or: ./bin/benchmark_dsa
 cd ..
 ```
 
@@ -231,26 +288,42 @@ cd ..
 ```bash
 cd backend
 cp ../.env.example .env
+# Ensure JWT_SECRET is set to at least 32 characters
 npm install
 npm run dev
 ```
 
-#### 5. Verification & Testing
+#### 4. Frontend Setup
+```bash
+cd frontend
+npm install
+npm start
+```
 
-Run all automated test suites to verify C engine DSA routines, backend endpoints, and end-to-end simulation:
+---
+
+## 10. Verification & Test Suite Summary
+
+Execute the full automated quality assurance matrix across all system tiers:
 
 ```bash
-# Core C Engine Unit Tests (63 tests)
+# 1. Core C Engine Unit Tests (91 assertions)
 cd core-engine
-build.bat            # Windows MSVC
-# or: make test      # Linux / GCC
-bin/test_dsa.exe
+build.bat && bin/test_dsa.exe
 
-# Backend Integration & E2E Tests (45 tests)
+# 2. Empirical C Benchmark Suite
+bin/benchmark_dsa.exe
+
+# 3. Backend Test Matrix (69 tests across 12 suites)
 cd ../backend
-node --test tests/integration.test.js tests/graph.test.js tests/e2e.test.js
+node --test tests/production_safety.test.js \
+            tests/frontend_workflow.test.js \
+            tests/integration.test.js \
+            tests/graph.test.js \
+            tests/e2e.test.js
 
-# Frontend Production Build Verification
+# 4. Frontend Production Build Verification
 cd ../frontend
+npm test -- --watchAll=false
 npm run build
 ```

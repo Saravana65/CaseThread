@@ -32,78 +32,143 @@ try {
 }
 
 /**
+ * Determines whether MemoryStore fallback is permitted.
+ * STRICT POLICY:
+ * In production (NODE_ENV === 'production'), MemoryStore is NEVER permitted under any circumstances.
+ * MemoryStore is only allowed in:
+ * 1. Automated test runs (NODE_ENV === 'test')
+ * 2. Explicitly enabled local offline development (ALLOW_MEMORY_STORE === 'true' or USE_MEMORY_STORE === 'true')
+ */
+function isMemoryStoreAllowed() {
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+  return (
+    process.env.NODE_ENV === 'test' ||
+    process.env.ALLOW_MEMORY_STORE === 'true' ||
+    process.env.USE_MEMORY_STORE === 'true'
+  );
+}
+
+/**
  * Tests connection to the MySQL database.
  * @returns {Promise<boolean>} True if connected, false otherwise
  */
 async function testConnection() {
-  if (!pool) return false;
+  if (!pool) {
+    isConnected = false;
+    return false;
+  }
   try {
     const connection = await pool.getConnection();
     await connection.ping();
     connection.release();
     isConnected = true;
-    console.log(`[DATABASE] Connected to MySQL 8 on ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(`[DATABASE] Connected to MySQL 8 on ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
+    }
     return true;
   } catch (error) {
     isConnected = false;
-    console.warn(`[DATABASE WARNING] MySQL not reachable on ${dbConfig.host}:${dbConfig.port}: ${error.message}`);
+    const sanitizedMsg = error.message ? error.message.replace(/:[^\s@]+@/, ':***@') : 'Connection refused';
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn(`[DATABASE WARNING] MySQL not reachable on ${dbConfig.host}:${dbConfig.port}: ${sanitizedMsg}`);
+    }
     return false;
   }
 }
 
 /**
  * Executes a parameterized SQL statement with automatic fallback support.
+ * In production: strictly uses MySQL; zero MemoryStore fallback.
  * @param {string} sql Parameterized SQL query
  * @param {Array} params Query parameters
  * @returns {Promise<[Array, Object]>} Results in mysql2 [rows, fields] format
  */
 async function execute(sql, params = []) {
+  if (process.env.NODE_ENV === 'production') {
+    if (!pool) {
+      throw new Error('[DATABASE CRITICAL] MySQL connection pool is uninitialized in production.');
+    }
+    return await pool.execute(sql, params);
+  }
+
+  // Non-production (test or explicitly enabled local development)
+  const allowMemory = isMemoryStoreAllowed();
   if (isConnected || (!process.env.USE_MEMORY_STORE && pool)) {
     try {
       return await pool.execute(sql, params);
     } catch (err) {
-      // If connection was lost or refused, check if we should fall back in test mode
-      if (
-        process.env.NODE_ENV === 'test' ||
-        process.env.USE_MEMORY_STORE === 'true' ||
-        err.code === 'ECONNREFUSED' ||
-        err.code === 'EACCES' ||
-        err.code === 'ER_ACCESS_DENIED_ERROR' ||
-        err.code === 'PROTOCOL_CONNECTION_LOST'
-      ) {
+      if (allowMemory) {
         return memoryStore.execute(sql, params);
       }
       throw err;
     }
   }
 
-  // In test/mock mode
-  return memoryStore.execute(sql, params);
+  if (allowMemory) {
+    return memoryStore.execute(sql, params);
+  }
+
+  throw new Error('[DATABASE ERROR] MySQL connection is offline and MemoryStore fallback is disabled.');
 }
 
 /**
  * Direct query execution for raw SQL or multi-statements.
+ * In production: strictly uses MySQL; zero MemoryStore fallback.
  */
 async function query(sql, params = []) {
+  if (process.env.NODE_ENV === 'production') {
+    if (!pool) {
+      throw new Error('[DATABASE CRITICAL] MySQL connection pool is uninitialized in production.');
+    }
+    return await pool.query(sql, params);
+  }
+
+  const allowMemory = isMemoryStoreAllowed();
   if (isConnected || (!process.env.USE_MEMORY_STORE && pool)) {
     try {
       return await pool.query(sql, params);
     } catch (err) {
-      if (process.env.NODE_ENV === 'test' || process.env.USE_MEMORY_STORE === 'true') {
+      if (allowMemory) {
         return memoryStore.execute(sql, params);
       }
       throw err;
     }
   }
 
-  return memoryStore.execute(sql, params);
+  if (allowMemory) {
+    return memoryStore.execute(sql, params);
+  }
+
+  throw new Error('[DATABASE ERROR] MySQL connection is offline and MemoryStore fallback is disabled.');
 }
 
 /**
  * Transaction wrapper ensuring atomicity.
+ * In production: strictly executes on MySQL; throws if unavailable.
  * @param {Function} callback Async callback receiving connection: async (conn) => { ... }
  */
 async function withTransaction(callback) {
+  if (process.env.NODE_ENV === 'production') {
+    if (!pool) {
+      throw new Error('[DATABASE CRITICAL] Cannot start transaction: MySQL pool is uninitialized in production.');
+    }
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+    try {
+      const result = await callback(connection);
+      await connection.commit();
+      return result;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  // Non-production
   if (isConnected && pool) {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
@@ -119,11 +184,14 @@ async function withTransaction(callback) {
     }
   }
 
-  // Fallback for tests
-  return callback({
-    execute: (sql, params) => memoryStore.execute(sql, params),
-    query: (sql, params) => memoryStore.execute(sql, params)
-  });
+  if (isMemoryStoreAllowed()) {
+    return callback({
+      execute: (sql, params) => memoryStore.execute(sql, params),
+      query: (sql, params) => memoryStore.execute(sql, params)
+    });
+  }
+
+  throw new Error('[DATABASE ERROR] Cannot start transaction: MySQL is unavailable and MemoryStore fallback is disabled.');
 }
 
 // ==============================================================================
@@ -1159,5 +1227,6 @@ module.exports = {
   query,
   withTransaction,
   testConnection,
-  memoryStore
+  memoryStore,
+  isMemoryStoreAllowed
 };

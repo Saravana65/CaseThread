@@ -1,8 +1,6 @@
 # ==============================================================================
-# CASETHREAD SYSTEM ORCHESTRATION DOCKER COMPOSE
+# CASETHREAD SYSTEM ORCHESTRATION DOCKER COMPOSE (PRODUCTION READY)
 # ==============================================================================
-
-version: '3.8'
 
 services:
   database:
@@ -10,20 +8,21 @@ services:
     container_name: casethread-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: casethread_db
-      MYSQL_USER: casethread_user
-      MYSQL_PASSWORD: casethread_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-casethread_db}
+      MYSQL_USER: ${DB_USER:-casethread_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "${DB_PORT:-3306}:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   backend:
     build:
@@ -32,18 +31,19 @@ services:
     container_name: casethread-backend
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "${PORT:-5000}:5000"
     environment:
-      NODE_ENV: development
-      PORT: 5000
+      NODE_ENV: production
+      PORT: ${PORT:-5000}
       DB_HOST: database
       DB_PORT: 3306
-      DB_USER: casethread_user
-      DB_PASSWORD: casethread_password
-      DB_NAME: casethread_db
-      JWT_SECRET: dev_forensic_secret_key_3892
-      C_ENGINE_TIMEOUT_MS: 8000
-      CLIENT_ORIGIN: http://localhost:3000
+      DB_USER: ${DB_USER:-casethread_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-casethread_db}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      C_ENGINE_TIMEOUT_MS: ${C_ENGINE_TIMEOUT_MS:-8000}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:3000}
     depends_on:
       database:
         condition: service_healthy
@@ -55,9 +55,9 @@ services:
     container_name: casethread-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     environment:
-      REACT_APP_API_BASE_URL: http://localhost:5000/api/v1
+      REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://localhost:5000/api/v1}
     depends_on:
       - backend
 
