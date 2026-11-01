@@ -15,6 +15,7 @@ flowchart LR
     P5 --> P6["Phase 6: Production Hardening & Benchmarks (COMPLETED)"]
     P6 --> P7["Phase 7: Forensic Integrity & Explainable AI (COMPLETED)"]
     P7 --> P8["Phase 8: Secure File Vault & Multi-Format Ingestion (COMPLETED)"]
+    P8 --> P9["Phase 9: Geospatial Intelligence & Interactive Mapping (COMPLETED)"]
 ```
 
 ---
@@ -242,3 +243,56 @@ flowchart LR
   - 22 dedicated automated test cases verifying file upload, magic bytes, MIME spoofing rejection, oversized file rejection, path traversal protection, downloads, media previews, integrity verification, tampering detection, missing file handling, derived artifacts, officer extraction reviews, search filters, and JSON report dossier integration.
   - Full platform test suite: **107 passing backend tests across 14 suites** (100% pass).
   - Optimized production React build compiled successfully (79.88 kB gzipped).
+
+---
+
+### Phase 9: Geospatial Evidence Intelligence & Interactive Investigation Mapping (COMPLETED)
+*Objective: Upgrade CASETHREAD with high-performance geographical evidence indexing and analysis, connecting extracted GPS coordinates, CCTV camera locations, vehicle sightings, and cellular tower relays to a C Quadtree spatial engine and an interactive forensic mapping workspace.*
+
+- [x] **Stage 0: Repository Audit & Spatial Analysis Gap Review**:
+  - Audited core engine headers, backend routes, database schemas, and frontend panels.
+  - Confirmed Phase 8 EXIF GPS metadata extraction and identified need for normalized spatial schema and C Quadtree indexing.
+- [x] **Stage 1: Normalized Geospatial Data Model (`database/schema.sql` & `connection.js`)**:
+  - Created `evidence_geospatial` table with WGS84 coordinates, altitude, estimated accuracy radii, location sources (`EXIF_GPS`, `OFFICER_ENTERED`, `CCTV_RECORD`, `CELL_TOWER`, `DMV_RECORD`), and verification status flags.
+  - Implemented boundary constraint validations: Latitude $[-90, 90]$, Longitude $[-180, 180]$.
+  - Added seeded geospatial points for demo Case 1 in downtown metro financial district.
+  - Updated in-memory test store (`connection.js`) with complete SQL handlers.
+- [x] **Stage 2: C Quadtree Spatial Index (`core-engine/include/quadtree.h` & `src/spatial/quadtree.c`)**:
+  - Implemented 2D hierarchical Quadtree with configurable bucket capacity (default 8) and dynamic subdivision up to depth 24.
+  - Geodesic Haversine distance calculations ($R = 6,371,008.8\text{ meters}$) with numerical stability.
+  - Implemented spatial candidate bounding box extraction and exact Haversine radius filtering.
+  - Robust edge-case handling: duplicate coordinate chaining (`next_duplicate`), boundary coordinate partitioning, polar convergence handling, and antimeridian ($180^\circ / -180^\circ$) longitude wraparound query splitting.
+  - Clean memory allocation/deallocation macros with zero leaks.
+- [x] **Stage 3: Geospatial Investigation Algorithms (`backend/services/geospatialService.js`)**:
+  - **Proximity Search:** Discovers evidence within radius $R$ with distance unit conversion (`km`, `miles`, `feet`, `meters`).
+  - **Geographical Clustering:** Density-based connected component clustering discovering spatial groups and isolating single-point outliers.
+  - **Shared Location Detection:** Discovers observations sharing coordinates within 25m tolerance.
+  - **Spatiotemporal Travel Velocity Analysis:** Calculates minimum theoretical travel speed $v = \frac{d}{\Delta t} \times 3.6\text{ km/h}$ between consecutive observations; flags transitions $> 180\text{ km/h}$ as `SPATIOTEMPORAL_SPEED_ANOMALY`.
+  - **Co-Presence Detection:** Identifies distinct evidence items occurring within 100m and 15 minutes of each other.
+  - **Judicial Disclaimer Integration:** All findings explicitly disclaim that proximity or location overlap does not prove direct contact, awareness, or criminal guilt.
+- [x] **Stage 4: Node.js Backend Integration (`geospatialController.js` & `geospatialRoutes.js`)**:
+  - Mounted `/api/v1/cases/:caseId/geospatial` (points, search, clusters, analysis, point creation, review).
+  - Mounted `/api/v1/evidence/:evidenceId/location` (evidence location history).
+  - Enforced strict case-level isolation rejecting cross-case access with HTTP 403 Forbidden.
+- [x] **Stage 5 & 6: Interactive Forensic Map UI (`GeospatialMapPanel.js`)**:
+  - Air-gapped Tactical Grid and online basemap provider options.
+  - Smooth pan/zoom canvas viewport with coordinates display and fit-bounds reset.
+  - Color-coded tactical markers for CCTV, Cell Tower, Vehicle Sightings, and Physical Evidence.
+  - Interactive distance caliper measuring great-circle displacement between any two markers.
+  - Spatiotemporal timeline scrubber slider with play/pause automatic chronological playback.
+  - Observation movement links explicitly tagged with non-transit route disclaimers.
+  - Inspection drawer with point details, velocity alert breakdowns, and manual coordinate recording form.
+- [x] **Stage 7 & 8: Privacy, Security & Explainability**:
+  - Strict local coordinate processing: zero external geocoding of sensitive crime scene coordinates.
+  - Standardized explainability cards displaying formulas, limitations, and detective follow-up steps.
+- [x] **Stage 9: Automated Unit & Regression Tests**:
+  - **C Quadtree Test Suite (`test_quadtree.c`):** 27/27 assertions passing (100%).
+  - **Backend Geospatial Test Suite (`geospatial.test.js`):** 15/15 tests passing (100%).
+  - **Full Platform Regression Suite:** **122 backend tests across 15 suites** passing (100%).
+  - **Full C DSA Suite:** **118 C assertions** across 8 modules passing (100%).
+  - **Optimized Frontend Production Build:** React bundle compiled successfully with 0 errors (86.7 kB gzipped).
+- [x] **Stage 10: Empirical Performance Benchmarks (`benchmark_quadtree.c`)**:
+  - Benchmarked Quadtree vs Linear Scan across $N \in \{100, 500, 1000, 5000, 10000\}$ points.
+  - 100% query result parity confirmed between Quadtree and Linear Scan.
+  - Demonstrated empirical speedup scaling from $10.77\times$ at $N = 5,000$ to **$17.67\times$ speedup at $N = 10,000$**.
+  - Generated empirical dataset saved to `core-engine/benchmarks/quadtree_benchmark_results.csv`.

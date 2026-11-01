@@ -88,6 +88,7 @@ The core algorithm engine is developed in **C** to demonstrate rigorous, manual 
 | **Breadth-First Search (BFS)** | `core-engine/src/graphs/` | Computes unweighted shortest associative hops between suspect and victim or scene. | $O(V + E)$ | $O(V)$ |
 | **Depth-First Search (DFS)** | `core-engine/src/graphs/` | Discovers connected cliques, isolated evidence clusters, and circular relationship cycles. | $O(V + E)$ | $O(V)$ |
 | **Binary Max-Heap / Priority Queue** | `core-engine/src/structures/` | Dynamically resizable binary heap maintaining root maximum lead priority score for investigative recommendation extraction. | Insert/Extract: $O(\log K)$<br>Peek: $O(1)$ | $O(K)$ |
+| **2D Quadtree Spatial Index** | `core-engine/src/spatial/` | Hierarchical spatial index for geospatial bounding-box and geodesic Haversine radius queries. | Range: $O(\log N + K)$<br>Build: $O(N \log N)$ | $O(N)$ |
 
 ---
 
@@ -307,14 +308,15 @@ npm start
 Execute the full automated quality assurance matrix across all system tiers:
 
 ```bash
-# 1. Core C Engine Unit Tests (91 assertions)
+# 1. Core C Engine Unit Tests & Spatial Index (118 assertions)
 cd core-engine
-build.bat && bin/test_dsa.exe
+build.bat && bin/test_dsa.exe && bin/test_quadtree.exe
 
-# 2. Empirical C Benchmark Suite
+# 2. Empirical C Benchmark Suite (DSA & Quadtree)
 bin/benchmark_dsa.exe
+bin/benchmark_quadtree.exe
 
-# 3. Backend Test Matrix (107 tests across 14 suites)
+# 3. Backend Test Matrix (122 tests across 15 suites)
 cd ../backend
 node --test tests/production_safety.test.js \
             tests/frontend_workflow.test.js \
@@ -322,7 +324,8 @@ node --test tests/production_safety.test.js \
             tests/graph.test.js \
             tests/e2e.test.js \
             tests/forensic_integrity.test.js \
-            tests/evidence_vault.test.js
+            tests/evidence_vault.test.js \
+            tests/geospatial.test.js
 
 # 4. Frontend Production Build Verification
 cd ../frontend
@@ -446,3 +449,80 @@ Every derived artifact is independently hashed with its own SHA-256 fingerprint,
 | `GET` | `/api/v1/vault/artifacts/:artifactId/download` | Download derived artifact file. |
 | `POST` | `/api/v1/vault/extractions/:extractionId/review` | Officer review and confirmation of extracted metadata attributes. |
 | `GET` | `/api/v1/vault/cases/:caseId/search` | Search and filter vault files by query, format, category, officer, or integrity status. |
+
+---
+
+## 13. Geospatial Evidence Intelligence & Interactive Mapping (Phase 9)
+
+Phase 9 equips CASETHREAD with spatial indexing and spatiotemporal investigation capabilities, connecting physical and digital evidence coordinates to an interactive forensic mapping workspace.
+
+### Geospatial Investigation Architecture
+
+```mermaid
+flowchart TD
+    EV["Evidence Vault & File Ingestion"] --> GPS["GPS Metadata Extraction (EXIF / Telemetry)"]
+    GPS --> GDM["Geospatial Data Model (evidence_geospatial)"]
+    GDM --> CQT["C Quadtree Spatial Index (core-engine/src/spatial/)"]
+    CQT --> SS["Spatial Search & Clustering (Bounding Box & Haversine Radius)"]
+    SS --> STC["Spatiotemporal Correlation (Velocity & Co-Presence Analysis)"]
+    STC --> EF["Explainable Spatial Findings (Disclaimers & Limitations)"]
+    EF --> MAP["Interactive Forensic Map UI (GeospatialMapPanel.js)"]
+```
+
+### C Quadtree Spatial Indexing & Geodesic Equations
+
+To achieve sub-millisecond spatial query performance across large investigations, CASETHREAD implements a native 2D hierarchical Quadtree (`core-engine/src/spatial/quadtree.c`) with configurable bucket capacity (default 8) and dynamic subdivision up to depth 24.
+
+- **Bounding Box Query:** Hierarchically intersects query regions against quadrant boundaries in $O(\log N + K)$ average time.
+- **Geodesic Haversine Distance:** Bounding box candidate pruning is followed by exact great-circle distance evaluation ($R = 6,371,008.8\text{ meters}$):
+  $$\Delta\phi = \frac{(\phi_2 - \phi_1) \cdot \pi}{180}, \quad \Delta\lambda = \frac{(\lambda_2 - \lambda_1) \cdot \pi}{180}$$
+  $$a = \sin^2\left(\frac{\Delta\phi}{2}\right) + \cos\left(\frac{\phi_1 \cdot \pi}{180}\right) \cos\left(\frac{\phi_2 \cdot \pi}{180}\right) \sin^2\left(\frac{\Delta\lambda}{2}\right)$$
+  $$d = 2 \cdot R \cdot \text{atan2}\left(\sqrt{a}, \sqrt{1 - a}\right)$$
+- **Antimeridian & Polar Handling:** Queries straddling the $+180^\circ / -180^\circ$ meridian split into disjoint sub-boxes ($[\text{min\_lon}, 180^\circ]$ and $[-180^\circ, \text{max\_lon}]$). Polar latitudes are clamped to $[-90^\circ, 90^\circ]$ with full longitude span.
+- **Duplicate Coordinates:** Identical coordinates are chained via `next_duplicate` linked lists, avoiding infinite subdivision.
+
+### Empirical Quadtree Performance vs Linear Scan
+
+Empirical benchmark execution conducted via `core-engine/bin/benchmark_quadtree.exe` across scales up to $N = 10,000$ points (`benchmarks/quadtree_benchmark_results.csv`):
+
+| Points ($N$) | Quadtree Radius Query ($\mu$s) | Linear Scan Radius ($\mu$s) | Query Parity | Empirical Quadtree Speedup |
+| :--- | :--- | :--- | :--- | :--- |
+| **100** | 11.91 $\mu$s | 8.15 $\mu$s | 100% Match | $0.68\times$ (overhead threshold) |
+| **500** | 2.55 $\mu$s | 38.84 $\mu$s | 100% Match | **$15.24\times$ Speedup** |
+| **1,000** | 5.66 $\mu$s | 79.00 $\mu$s | 100% Match | **$13.95\times$ Speedup** |
+| **5,000** | 46.74 $\mu$s | 503.25 $\mu$s | 100% Match | **$10.77\times$ Speedup** |
+| **10,000** | 90.99 $\mu$s | 1,607.29 $\mu$s | 100% Match | **$17.67\times$ Speedup** |
+
+### Geospatial Investigation Algorithms
+
+1. **Geographical Proximity Search:**
+   - Evaluates evidence within radius $R$ of a crime scene or coordinates. Supports conversion to kilometers, miles, and feet.
+2. **Spatial Density Clustering:**
+   - Connected-component density algorithm discovering clusters within configurable distance thresholds (e.g. 200m). Computes cluster centroids, spread radii, and flags isolated outlier evidence items.
+3. **Shared Location Detection:**
+   - Detects observations situated at identical or near-identical coordinates ($\le 25\text{m}$).
+4. **Spatiotemporal Travel Velocity Analysis:**
+   - Evaluates minimum transit velocity between consecutive observations:
+     $$v = \frac{d}{\Delta t} \times 3.6\text{ (km/h)}$$
+   - Transitions exceeding 180 km/h are flagged as `SPATIOTEMPORAL_SPEED_ANOMALY`.
+5. **Spatial-Temporal Co-Presence:**
+   - Detects distinct entities observed within 100m and 15 minutes of each other.
+
+### Map Privacy, Security & Judicial Disclaimers
+
+- **Zero External Geocoding:** Sensitive crime scene coordinates are processed strictly on the local backend and client. No coordinate payloads are transmitted to external geocoding or AI APIs.
+- **Configurable Basemap:** Defaults to an air-gapped Tactical Grid mode with zero external network requests, with optional CartoDB Dark Matter / OSM basemap overlays.
+- **Strict Evidence Admissibility Notice:**
+  > **IMPORTANT NOTICE:** Spatial proximity or shared location does **NOT** prove direct physical contact, mutual awareness, or criminal association. GPS coordinates extracted from media do not prove that photographed criminal activity occurred at that specific location. All spatial findings serve strictly as investigative decision-support hypotheses.
+
+### Geospatial API Endpoints Reference
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/cases/:caseId/geospatial` | Retrieve all cataloged geospatial points for a case with joined evidence metadata. |
+| `POST` | `/api/v1/cases/:caseId/geospatial/search` | Execute bounding box or Haversine radius queries with category and source filters. |
+| `GET` | `/api/v1/cases/:caseId/geospatial/clusters` | Discover spatial density clusters and isolated evidence items. |
+| `POST` | `/api/v1/cases/:caseId/geospatial/analyze` | Execute spatiotemporal velocity anomaly and co-presence correlation analysis. |
+| `POST` | `/api/v1/cases/:caseId/geospatial/points` | Manually record or associate coordinates with an evidence record. |
+| `GET` | `/api/v1/evidence/:evidenceId/location` | Retrieve coordinate history and EXIF extractions for a specific evidence item. |
+| `POST` | `/api/v1/cases/:caseId/geospatial/points/:id/review` | Officer review and sign-off on recorded geospatial coordinates. |

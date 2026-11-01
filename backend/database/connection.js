@@ -995,6 +995,140 @@ class MemoryStore {
     this.evidence_files = [];
     this.metadata_extractions = [];
     this.derived_artifacts = [];
+    this.evidence_geospatial = [
+      {
+        geospatial_id: 1,
+        evidence_id: 1,
+        case_id: 1,
+        entity_type: 'CCTV',
+        entity_id: null,
+        latitude: 40.71280000,
+        longitude: -74.00600000,
+        altitude: 12.50,
+        accuracy_meters: 3.00,
+        coordinate_reference_system: 'WGS84',
+        location_source: 'CCTV_RECORD',
+        location_name: 'Metro Depository Rear Loading Bay Gate',
+        recorded_timestamp: '2026-10-15 02:49:12',
+        timezone_offset: '+00:00',
+        extraction_source: 'Fixed Surveillance Camera Spec Registry',
+        verification_status: 'CONFIRMED_FACT',
+        officer_reviewed: 1,
+        reviewed_by_officer_id: 1,
+        review_notes: 'Verified fixed CCTV installation pole.',
+        created_at: new Date().toISOString()
+      },
+      {
+        geospatial_id: 2,
+        evidence_id: 2,
+        case_id: 1,
+        entity_type: 'EVIDENCE',
+        entity_id: 1,
+        latitude: 40.71350000,
+        longitude: -74.00510000,
+        altitude: 35.00,
+        accuracy_meters: 25.00,
+        coordinate_reference_system: 'WGS84',
+        location_source: 'CELL_TOWER',
+        location_name: 'Sector 7 Cell Relay Antenna Tower',
+        recorded_timestamp: '2026-10-15 02:44:00',
+        timezone_offset: '+00:00',
+        extraction_source: 'Cellular Carrier Tower Subpoena Packet',
+        verification_status: 'CONFIRMED_FACT',
+        officer_reviewed: 1,
+        reviewed_by_officer_id: 1,
+        review_notes: 'Subpoena cell tower coordinate alignment.',
+        created_at: new Date().toISOString()
+      },
+      {
+        geospatial_id: 3,
+        evidence_id: 5,
+        case_id: 1,
+        entity_type: 'VEHICLE_SIGHTING',
+        entity_id: 3,
+        latitude: 40.71600000,
+        longitude: -74.00400000,
+        altitude: 10.00,
+        accuracy_meters: 5.00,
+        coordinate_reference_system: 'WGS84',
+        location_source: 'CCTV_RECORD',
+        location_name: '4th & Financial Boulevard Intersection',
+        recorded_timestamp: '2026-10-15 02:51:30',
+        timezone_offset: '+00:00',
+        extraction_source: 'Municipal Traffic Camera System',
+        verification_status: 'CONFIRMED_FACT',
+        officer_reviewed: 1,
+        reviewed_by_officer_id: 1,
+        review_notes: null,
+        created_at: new Date().toISOString()
+      },
+      {
+        geospatial_id: 4,
+        evidence_id: 6,
+        case_id: 1,
+        entity_type: 'EVIDENCE',
+        entity_id: null,
+        latitude: 40.71295000,
+        longitude: -74.00615000,
+        altitude: -5.00,
+        accuracy_meters: 1.50,
+        coordinate_reference_system: 'WGS84',
+        location_source: 'OFFICER_ENTERED',
+        location_name: 'Depository Sub-level 2 Server Corridor',
+        recorded_timestamp: '2026-10-15 02:38:15',
+        timezone_offset: '+00:00',
+        extraction_source: 'Crime Scene Technician Architectural Mapping',
+        verification_status: 'CONFIRMED_FACT',
+        officer_reviewed: 1,
+        reviewed_by_officer_id: 1,
+        review_notes: null,
+        created_at: new Date().toISOString()
+      },
+      {
+        geospatial_id: 5,
+        evidence_id: 4,
+        case_id: 1,
+        entity_type: 'EVIDENCE',
+        entity_id: null,
+        latitude: 40.70500000,
+        longitude: -74.01800000,
+        altitude: 2.00,
+        accuracy_meters: 50.00,
+        coordinate_reference_system: 'WGS84',
+        location_source: 'OFFICER_ENTERED',
+        location_name: 'Harbour Pier 9 Cargo Terminal Berth 4',
+        recorded_timestamp: '2026-10-15 04:15:00',
+        timezone_offset: '+00:00',
+        extraction_source: 'Witness Tip Location Estimation',
+        verification_status: 'UNVERIFIED_OBSERVATION',
+        officer_reviewed: 0,
+        reviewed_by_officer_id: null,
+        review_notes: 'Unverified tipster location.',
+        created_at: new Date().toISOString()
+      },
+      {
+        geospatial_id: 6,
+        evidence_id: 1,
+        case_id: 1,
+        entity_type: 'EVIDENCE',
+        entity_id: null,
+        latitude: 40.71285000,
+        longitude: -74.00595000,
+        altitude: 11.00,
+        accuracy_meters: 4.20,
+        coordinate_reference_system: 'WGS84',
+        location_source: 'EXIF_GPS',
+        location_name: 'Depository Alleyway Approach',
+        recorded_timestamp: '2026-10-15 02:48:00',
+        timezone_offset: '+00:00',
+        extraction_source: 'EXIF metadata extraction from patrol photo',
+        verification_status: 'UNVERIFIED_OBSERVATION',
+        officer_reviewed: 0,
+        reviewed_by_officer_id: null,
+        review_notes: null,
+        created_at: new Date().toISOString()
+      }
+    ];
     this.integrity_verifications = [
       {
         verification_id: 1,
@@ -1164,6 +1298,29 @@ class MemoryStore {
           rows = rows.filter(d => d.evidence_id === parseInt(params[0], 10));
         } else if (sql.includes('case_id = ?') || sql.includes('d.case_id = ?')) {
           rows = rows.filter(d => d.case_id === parseInt(params[0], 10));
+        }
+        return [rows, []];
+      }
+      if (sql.includes('FROM evidence_geospatial')) {
+        let rows = [...this.evidence_geospatial];
+        if (sql.includes('geospatial_id = ?') || sql.includes('g.geospatial_id = ?')) {
+          rows = rows.filter(g => g.geospatial_id === parseInt(params[0], 10));
+        } else if (sql.includes('evidence_id = ?') || sql.includes('g.evidence_id = ?')) {
+          rows = rows.filter(g => g.evidence_id === parseInt(params[0], 10));
+        } else if (sql.includes('case_id = ?') || sql.includes('g.case_id = ?')) {
+          rows = rows.filter(g => g.case_id === parseInt(params[0], 10));
+        }
+        if (sql.includes('JOIN evidence') || sql.includes('join evidence')) {
+          rows = rows.map(g => {
+            const ev = this.evidence.find(e => e.evidence_id === g.evidence_id);
+            return {
+              ...g,
+              evidence_title: ev?.title || 'Unknown Evidence',
+              evidence_tracking_code: ev?.tracking_code || 'N/A',
+              evidence_category: ev?.category || 'EVIDENCE',
+              integrity_status: ev?.integrity_status || 'INTACT'
+            };
+          });
         }
         return [rows, []];
       }
@@ -1480,6 +1637,35 @@ class MemoryStore {
       this.derived_artifacts.push(artifact);
       return [{ insertId: newId, affectedRows: 1 }, []];
     }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_GEOSPATIAL')) {
+      const newId = this.evidence_geospatial.length + 1;
+      const geo = {
+        geospatial_id: newId,
+        evidence_id: parseInt(params[0], 10),
+        case_id: parseInt(params[1], 10),
+        entity_type: params[2] || 'EVIDENCE',
+        entity_id: params[3] !== undefined && params[3] !== null ? parseInt(params[3], 10) : null,
+        latitude: parseFloat(params[4]),
+        longitude: parseFloat(params[5]),
+        altitude: params[6] !== undefined && params[6] !== null ? parseFloat(params[6]) : null,
+        accuracy_meters: params[7] !== undefined && params[7] !== null ? parseFloat(params[7]) : null,
+        coordinate_reference_system: params[8] || 'WGS84',
+        location_source: params[9] || 'OFFICER_ENTERED',
+        location_name: params[10] || null,
+        recorded_timestamp: params[11] || new Date().toISOString(),
+        timezone_offset: params[12] || '+00:00',
+        extraction_source: params[13] || 'Manual Detective Entry',
+        verification_status: params[14] || 'UNVERIFIED_OBSERVATION',
+        officer_reviewed: params[15] ? 1 : 0,
+        reviewed_by_officer_id: params[16] || null,
+        review_notes: params[17] || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      this.evidence_geospatial.push(geo);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
     if (trimmed.startsWith('INSERT INTO EVIDENCE_AUDIT_LOGS')) {
       const newId = this.audit_logs.length + 1;
       if (sql.includes('previous_event_hash')) {
@@ -1673,6 +1859,22 @@ class MemoryStore {
       if (lead) {
         lead.lead_status = params[0];
         lead.updated_at = new Date().toISOString();
+        return [{ affectedRows: 1 }, []];
+      }
+      return [{ affectedRows: 0 }, []];
+    }
+
+    if (trimmed.startsWith('UPDATE EVIDENCE_GEOSPATIAL')) {
+      const geoId = parseInt(params[params.length - 1], 10);
+      const geo = this.evidence_geospatial.find(item => item.geospatial_id === geoId);
+      if (geo) {
+        if (sql.includes('officer_reviewed = ?')) {
+          geo.officer_reviewed = params[0] ? 1 : 0;
+          geo.reviewed_by_officer_id = params[1];
+          geo.review_notes = params[2];
+          if (params[3]) geo.verification_status = params[3];
+        }
+        geo.updated_at = new Date().toISOString();
         return [{ affectedRows: 1 }, []];
       }
       return [{ affectedRows: 0 }, []];

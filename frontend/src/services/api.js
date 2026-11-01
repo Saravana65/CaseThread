@@ -249,6 +249,46 @@ class ApiService {
     const token = this.getToken();
     return `${API_BASE_URL}/vault/artifacts/${artifactId}/download${token ? '?token=' + encodeURIComponent(token) : ''}`;
   }
+
+  // Phase 9: Geospatial Evidence Intelligence & Mapping
+  getCaseGeospatial(caseId) {
+    return this.request(`/cases/${caseId}/geospatial`);
+  }
+
+  searchCaseGeospatial(caseId, searchPayload) {
+    return this.request(`/cases/${caseId}/geospatial/search`, {
+      method: 'POST',
+      body: JSON.stringify(searchPayload)
+    });
+  }
+
+  getCaseGeospatialClusters(caseId, radiusMeters = 200) {
+    return this.request(`/cases/${caseId}/geospatial/clusters?cluster_radius_meters=${radiusMeters}`);
+  }
+
+  analyzeCaseGeospatial(caseId) {
+    return this.request(`/cases/${caseId}/geospatial/analyze`, {
+      method: 'POST'
+    });
+  }
+
+  recordGeospatialPoint(caseId, pointData) {
+    return this.request(`/cases/${caseId}/geospatial/points`, {
+      method: 'POST',
+      body: JSON.stringify(pointData)
+    });
+  }
+
+  getEvidenceLocation(evidenceId) {
+    return this.request(`/evidence/${evidenceId}/location`);
+  }
+
+  reviewGeospatialPoint(caseId, pointId, reviewData) {
+    return this.request(`/cases/${caseId}/geospatial/points/${pointId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData)
+    });
+  }
 }
 
 export const api = new ApiService();

@@ -30,7 +30,8 @@ ENGINE_SRCS := $(wildcard $(SRC_DIR)/*.c) \
                $(wildcard $(SRC_DIR)/hashmap/*.c) \
                $(wildcard $(SRC_DIR)/trees/*.c) \
                $(wildcard $(SRC_DIR)/graphs/*.c) \
-               $(wildcard $(SRC_DIR)/algorithms/*.c)
+               $(wildcard $(SRC_DIR)/algorithms/*.c) \
+               $(wildcard $(SRC_DIR)/spatial/*.c)
 
 TEST_SRCS := $(TEST_DIR)/test_dsa.c \
              $(wildcard $(SRC_DIR)/structures/*.c) \
@@ -38,6 +39,7 @@ TEST_SRCS := $(TEST_DIR)/test_dsa.c \
              $(wildcard $(SRC_DIR)/trees/*.c) \
              $(wildcard $(SRC_DIR)/graphs/*.c) \
              $(wildcard $(SRC_DIR)/algorithms/*.c) \
+             $(wildcard $(SRC_DIR)/spatial/*.c) \
              $(SRC_DIR)/evidence.c
 
 BENCHMARK_SRCS := $(TEST_DIR)/benchmark_dsa.c \

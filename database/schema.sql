@@ -515,6 +515,45 @@ CREATE TABLE evidence_derived_artifacts (
     INDEX idx_artifact_type (artifact_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------------------
+-- 14. Table: evidence_geospatial (Normalized Geographical Evidence Data Model)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_geospatial (
+    geospatial_id INT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    entity_type ENUM('EVIDENCE', 'SUSPECT', 'VICTIM', 'WITNESS', 'INCIDENT', 'CCTV', 'VEHICLE_SIGHTING') NOT NULL DEFAULT 'EVIDENCE',
+    entity_id INT,
+    latitude DECIMAL(10, 8) NOT NULL COMMENT 'WGS84 Latitude between -90.00000000 and +90.00000000',
+    longitude DECIMAL(11, 8) NOT NULL COMMENT 'WGS84 Longitude between -180.00000000 and +180.00000000',
+    altitude DECIMAL(8, 2) DEFAULT NULL COMMENT 'Meters above sea level',
+    accuracy_meters DECIMAL(6, 2) DEFAULT NULL COMMENT 'Estimated accuracy radius in meters',
+    coordinate_reference_system VARCHAR(30) NOT NULL DEFAULT 'WGS84',
+    location_source ENUM('EXIF_GPS', 'OFFICER_ENTERED', 'EXTERNAL_DEVICE', 'CCTV_RECORD', 'CELL_TOWER', 'DMV_RECORD') NOT NULL,
+    location_name VARCHAR(255),
+    recorded_timestamp DATETIME,
+    timezone_offset VARCHAR(10) DEFAULT '+00:00',
+    extraction_source VARCHAR(150) COMMENT 'Tool or source provenance (e.g. EXIF metadata extraction, CAD GPS)',
+    verification_status ENUM('CONFIRMED_FACT', 'UNVERIFIED_OBSERVATION', 'HYPOTHESIS') NOT NULL DEFAULT 'UNVERIFIED_OBSERVATION',
+    officer_reviewed BOOLEAN NOT NULL DEFAULT FALSE,
+    reviewed_by_officer_id INT DEFAULT NULL,
+    review_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_geo_evidence FOREIGN KEY (evidence_id) 
+        REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_geo_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_geo_officer FOREIGN KEY (reviewed_by_officer_id) 
+        REFERENCES officers(officer_id) ON DELETE SET NULL,
+    INDEX idx_geo_evidence (evidence_id),
+    INDEX idx_geo_case (case_id),
+    INDEX idx_geo_coords (latitude, longitude),
+    INDEX idx_geo_source (location_source),
+    INDEX idx_geo_timestamp (recorded_timestamp),
+    INDEX idx_geo_verification (verification_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- INITIAL SEED DATA (For Verification & Development)
 -- ==============================================================================
 
@@ -620,3 +659,14 @@ INSERT INTO evidence_audit_logs (audit_id, evidence_id, case_id, officer_id, act
 VALUES 
 (1, 1, 1, 1, 'CREATED', NULL, '{"tracking_code":"EVD-CCTV-001","title":"Loading Dock Camera Feed #4","category":"CCTV","verification":"CONFIRMED_FACT"}', NULL, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000', 'f1a238479e0811e5f84d284792a5436d8594b29c91b10a4e76c3746682bc85c1', '{"evidence_id":1,"action_type":"CREATED","officer_id":1,"prev_hash":"GENESIS_0000000000000000000000000000000000000000000000000000000000000000"}', 'Initial forensic evidence ingestion', '127.0.0.1', '2026-10-15 04:00:00'),
 (2, 1, 1, 1, 'CUSTODY_TRANSFERRED', '{"custodian":"Depository Security Lead Martinez"}', '{"custodian":"Det. Alexander Cross (Badge DET-8841)"}', 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0', 'b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef01', 'f1a238479e0811e5f84d284792a5436d8594b29c91b10a4e76c3746682bc85c1', '7b4e9f31c828d098a54627198e3b5a76c8d192e4578b9a023f6e871239c4d5e6', '{"evidence_id":1,"action_type":"CUSTODY_TRANSFERRED","officer_id":1,"prev_hash":"f1a238479e0811e5f84d284792a5436d8594b29c91b10a4e76c3746682bc85c1"}', 'Initial evidence transfer from scene', '127.0.0.1', '2026-10-15 04:30:00');
+
+-- 13. Seed Geospatial Evidence Coordinates (Stage 1)
+INSERT INTO evidence_geospatial (geospatial_id, evidence_id, case_id, entity_type, entity_id, latitude, longitude, altitude, accuracy_meters, coordinate_reference_system, location_source, location_name, recorded_timestamp, timezone_offset, extraction_source, verification_status, officer_reviewed)
+VALUES 
+(1, 1, 1, 'CCTV', NULL, 40.71280000, -74.00600000, 12.50, 3.00, 'WGS84', 'CCTV_RECORD', 'Metro Depository Rear Loading Bay Gate', '2026-10-15 02:49:12', '+00:00', 'Fixed Surveillance Camera Spec Registry', 'CONFIRMED_FACT', TRUE),
+(2, 2, 1, 'EVIDENCE', 1, 40.71350000, -74.00510000, 35.00, 25.00, 'WGS84', 'CELL_TOWER', 'Sector 7 Cell Relay Antenna Tower', '2026-10-15 02:44:00', '+00:00', 'Cellular Carrier Tower Subpoena Packet', 'CONFIRMED_FACT', TRUE),
+(3, 5, 1, 'VEHICLE_SIGHTING', 3, 40.71600000, -74.00400000, 10.00, 5.00, 'WGS84', 'CCTV_RECORD', '4th & Financial Boulevard Intersection', '2026-10-15 02:51:30', '+00:00', 'Municipal Traffic Camera System', 'CONFIRMED_FACT', TRUE),
+(4, 6, 1, 'EVIDENCE', NULL, 40.71295000, -74.00615000, -5.00, 1.50, 'WGS84', 'OFFICER_ENTERED', 'Depository Sub-level 2 Server Corridor', '2026-10-15 02:38:15', '+00:00', 'Crime Scene Technician Architectural Mapping', 'CONFIRMED_FACT', TRUE),
+(5, 4, 1, 'EVIDENCE', NULL, 40.70500000, -74.01800000, 2.00, 50.00, 'WGS84', 'OFFICER_ENTERED', 'Harbour Pier 9 Cargo Terminal Berth 4', '2026-10-15 04:15:00', '+00:00', 'Witness Tip Location Estimation', 'UNVERIFIED_OBSERVATION', FALSE),
+(6, 1, 1, 'EVIDENCE', NULL, 40.71285000, -74.00595000, 11.00, 4.20, 'WGS84', 'EXIF_GPS', 'Depository Alleyway Approach', '2026-10-15 02:48:00', '+00:00', 'EXIF metadata extraction from patrol photo', 'UNVERIFIED_OBSERVATION', FALSE);
+

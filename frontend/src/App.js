@@ -9,6 +9,7 @@ import TimelinePanel from './components/TimelinePanel';
 import InvestigativeLeadsPanel from './components/InvestigativeLeadsPanel';
 import EvidenceIntegrityPanel from './components/EvidenceIntegrityPanel';
 import EvidenceVaultPanel from './components/EvidenceVaultPanel';
+import GeospatialMapPanel from './components/GeospatialMapPanel';
 import ReportExportModal from './components/ReportExportModal';
 import api from './services/api';
 import './styles/theme.css';
@@ -203,6 +204,13 @@ export default function App() {
               officer={officer}
             />
           </div>
+        )}
+
+        {activeTab === 'geospatial' && (
+          <GeospatialMapPanel
+            selectedCaseId={selectedCaseId}
+            officer={officer}
+          />
         )}
 
         {activeTab === 'integrity' && (

@@ -5,6 +5,7 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
     { id: 'dossier', label: '📂 Case Dossier', icon: '📂' },
     { id: 'vault', label: '🗄️ Evidence Vault', icon: '🗄️' },
+    { id: 'geospatial', label: '🗺️ Geo Intelligence', icon: '🗺️' },
     { id: 'integrity', label: '🛡️ Evidence Integrity', icon: '🛡️' },
     { id: 'graph', label: '🕸️ Evidence Graph', icon: '🕸️' },
     { id: 'gaps', label: '🔍 Evidence Gaps', icon: '🔍' },
