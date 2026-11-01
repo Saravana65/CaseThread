@@ -182,6 +182,43 @@ export default function EvidenceGapPanel({ gaps = [], onResolveGap }) {
                   </div>
                 </div>
 
+                {/* Explainability Block (Phase 7) */}
+                {(gap.algorithm_rule || gap.known_limitations) && (
+                  <div style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '4px',
+                    padding: '0.6rem 0.75rem',
+                    fontSize: '0.72rem',
+                    marginBottom: '0.85rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.35rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--accent-orange)', fontFamily: 'var(--font-mono)', fontWeight: '700' }}>
+                        RULE: {gap.algorithm_rule || 'HEURISTIC_GAP_DETECTION'}
+                      </span>
+                      {gap.finding_category && (
+                        <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                          {gap.finding_category}
+                        </span>
+                      )}
+                    </div>
+                    {gap.known_limitations && (
+                      <div style={{ color: 'var(--text-muted)' }}>
+                        <strong style={{ color: 'var(--text-secondary)' }}>Limitation: </strong>
+                        {gap.known_limitations}
+                      </div>
+                    )}
+                    {gap.supporting_evidence_ids && gap.supporting_evidence_ids.length > 0 && (
+                      <div style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        Supporting Evidence: {gap.supporting_evidence_ids.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Resolution Status Bar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

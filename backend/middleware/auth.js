@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'casethread_super_secure_jwt_dev_ke
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = (authHeader && authHeader.split(' ')[1]) || (req.query && req.query.token);
 
   if (!token) {
     return res.status(401).json({

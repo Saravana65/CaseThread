@@ -1,9 +1,10 @@
 import React from 'react';
 
-export default function Navbar({ officer, onLogout, activeTab, onTabChange }) {
+export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOpenReport }) {
   const navItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
     { id: 'dossier', label: '📂 Case Dossier', icon: '📂' },
+    { id: 'integrity', label: '🛡️ Evidence Integrity', icon: '🛡️' },
     { id: 'graph', label: '🕸️ Evidence Graph', icon: '🕸️' },
     { id: 'gaps', label: '🔍 Evidence Gaps', icon: '🔍' },
     { id: 'timeline', label: '⏱️ Timelines', icon: '⏱️' },
@@ -90,6 +91,16 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange }) {
                 BADGE: {officer.badge_number || 'DET-8841'} • {officer.role || 'LEAD_OFFICER'}
               </div>
             </div>
+            {onOpenReport && (
+              <button
+                onClick={onOpenReport}
+                className="btn-primary"
+                style={{ fontSize: '0.7rem', padding: '0.35rem 0.7rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                title="Export complete forensic intelligence report"
+              >
+                <span>📄</span> Export Report
+              </button>
+            )}
             <button 
               onClick={onLogout}
               className="btn-secondary"

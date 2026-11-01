@@ -314,16 +314,54 @@ build.bat && bin/test_dsa.exe
 # 2. Empirical C Benchmark Suite
 bin/benchmark_dsa.exe
 
-# 3. Backend Test Matrix (69 tests across 12 suites)
+# 3. Backend Test Matrix (85 tests across 13 suites)
 cd ../backend
 node --test tests/production_safety.test.js \
             tests/frontend_workflow.test.js \
             tests/integration.test.js \
             tests/graph.test.js \
-            tests/e2e.test.js
+            tests/e2e.test.js \
+            tests/forensic_integrity.test.js
 
 # 4. Frontend Production Build Verification
 cd ../frontend
 npm test -- --watchAll=false
 npm run build
 ```
+
+---
+
+## 11. Forensic Integrity & Explainable Intelligence (Phase 7)
+
+Phase 7 upgrades CASETHREAD into a forensic decision-support platform with cryptographic verification, auditable chain-of-custody, backward-linked audit hash chaining, and explainable algorithmic findings.
+
+### Cryptographic Fingerprinting & Integrity Verification
+Every evidence item is cryptographically sealed with a SHA-256 hash upon ingestion:
+- **Raw Content Fingerprinting (`CONTENT_SHA256`):** Computed directly over ingested binary or text payload bytes (e.g. surveillance video frames, phone call transcripts).
+- **Metadata Snapshot Fingerprinting (`METADATA_CANONICAL`):** Computed over a deterministic, sorted, canonical JSON representation of tracking code, category, title, description, and source when raw binary content is absent.
+- **Integrity Status States:**
+  - `INTACT`: Payload matches the original recorded fingerprint with zero bit-level discrepancies.
+  - `TAMPERED_MISMATCH`: Live payload or canonical metadata diverges from the recorded fingerprint. An alert is instantly triggered in the dashboard.
+  - `PENDING`: Newly ingested evidence awaiting formal forensic verification by the case lead officer.
+
+### Tamper-Evident Audit Hash Chaining
+Audit logs in `evidence_audit_logs` are linked backward in a cryptographic hash chain:
+$$\text{Event Hash}_i = \text{SHA-256}\left(\text{Event Hash}_{i-1} \parallel \text{Officer ID} \parallel \text{Action} \parallel \text{Canonical Payload} \parallel \text{Timestamp}\right)$$
+- Initial events link directly to the system constant `GENESIS_HASH` (`0000000000000000000000000000000000000000000000000000000000000000`).
+- The verification utility (`cryptoService.verifyAuditChain`) recalculates every hash in sequence:
+  - If a database administrator or malicious actor alters an event payload, `verifyAuditChain` fails with `PAYLOAD_TAMPERING_DETECTED`.
+  - If records are deleted or chronological sequence is altered, verification fails with `LINKAGE_INTEGRITY_VIOLATION`.
+
+### Chain-of-Custody Workflow
+Custody transfers are tracked in `evidence_custody_events` with complete provenance:
+- Transferring officer ID and receiving officer ID.
+- Mandatory transfer purpose (`TRANSFERRED_FOR_ANALYSIS`, `CHECKED_OUT_FOR_COURT`, `RETURNED_TO_SECURE_STORAGE`).
+- Destination location (e.g., "Forensic Crime Lab - Ballistics Unit").
+- Case isolation: Cross-case custody transfers by non-assigned officers are strictly rejected with HTTP 403 Forbidden.
+
+### Structured Case Dossier Export & Printable Reports
+- **JSON Export (`GET /api/v1/reports/cases/:caseId/json`):** Complete structured export including case summary, suspects, victims, witnesses, evidence inventory with fingerprints, custody events, relational network, chronological timeline, algorithm leads with formula breakdown, and audit verification status.
+- **Printable HTML/PDF Dossier (`GET /api/v1/reports/cases/:caseId/html`):** Formatted for law enforcement presentation with official classification banners, print pagination controls, and forensic audit seals. Zero credentials or sensitive hashes are leaked.
+
+### Academic Scope & Judicial Disclaimer
+> **IMPORTANT ADMISSIBILITY NOTICE:** CASETHREAD is designed as an academic decision-support framework to demonstrate cryptographic provenance and advanced data structures. It provides mathematical and cryptographic guarantees of internal database consistency. However, it does **NOT** constitute a certified statutory forensic acquisition tool or substitute for court-recognized legal chain-of-custody documentation without independent sworn verification.

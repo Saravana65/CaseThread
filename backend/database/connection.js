@@ -5,6 +5,7 @@
  */
 
 const mysql = require('mysql2/promise');
+const cryptoService = require('../services/cryptoService');
 require('dotenv').config();
 
 const dbConfig = {
@@ -341,6 +342,14 @@ class MemoryStore {
         verification_status: 'CONFIRMED_FACT',
         reliability_assessment: 'HIGH',
         file_reference: '/evidence/cctv_cam4_0249.mp4',
+        content_payload: 'RAW_MP4_HEADER_OFFSET_004912_FPS30_HASH_VERIFIED',
+        sha256_fingerprint: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        fingerprint_algorithm: 'SHA-256',
+        fingerprint_type: 'ORIGINAL_FILE',
+        fingerprinted_at: '2026-10-15 04:05:00',
+        last_verified_at: '2026-10-15 06:00:00',
+        integrity_status: 'INTACT',
+        current_version: 1,
         entered_by_officer_id: 1,
         chain_of_custody_notes: 'Collected directly by Lead Det. Cross.',
         metadata_json: JSON.stringify({ camera_id: 'CAM-04', resolution: '1080p', direction: 'Northbound' }),
@@ -362,6 +371,14 @@ class MemoryStore {
         verification_status: 'CONFIRMED_FACT',
         reliability_assessment: 'HIGH',
         file_reference: '/evidence/tel_dump_tow07.csv',
+        content_payload: 'CELL_DUMP_TOWER07_CDR_402_99_38S',
+        sha256_fingerprint: '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a',
+        fingerprint_algorithm: 'SHA-256',
+        fingerprint_type: 'METADATA_CANONICAL',
+        fingerprinted_at: '2026-10-15 06:20:00',
+        last_verified_at: '2026-10-15 07:00:00',
+        integrity_status: 'INTACT',
+        current_version: 1,
         entered_by_officer_id: 1,
         chain_of_custody_notes: 'Obtained via judicial telecommunications subpoena.',
         metadata_json: JSON.stringify({ tower_id: 'TOW-07', duration_sec: 38, cell_id: '402-99' }),
@@ -383,6 +400,14 @@ class MemoryStore {
         verification_status: 'CONFIRMED_FACT',
         reliability_assessment: 'HIGH',
         file_reference: null,
+        content_payload: 'DMV_REG_7XYZ99_DAMON_VANCE_MATTE_BLACK',
+        sha256_fingerprint: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
+        fingerprint_algorithm: 'SHA-256',
+        fingerprint_type: 'METADATA_CANONICAL',
+        fingerprinted_at: '2026-10-15 08:25:00',
+        last_verified_at: '2026-10-15 08:45:00',
+        integrity_status: 'INTACT',
+        current_version: 1,
         entered_by_officer_id: 1,
         chain_of_custody_notes: 'Direct query from state motor vehicle registry.',
         metadata_json: JSON.stringify({ license_plate: '7XYZ99', make: 'Sedan', color: 'Matte Black' }),
@@ -842,7 +867,145 @@ class MemoryStore {
       }
     ];
 
-    this.audit_logs = [];
+    const genesisTime = new Date('2026-10-15T04:00:00.000Z').toISOString();
+    const genesisEvent = {
+      audit_id: 1,
+      evidence_id: 1,
+      case_id: 1,
+      officer_id: 1,
+      action_type: 'CREATED',
+      previous_state: null,
+      new_state: JSON.stringify({ tracking_code: 'EVD-CCTV-001', title: 'Loading Dock Camera Feed #4', category: 'CCTV' }),
+      previous_state_hash: '',
+      current_state_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+      previous_event_hash: cryptoService.GENESIS_HASH,
+      canonical_payload: JSON.stringify({ evidence_id: 1, action_type: 'CREATED' }),
+      reason_for_change: 'Initial forensic evidence ingestion',
+      ip_address: '127.0.0.1',
+      created_at: genesisTime
+    };
+    genesisEvent.current_event_hash = cryptoService.calculateEventHash(genesisEvent);
+
+    this.audit_logs = [genesisEvent];
+
+    this.evidence_versions = [
+      {
+        version_id: 1,
+        evidence_id: 1,
+        case_id: 1,
+        version_number: 1,
+        title: 'Loading Dock Camera Feed #4',
+        category: 'CCTV',
+        description: 'Timestamped footage showing black sedan leaving rear gate at 02:49:12 AM.',
+        collection_location: 'Metro Depository Loading Bay',
+        collected_at: '2026-10-15 04:00:00',
+        source: 'Depository Security DVR Unit 2',
+        verification_status: 'CONFIRMED_FACT',
+        reliability_assessment: 'HIGH',
+        content_payload: 'RAW_MP4_HEADER_OFFSET_004912_FPS30_HASH_VERIFIED',
+        metadata_json: JSON.stringify({ camera_id: 'CAM-04', resolution: '1080p', direction: 'Northbound' }),
+        version_fingerprint: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        fingerprint_type: 'ORIGINAL_FILE',
+        modified_by_officer_id: 1,
+        reason_for_modification: 'Initial evidence ingestion and baseline version creation.',
+        created_at: '2026-10-15 04:00:00'
+      },
+      {
+        version_id: 2,
+        evidence_id: 2,
+        case_id: 1,
+        version_number: 1,
+        title: 'Cell Tower Dump Sector 7',
+        category: 'PHONE_RECORD',
+        description: 'Inbound call to Marcus Vance burner device originating near loading dock at 02:44:00 AM.',
+        collection_location: 'Sector 7 Cell Relay',
+        collected_at: '2026-10-15 06:15:00',
+        source: 'Telecom Subpoena Tower 7 Log',
+        verification_status: 'CONFIRMED_FACT',
+        reliability_assessment: 'HIGH',
+        content_payload: 'CELL_DUMP_TOWER07_CDR_402_99_38S',
+        metadata_json: JSON.stringify({ tower_id: 'TOW-07', duration_sec: 38, cell_id: '402-99' }),
+        version_fingerprint: '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a',
+        fingerprint_type: 'METADATA_CANONICAL',
+        modified_by_officer_id: 2,
+        reason_for_modification: 'Initial evidence ingestion and baseline version creation.',
+        created_at: '2026-10-15 06:15:00'
+      },
+      {
+        version_id: 3,
+        evidence_id: 3,
+        case_id: 1,
+        version_number: 1,
+        title: 'Black Matte Sedan Registration',
+        category: 'VEHICLE',
+        description: 'Vehicle matching CCTV footage registered to Damon Vance.',
+        collection_location: 'DMV Database Registry',
+        collected_at: '2026-10-15 08:20:00',
+        source: 'State DMV Central Database',
+        verification_status: 'CONFIRMED_FACT',
+        reliability_assessment: 'HIGH',
+        content_payload: 'DMV_REG_7XYZ99_DAMON_VANCE_MATTE_BLACK',
+        metadata_json: JSON.stringify({ license_plate: '7XYZ99', make: 'Sedan', color: 'Matte Black' }),
+        version_fingerprint: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
+        fingerprint_type: 'METADATA_CANONICAL',
+        modified_by_officer_id: 1,
+        reason_for_modification: 'Initial evidence ingestion and baseline version creation.',
+        created_at: '2026-10-15 08:20:00'
+      }
+    ];
+
+    this.custody_events = [
+      {
+        custody_event_id: 1,
+        evidence_id: 1,
+        case_id: 1,
+        previous_custodian: 'Depository Security Lead Martinez',
+        new_custodian: 'Det. Alexander Cross (Badge DET-8841)',
+        transfer_timestamp: '2026-10-15 04:30:00',
+        transfer_reason: 'Initial Evidence Seizure from DVR Unit',
+        transfer_location: 'Metro Depository Security Office',
+        transfer_notes: 'DVR hard drive clone exported to encrypted forensic drive.',
+        transferring_officer_id: 1,
+        verification_status: 'VERIFIED',
+        related_fingerprint: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        is_successful: 1,
+        failure_reason: null,
+        created_at: '2026-10-15 04:30:00'
+      },
+      {
+        custody_event_id: 2,
+        evidence_id: 1,
+        case_id: 1,
+        previous_custodian: 'Det. Alexander Cross (Badge DET-8841)',
+        new_custodian: 'Digital Forensics Lab Technician Miller',
+        transfer_timestamp: '2026-10-15 06:00:00',
+        transfer_reason: 'Forensic Video Enhancement and Plate Extraction',
+        transfer_location: 'Central Forensics Laboratory Room 302',
+        transfer_notes: 'Transferred with tamper-evident seal #7741.',
+        transferring_officer_id: 1,
+        verification_status: 'VERIFIED',
+        related_fingerprint: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        is_successful: 1,
+        failure_reason: null,
+        created_at: '2026-10-15 06:00:00'
+      }
+    ];
+
+    this.integrity_verifications = [
+      {
+        verification_id: 1,
+        evidence_id: 1,
+        case_id: 1,
+        officer_id: 1,
+        recalculated_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        recorded_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        match_status: 'MATCH',
+        fingerprint_type: 'ORIGINAL_FILE',
+        notes: 'Automated ingestion verification: hash match confirmed.',
+        ip_address: '127.0.0.1',
+        verified_at: '2026-10-15 04:05:00'
+      }
+    ];
   }
 
   async execute(sql, params = []) {
@@ -909,10 +1072,44 @@ class MemoryStore {
       if (sql.includes('FROM witnesses') && (sql.includes('case_id = ?') || sql.includes('w.case_id = ?'))) {
         return [this.witnesses.filter(w => w.case_id === parseInt(params[0], 10)), []];
       }
-      if (sql.includes('FROM evidence_audit_logs') && (sql.includes('evidence_id = ?') || sql.includes('a.evidence_id = ?'))) {
+      if (sql.includes('FROM evidence_versions')) {
         const evId = parseInt(params[0], 10);
-        const matches = this.audit_logs.filter(a => a.evidence_id === evId);
-        return [matches.slice().reverse(), []];
+        const rows = this.evidence_versions.filter(v => v.evidence_id === evId).sort((a, b) => a.version_number - b.version_number);
+        return [rows, []];
+      }
+      if (sql.includes('FROM evidence_custody_events')) {
+        let rows = [...this.custody_events];
+        if (sql.includes('evidence_id = ?') || sql.includes('c.evidence_id = ?')) {
+          rows = rows.filter(c => c.evidence_id === parseInt(params[0], 10));
+        } else if (sql.includes('case_id = ?') || sql.includes('c.case_id = ?')) {
+          rows = rows.filter(c => c.case_id === parseInt(params[0], 10));
+        }
+        rows.sort((a, b) => new Date(b.transfer_timestamp) - new Date(a.transfer_timestamp));
+        return [rows, []];
+      }
+      if (sql.includes('FROM evidence_integrity_verifications')) {
+        let rows = [...this.integrity_verifications];
+        if (sql.includes('evidence_id = ?') || sql.includes('v.evidence_id = ?')) {
+          rows = rows.filter(v => v.evidence_id === parseInt(params[0], 10));
+        } else if (sql.includes('case_id = ?') || sql.includes('v.case_id = ?')) {
+          rows = rows.filter(v => v.case_id === parseInt(params[0], 10));
+        }
+        rows.sort((a, b) => new Date(b.verified_at) - new Date(a.verified_at));
+        return [rows, []];
+      }
+      if (sql.includes('FROM evidence_audit_logs')) {
+        let rows = [...this.audit_logs];
+        if (sql.includes('evidence_id = ?') || sql.includes('a.evidence_id = ?')) {
+          rows = rows.filter(a => a.evidence_id === parseInt(params[0], 10));
+        } else if (sql.includes('case_id = ?') || sql.includes('a.case_id = ?')) {
+          rows = rows.filter(a => a.case_id === parseInt(params[0], 10));
+        }
+        if (sql.includes('ORDER BY created_at ASC') || sql.includes('ORDER BY a.created_at ASC') || sql.includes('ORDER BY audit_id ASC')) {
+          rows.sort((a, b) => a.audit_id - b.audit_id);
+        } else {
+          rows.sort((a, b) => b.audit_id - a.audit_id);
+        }
+        return [rows, []];
       }
       if (sql.includes('FROM evidence_relationships')) {
         return [this.relationships.filter(r => r.case_id === parseInt(params[0], 10)), []];
@@ -1062,21 +1259,115 @@ class MemoryStore {
       return [{ insertId: newId, affectedRows: 1 }, []];
     }
 
-    if (trimmed.startsWith('INSERT INTO EVIDENCE_AUDIT_LOGS')) {
-      const newId = this.audit_logs.length + 1;
-      const isCreated = sql.includes("'CREATED'");
-      this.audit_logs.push({
-        audit_id: newId,
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_VERSIONS')) {
+      const newId = this.evidence_versions.length + 1;
+      const ver = {
+        version_id: newId,
+        evidence_id: parseInt(params[0], 10),
+        case_id: parseInt(params[1], 10),
+        version_number: parseInt(params[2], 10),
+        title: params[3],
+        category: params[4],
+        description: params[5],
+        collection_location: params[6] || null,
+        collected_at: params[7] || null,
+        source: params[8],
+        verification_status: params[9],
+        reliability_assessment: params[10],
+        content_payload: params[11] || null,
+        metadata_json: params[12] || null,
+        version_fingerprint: params[13],
+        fingerprint_type: params[14] || 'METADATA_CANONICAL',
+        modified_by_officer_id: parseInt(params[15], 10),
+        reason_for_modification: params[16] || 'Version snapshot',
+        created_at: new Date().toISOString()
+      };
+      this.evidence_versions.push(ver);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_CUSTODY_EVENTS')) {
+      const newId = this.custody_events.length + 1;
+      const event = {
+        custody_event_id: newId,
+        evidence_id: parseInt(params[0], 10),
+        case_id: parseInt(params[1], 10),
+        previous_custodian: params[2],
+        new_custodian: params[3],
+        transfer_timestamp: params[4] || new Date().toISOString(),
+        transfer_reason: params[5],
+        transfer_location: params[6],
+        transfer_notes: params[7] || null,
+        transferring_officer_id: parseInt(params[8], 10),
+        verification_status: params[9] || 'VERIFIED',
+        related_fingerprint: params[10] || null,
+        is_successful: params[11] !== undefined ? (params[11] ? 1 : 0) : 1,
+        failure_reason: params[12] || null,
+        created_at: new Date().toISOString()
+      };
+      this.custody_events.push(event);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_INTEGRITY_VERIFICATIONS')) {
+      const newId = this.integrity_verifications.length + 1;
+      const ver = {
+        verification_id: newId,
         evidence_id: parseInt(params[0], 10),
         case_id: parseInt(params[1], 10),
         officer_id: parseInt(params[2], 10),
-        action_type: isCreated ? 'CREATED' : 'METADATA_UPDATED',
-        previous_state: isCreated ? null : params[3],
-        new_state: isCreated ? params[3] : params[4],
-        reason_for_change: isCreated ? 'Initial forensic evidence ingestion' : (params[5] || 'Routine update'),
-        ip_address: isCreated ? params[4] : params[6],
-        created_at: new Date().toISOString()
-      });
+        recalculated_hash: params[3],
+        recorded_hash: params[4],
+        match_status: params[5],
+        fingerprint_type: params[6],
+        notes: params[7] || null,
+        ip_address: params[8] || '127.0.0.1',
+        verified_at: new Date().toISOString()
+      };
+      this.integrity_verifications.push(ver);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_AUDIT_LOGS')) {
+      const newId = this.audit_logs.length + 1;
+      if (sql.includes('previous_event_hash')) {
+        this.audit_logs.push({
+          audit_id: newId,
+          evidence_id: parseInt(params[0], 10),
+          case_id: parseInt(params[1], 10),
+          officer_id: parseInt(params[2], 10),
+          action_type: params[3],
+          previous_state: params[4],
+          new_state: params[5],
+          previous_state_hash: params[6] || null,
+          current_state_hash: params[7] || null,
+          previous_event_hash: params[8] || 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000',
+          current_event_hash: params[9] || '',
+          canonical_payload: params[10] || null,
+          reason_for_change: params[11] || 'Audit record',
+          ip_address: params[12] || '127.0.0.1',
+          created_at: params[13] || new Date().toISOString()
+        });
+      } else {
+        const isCreated = sql.includes("'CREATED'");
+        this.audit_logs.push({
+          audit_id: newId,
+          evidence_id: parseInt(params[0], 10),
+          case_id: parseInt(params[1], 10),
+          officer_id: parseInt(params[2], 10),
+          action_type: isCreated ? 'CREATED' : 'METADATA_UPDATED',
+          previous_state: isCreated ? null : params[3],
+          new_state: isCreated ? params[3] : params[4],
+          previous_state_hash: null,
+          current_state_hash: null,
+          previous_event_hash: 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000',
+          current_event_hash: 'f1a238479e0811e5f84d284792a5436d8594b29c91b10a4e76c3746682bc85c1',
+          canonical_payload: null,
+          reason_for_change: isCreated ? 'Initial forensic evidence ingestion' : (params[5] || 'Routine update'),
+          ip_address: isCreated ? params[4] : params[6],
+          created_at: new Date().toISOString()
+        });
+      }
       return [{ insertId: newId, affectedRows: 1 }, []];
     }
 
@@ -1104,7 +1395,7 @@ class MemoryStore {
       const newId = this.evidence.length + 1;
       const ev = {
         evidence_id: newId,
-        case_id: params[0],
+        case_id: parseInt(params[0], 10),
         tracking_code: params[1],
         title: params[2],
         category: params[3],
@@ -1116,9 +1407,16 @@ class MemoryStore {
         verification_status: params[9] || 'UNVERIFIED_OBSERVATION',
         reliability_assessment: params[10] || 'MEDIUM',
         file_reference: params[11] || null,
-        entered_by_officer_id: params[12],
+        entered_by_officer_id: parseInt(params[12], 10),
         chain_of_custody_notes: params[13] || null,
         metadata_json: params[14] || null,
+        content_payload: params[15] !== undefined ? params[15] : null,
+        sha256_fingerprint: params[16] || null,
+        fingerprint_algorithm: params[17] || 'SHA-256',
+        fingerprint_type: params[18] || 'METADATA_CANONICAL',
+        fingerprinted_at: params[19] || new Date().toISOString(),
+        integrity_status: params[20] || 'PENDING_VERIFICATION',
+        current_version: params[21] ? parseInt(params[21], 10) : 1,
         is_archived: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -1191,12 +1489,25 @@ class MemoryStore {
       if (ev) {
         if (sql.includes('is_archived = 1')) {
           ev.is_archived = 1;
+        } else if (sql.includes('integrity_status = ?') && sql.includes('last_verified_at = ?') && params.length === 3) {
+          ev.integrity_status = params[0];
+          ev.last_verified_at = params[1];
         } else {
           ev.title = params[0];
           ev.description = params[1];
           ev.verification_status = params[2];
           ev.reliability_assessment = params[3];
           ev.metadata_json = params[4];
+          if (sql.includes('content_payload = ?')) {
+            ev.content_payload = params[5];
+          }
+          if (sql.includes('sha256_fingerprint = ?')) {
+            const fpIdx = sql.includes('content_payload = ?') ? 6 : 5;
+            ev.sha256_fingerprint = params[fpIdx];
+          }
+          if (sql.includes('current_version = current_version + 1')) {
+            ev.current_version = (ev.current_version || 1) + 1;
+          }
         }
         ev.updated_at = new Date().toISOString();
         return [{ affectedRows: 1 }, []];

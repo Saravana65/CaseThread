@@ -97,7 +97,50 @@ exports.runInvestigationAnalysis = async (req, res, next) => {
     // 4. Dispatch to native C Engine via standard input IPC (No mock fallback)
     const engineResults = await cEngineService.runAnalysis(cEnginePayload);
 
-    // 5. Persist synthesized C Engine leads into MySQL / Data Store
+    // 5. Enrich algorithm-generated findings with structured explainability metadata (Stage 5)
+    if (engineResults.evidence_gaps && Array.isArray(engineResults.evidence_gaps)) {
+      engineResults.evidence_gaps = engineResults.evidence_gaps.map((gap, idx) => ({
+        ...gap,
+        finding_category: 'EVIDENCE_GAP',
+        finding_description: gap.reason || gap.title,
+        algorithm_rule: 'FIELD_COMPLETENESS_AND_GRAPH_ISOLATION',
+        score_calculation_explanation: `Severity ${gap.priority || 'MEDIUM'}: Evaluated missing provenance fields (source, collected_at) and vertex degree connectivity.`,
+        known_limitations: 'Flags structural or administrative missingness in registered evidence records; does not prove evidence was intentionally concealed or destroyed.',
+        recommended_follow_up: gap.suggested_action || 'Review custody log and dispatch field officer for missing provenance data.',
+        nature: 'ALGORITHMIC_INFERENCE',
+        judicial_disclaimer: 'Algorithmic gap discovery is an investigative decision aid and does not constitute evidence of negligence or criminal interference.'
+      }));
+    }
+
+    if (engineResults.timeline_anomalies && Array.isArray(engineResults.timeline_anomalies)) {
+      engineResults.timeline_anomalies = engineResults.timeline_anomalies.map((anom, idx) => ({
+        ...anom,
+        finding_category: 'TIMELINE_ANOMALY',
+        finding_description: anom.explanation,
+        algorithm_rule: 'SPATIOTEMPORAL_VELOCITY_CALCULATION',
+        score_calculation_explanation: 'Calculated displacement between consecutive geolocated timestamps. Flagged velocity transition exceeding physical transit limits.',
+        known_limitations: 'Assumes straight-line geodesic distance; does not verify intermediary high-speed transit or unsynchronized device clocks.',
+        recommended_follow_up: anom.suggested_check || 'Subpoena cell tower records and review surveillance at intervening transit nodes.',
+        nature: 'ALGORITHMIC_INFERENCE',
+        judicial_disclaimer: 'Spatiotemporal anomalies highlight mathematical timeline contradictions and do not automatically invalidate statements or prove deception.'
+      }));
+    }
+
+    if (engineResults.prioritized_leads && Array.isArray(engineResults.prioritized_leads)) {
+      engineResults.prioritized_leads = engineResults.prioritized_leads.map((lead, idx) => ({
+        ...lead,
+        finding_category: 'INVESTIGATIVE_LEAD',
+        finding_description: lead.explanation,
+        algorithm_rule: 'BINARY_MAX_HEAP_COMPOSITE_SCORING',
+        score_calculation_explanation: `Composite heuristic score ${lead.score || 65.0}/100: Formulated as 40% Source Confidence + 30% Graph Centrality Degree + 30% Gap Criticality Index.`,
+        known_limitations: 'Algorithmic prioritization orders investigative focus based on heuristic weight; high priority does NOT demonstrate guilt, liability, or established fact.',
+        recommended_follow_up: lead.suggested_step || 'Verify supporting evidence links and conduct witness interrogation.',
+        nature: 'HYPOTHESIS',
+        judicial_disclaimer: 'Investigative leads are algorithm-synthesized hypotheses and must be corroborated by judicial evidence before submission to courts.'
+      }));
+    }
+
+    // 6. Persist synthesized C Engine leads into MySQL / Data Store
     if (engineResults.prioritized_leads && engineResults.prioritized_leads.length > 0) {
       for (const lead of engineResults.prioritized_leads) {
         try {

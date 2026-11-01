@@ -151,6 +151,47 @@ class ApiService {
       body: JSON.stringify(relData)
     });
   }
+
+  // Phase 7: Forensic Evidence Integrity, Custody, Versions, and Reports
+  verifyEvidenceIntegrity(evidenceId) {
+    return this.request(`/evidence/${evidenceId}/verify-integrity`, {
+      method: 'POST'
+    });
+  }
+
+  getEvidenceVersions(evidenceId) {
+    return this.request(`/evidence/${evidenceId}/versions`);
+  }
+
+  getEvidenceAuditChain(evidenceId) {
+    return this.request(`/evidence/${evidenceId}/audit-chain`);
+  }
+
+  verifyEvidenceAuditChain(evidenceId) {
+    return this.request(`/evidence/${evidenceId}/audit-chain/verify`, {
+      method: 'POST'
+    });
+  }
+
+  getCustodyHistory(evidenceId) {
+    return this.request(`/custody/evidence/${evidenceId}`);
+  }
+
+  transferCustody(transferData) {
+    return this.request('/custody/transfer', {
+      method: 'POST',
+      body: JSON.stringify(transferData)
+    });
+  }
+
+  getCaseReportJson(caseId) {
+    return this.request(`/reports/cases/${caseId}/json`);
+  }
+
+  getCaseReportHtmlUrl(caseId) {
+    const token = this.getToken();
+    return `${API_BASE_URL}/reports/cases/${caseId}/html${token ? '?token=' + encodeURIComponent(token) : ''}`;
+  }
 }
 
 export const api = new ApiService();

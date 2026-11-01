@@ -195,6 +195,46 @@ export default function InvestigativeLeadsPanel({ leads = [], onUpdateStatus }) 
                   )}
                 </div>
 
+                {/* Explainable Decision Support Block (Phase 7) */}
+                {(lead.algorithm_rule || lead.score_calculation_explanation || lead.known_limitations) && (
+                  <div style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '4px',
+                    padding: '0.65rem 0.85rem',
+                    fontSize: '0.74rem',
+                    marginBottom: '0.85rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.35rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--accent-orange)', fontFamily: 'var(--font-mono)', fontWeight: '700' }}>
+                        ALGORITHM RULE: {lead.algorithm_rule || 'BINARY_MAX_HEAP_COMPOSITE_SCORING'}
+                      </span>
+                      {lead.finding_category && (
+                        <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                          {lead.finding_category}
+                        </span>
+                      )}
+                    </div>
+
+                    {lead.score_calculation_explanation && (
+                      <div style={{ color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>Formula Breakdown: </strong>
+                        {lead.score_calculation_explanation}
+                      </div>
+                    )}
+
+                    {lead.known_limitations && (
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
+                        <strong style={{ color: 'var(--text-secondary)' }}>Academic Limitation: </strong>
+                        {lead.known_limitations}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Recommended Next Action & Workflow Transition */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.6rem' }}>
                   <div style={{ flex: 1, minWidth: '260px' }}>

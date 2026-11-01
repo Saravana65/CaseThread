@@ -22,6 +22,8 @@ const timelineRoutes = require('./routes/timelineRoutes');
 const leadRoutes = require('./routes/leadRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
 const graphRoutes = require('./routes/graphRoutes');
+const custodyRoutes = require('./routes/custodyRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -71,7 +73,7 @@ app.get('/api/v1/health', async (req, res) => {
       return res.status(503).json({
         status: 'UNHEALTHY',
         service: 'CASETHREAD Intelligence API',
-        version: '1.0.0-phase6',
+        version: '1.0.0-phase7',
         database_connected: false,
         error: 'Production MySQL database connection is unavailable.',
         timestamp: new Date().toISOString()
@@ -81,7 +83,7 @@ app.get('/api/v1/health', async (req, res) => {
     return res.status(200).json({
       status: 'ONLINE',
       service: 'CASETHREAD Intelligence API',
-      version: '1.0.0-phase6',
+      version: '1.0.0-phase7',
       database_connected: true,
       timestamp: new Date().toISOString()
     });
@@ -93,7 +95,7 @@ app.get('/api/v1/health', async (req, res) => {
   return res.status(statusCode).json({
     status: isHealthy ? 'ONLINE' : 'UNHEALTHY',
     service: 'CASETHREAD Intelligence API',
-    version: '1.0.0-phase6',
+    version: '1.0.0-phase7',
     database_connected: dbStatus,
     timestamp: new Date().toISOString()
   });
@@ -112,6 +114,8 @@ app.use('/api/v1/victims', victimRoutes);
 app.use('/api/v1/witnesses', witnessRoutes);
 
 app.use('/api/v1/evidence', evidenceRoutes);
+app.use('/api/v1/custody', custodyRoutes);
+app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/timeline', timelineRoutes);
 app.use('/api/v1/leads', leadRoutes);
 app.use('/api/v1/analysis', analysisRoutes);

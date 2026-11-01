@@ -7,6 +7,8 @@ import GraphAnalysis from './pages/GraphAnalysis';
 import EvidenceGapPanel from './components/EvidenceGapPanel';
 import TimelinePanel from './components/TimelinePanel';
 import InvestigativeLeadsPanel from './components/InvestigativeLeadsPanel';
+import EvidenceIntegrityPanel from './components/EvidenceIntegrityPanel';
+import ReportExportModal from './components/ReportExportModal';
 import api from './services/api';
 import './styles/theme.css';
 
@@ -18,6 +20,7 @@ export default function App() {
   const [analyzing, setAnalyzing] = useState(false);
   const [officer, setOfficer] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const checkActiveSession = useCallback(async () => {
     const token = api.getToken();
@@ -167,6 +170,7 @@ export default function App() {
         onLogout={handleLogout}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onOpenReport={() => setReportModalOpen(true)}
       />
 
       <main style={{ flex: 1, padding: '1rem 0' }}>
@@ -186,8 +190,17 @@ export default function App() {
               analyzing={analyzing}
               onExploreGraph={() => setActiveTab('graph')}
               onRefreshCase={loadCaseInfo}
+              onOpenReport={() => setReportModalOpen(true)}
             />
           </div>
+        )}
+
+        {activeTab === 'integrity' && (
+          <EvidenceIntegrityPanel
+            selectedCaseId={selectedCaseId}
+            officer={officer}
+            onOpenReport={() => setReportModalOpen(true)}
+          />
         )}
 
         {activeTab === 'graph' && (
@@ -221,6 +234,14 @@ export default function App() {
           </div>
         )}
       </main>
+
+      <ReportExportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        caseId={selectedCaseId}
+        caseNumber={caseData?.case_number}
+        caseTitle={caseData?.title}
+      />
 
       <footer style={{
         backgroundColor: 'var(--bg-secondary)',

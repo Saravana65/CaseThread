@@ -13,6 +13,9 @@ USE casethread_db;
 -- Disable foreign key checks during schema re-creation if needed
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS evidence_integrity_verifications;
+DROP TABLE IF EXISTS evidence_custody_events;
+DROP TABLE IF EXISTS evidence_versions;
 DROP TABLE IF EXISTS evidence_audit_logs;
 DROP TABLE IF EXISTS investigation_leads;
 DROP TABLE IF EXISTS investigation_timelines;
@@ -168,6 +171,14 @@ CREATE TABLE evidence (
     verification_status ENUM('CONFIRMED_FACT', 'UNVERIFIED_OBSERVATION', 'HYPOTHESIS') NOT NULL DEFAULT 'UNVERIFIED_OBSERVATION',
     reliability_assessment ENUM('HIGH', 'MEDIUM', 'LOW', 'QUESTIONABLE', 'PENDING_LAB') NOT NULL DEFAULT 'MEDIUM',
     file_reference VARCHAR(500) COMMENT 'File storage path or cryptographic hash of media',
+    content_payload LONGTEXT COMMENT 'Original raw payload or representation used for bit-level integrity verification',
+    sha256_fingerprint VARCHAR(64) COMMENT 'Cryptographic SHA-256 fingerprint digest (hex)',
+    fingerprint_algorithm VARCHAR(32) NOT NULL DEFAULT 'SHA-256',
+    fingerprint_type ENUM('ORIGINAL_FILE', 'METADATA_CANONICAL') NOT NULL DEFAULT 'METADATA_CANONICAL',
+    fingerprinted_at DATETIME,
+    last_verified_at DATETIME,
+    integrity_status ENUM('PENDING_VERIFICATION', 'INTACT', 'TAMPERED_MISMATCH') NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    current_version INT NOT NULL DEFAULT 1,
     entered_by_officer_id INT NOT NULL,
     chain_of_custody_notes TEXT,
     metadata_json JSON COMMENT 'Structured properties (e.g. imei, plate_number, mac_address, coordinates)',
@@ -182,7 +193,99 @@ CREATE TABLE evidence (
     INDEX idx_evidence_tracking (tracking_code),
     INDEX idx_evidence_category (category),
     INDEX idx_evidence_verification (verification_status),
-    INDEX idx_evidence_source (source)
+    INDEX idx_evidence_source (source),
+    INDEX idx_evidence_fingerprint (sha256_fingerprint),
+    INDEX idx_evidence_integrity (integrity_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 6a. Table: evidence_versions (Historical Version Ledger for Evidence Records)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_versions (
+    version_id INT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    version_number INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    collection_location VARCHAR(255),
+    collected_at DATETIME,
+    source VARCHAR(255) NOT NULL,
+    verification_status ENUM('CONFIRMED_FACT', 'UNVERIFIED_OBSERVATION', 'HYPOTHESIS') NOT NULL,
+    reliability_assessment ENUM('HIGH', 'MEDIUM', 'LOW', 'QUESTIONABLE', 'PENDING_LAB') NOT NULL,
+    content_payload LONGTEXT,
+    metadata_json JSON,
+    version_fingerprint VARCHAR(64) NOT NULL,
+    fingerprint_type ENUM('ORIGINAL_FILE', 'METADATA_CANONICAL') NOT NULL DEFAULT 'METADATA_CANONICAL',
+    modified_by_officer_id INT NOT NULL,
+    reason_for_modification TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ver_evidence FOREIGN KEY (evidence_id) 
+        REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_ver_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_ver_officer FOREIGN KEY (modified_by_officer_id) 
+        REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    UNIQUE KEY uq_evidence_version (evidence_id, version_number),
+    INDEX idx_ver_evidence (evidence_id),
+    INDEX idx_ver_case (case_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 6b. Table: evidence_custody_events (Auditable Physical & Digital Chain of Custody)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_custody_events (
+    custody_event_id INT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    previous_custodian VARCHAR(150) NOT NULL,
+    new_custodian VARCHAR(150) NOT NULL,
+    transfer_timestamp DATETIME NOT NULL,
+    transfer_reason VARCHAR(255) NOT NULL,
+    transfer_location VARCHAR(255) NOT NULL,
+    transfer_notes TEXT,
+    transferring_officer_id INT NOT NULL,
+    verification_status ENUM('VERIFIED', 'UNVERIFIED', 'REJECTED') NOT NULL DEFAULT 'VERIFIED',
+    related_fingerprint VARCHAR(64),
+    is_successful BOOLEAN NOT NULL DEFAULT TRUE,
+    failure_reason VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_custody_evidence FOREIGN KEY (evidence_id) 
+        REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_custody_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_custody_officer FOREIGN KEY (transferring_officer_id) 
+        REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_custody_evidence (evidence_id),
+    INDEX idx_custody_case (case_id),
+    INDEX idx_custody_time (transfer_timestamp)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 6c. Table: evidence_integrity_verifications (Cryptographic Verification History)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_integrity_verifications (
+    verification_id INT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    officer_id INT NOT NULL,
+    recalculated_hash VARCHAR(64) NOT NULL,
+    recorded_hash VARCHAR(64) NOT NULL,
+    match_status ENUM('MATCH', 'MISMATCH') NOT NULL,
+    fingerprint_type ENUM('ORIGINAL_FILE', 'METADATA_CANONICAL') NOT NULL,
+    notes TEXT,
+    ip_address VARCHAR(45),
+    verified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_verify_evidence FOREIGN KEY (evidence_id) 
+        REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_verify_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_verify_officer FOREIGN KEY (officer_id) 
+        REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_verify_evidence (evidence_id),
+    INDEX idx_verify_case (case_id),
+    INDEX idx_verify_status (match_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------------------------
@@ -269,7 +372,7 @@ CREATE TABLE investigation_leads (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------------------------
--- 10. Table: evidence_audit_logs (Immutable Forensic Chain-of-Custody & Mutation Ledger)
+-- 10. Table: evidence_audit_logs (Immutable Cryptographically Chained Audit Ledger)
 -- ------------------------------------------------------------------------------
 CREATE TABLE evidence_audit_logs (
     audit_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -283,10 +386,17 @@ CREATE TABLE evidence_audit_logs (
         'VERIFICATION_CHANGED',
         'RELIABILITY_UPDATED',
         'RELATIONSHIP_LINKED',
+        'CUSTODY_TRANSFERRED',
+        'INTEGRITY_VERIFIED',
         'ARCHIVED'
     ) NOT NULL,
     previous_state JSON COMMENT 'Snapshot before mutation',
     new_state JSON COMMENT 'Snapshot after mutation',
+    previous_state_hash VARCHAR(64) COMMENT 'SHA-256 of canonical previous state',
+    current_state_hash VARCHAR(64) COMMENT 'SHA-256 of canonical new state',
+    previous_event_hash VARCHAR(64) NOT NULL DEFAULT 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000' COMMENT 'Cryptographic link to prior event hash for tamper-evident chaining',
+    current_event_hash VARCHAR(64) NOT NULL COMMENT 'SHA-256 of deterministic event payload including previous_event_hash',
+    canonical_payload JSON COMMENT 'Deterministic canonical serialization of event fields',
     reason_for_change TEXT,
     ip_address VARCHAR(45),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -299,6 +409,8 @@ CREATE TABLE evidence_audit_logs (
     INDEX idx_audit_evidence (evidence_id),
     INDEX idx_audit_case (case_id),
     INDEX idx_audit_officer (officer_id),
+    INDEX idx_audit_event_hash (current_event_hash),
+    INDEX idx_audit_prev_hash (previous_event_hash),
     INDEX idx_audit_timestamp (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -341,17 +453,17 @@ VALUES
 (1, 'Arthur Pendelton', '+1-555-0166', 'Heard industrial drilling hum and metallic latch release sounds coming from Sub-level 2 while conducting night janitorial rounds at 02:35 AM.', 0.75, '2026-10-15 10:15:00', 'Depository Maintenance Basement');
 
 -- 6. Seed Evidence (Distinguishing Fact vs Unverified Observation, Missing Timestamps, Disconnected Clusters & Isolated Record)
-INSERT INTO evidence (case_id, tracking_code, title, category, description, collection_location, collected_at, source, related_entity_ids, verification_status, reliability_assessment, entered_by_officer_id, metadata_json)
+INSERT INTO evidence (case_id, tracking_code, title, category, description, collection_location, collected_at, source, related_entity_ids, verification_status, reliability_assessment, entered_by_officer_id, metadata_json, sha256_fingerprint, fingerprint_algorithm, fingerprint_type, fingerprinted_at, integrity_status, content_payload)
 VALUES 
-(1, 'EVD-CCTV-001', 'Loading Dock Camera Feed #4', 'CCTV', 'Timestamped footage showing black sedan leaving rear gate at 02:49:12 AM.', 'Metro Depository Loading Bay', '2026-10-15 04:00:00', 'Depository Security DVR Unit 2', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"camera_id": "CAM-04", "resolution": "1080p", "direction": "Northbound"}'),
-(1, 'EVD-TEL-002', 'Cell Tower Dump Sector 7', 'PHONE_RECORD', 'Inbound call to Marcus Vance burner device originating near loading dock at 02:44:00 AM.', 'Sector 7 Cell Relay', '2026-10-15 06:15:00', 'Telecom Subpoena Tower 7 Log', '[{"type":"SUSPECT","id":1}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"tower_id": "TOW-07", "duration_sec": 38, "cell_id": "402-99"}'),
-(1, 'EVD-VEH-003', 'Black Matte Sedan Registration', 'VEHICLE', 'Vehicle matching CCTV footage registered to Damon Vance.', 'DMV Database Registry', '2026-10-15 08:20:00', 'State DMV Central Database', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"license_plate": "7XYZ99", "make": "Sedan", "color": "Matte Black"}'),
-(1, 'EVD-OBS-004', 'Anonymous Tip: Sighting at Docks', 'TESTIMONY_TRANSCRIPT', 'Anonymous caller stated someone looking like Marcus Vance was loading metallic crates into a motorboat at 04:15 AM.', 'Harbour Pier 9', '2026-10-15 11:00:00', 'UNKNOWN', '[{"type":"SUSPECT","id":1}]', 'UNVERIFIED_OBSERVATION', 'QUESTIONABLE', 1, '{"tip_id": "TIP-8921", "audio_recorded": true}'),
-(1, 'EVD-CCTV-005', 'Financial Blvd Street Camera #12', 'CCTV', 'High-definition traffic camera recording matte black sedan speeding north across Financial Blvd at 02:51:30 AM.', '4th & Financial Blvd Intersection', '2026-10-15 05:30:00', 'City Traffic Authority Archive', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"camera_id": "TRAFFIC-12", "speed_est_mph": 58, "plate_partial": "7XY"}'),
-(1, 'EVD-DIG-006', 'Vault Server Access Log', 'DIGITAL_DEVICE', 'Digital logs showing root cryptographic vault door override executed at 02:38:15 AM using contractor encryption credential key.', 'Depository Server Room', '2026-10-15 07:45:00', 'Vault Core Server Audit Journal', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"auth_user": "CONTRACTOR_ROOT", "ip": "10.0.4.15", "key_id": "ENC-ROSTOVA-88"}'),
-(1, 'EVD-BIO-007', 'Synthetic Glove Fiber Sample', 'BIOMETRIC', 'Rare nitrile-neoprene fiber strand recovered from vault door keypad frame with no logged timestamp.', 'Vault Door Keypad', NULL, 'Forensic Crime Scene Team Unit 1', '[]', 'CONFIRMED_FACT', 'PENDING_LAB', 1, '{"lab_ref": "BIO-LAB-2026-09"}'),
-(1, 'EVD-TEL-008', 'Encrypted VoIP Call Relay', 'PHONE_RECORD', 'VoIP encrypted burst data packet between Elena Rostova terminal and offshore proxy at 02:40:00 AM.', 'Sub-gateway Router 9', '2026-10-15 09:10:00', 'Cyber Telemetry Sniffer Log', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"protocol": "TLSv1.3", "packet_size_bytes": 1024}'),
-(1, 'EVD-ISO-009', 'Abandoned Mountain Bicycle', 'PHYSICAL', 'Blue mountain bicycle found discarded in alleyway 6 miles from crime scene. No fingerprint or camera links.', 'Alleyway behind 1400 Industrial Way', '2026-10-15 14:00:00', 'Patrol Officer Beat 14', '[]', 'UNVERIFIED_OBSERVATION', 'LOW', 1, '{"serial_number": "MN-4820", "condition": "rusted_chain"}');
+(1, 'EVD-CCTV-001', 'Loading Dock Camera Feed #4', 'CCTV', 'Timestamped footage showing black sedan leaving rear gate at 02:49:12 AM.', 'Metro Depository Loading Bay', '2026-10-15 04:00:00', 'Depository Security DVR Unit 2', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"camera_id": "CAM-04", "resolution": "1080p", "direction": "Northbound"}', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 04:05:00', 'INTACT', 'RAW_MP4_HEADER_OFFSET_004912_FPS30_HASH_VERIFIED'),
+(1, 'EVD-TEL-002', 'Cell Tower Dump Sector 7', 'PHONE_RECORD', 'Inbound call to Marcus Vance burner device originating near loading dock at 02:44:00 AM.', 'Sector 7 Cell Relay', '2026-10-15 06:15:00', 'Telecom Subpoena Tower 7 Log', '[{"type":"SUSPECT","id":1}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"tower_id": "TOW-07", "duration_sec": 38, "cell_id": "402-99"}', '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 06:20:00', 'INTACT', 'CELL_DUMP_TOWER07_CDR_402_99_38S'),
+(1, 'EVD-VEH-003', 'Black Matte Sedan Registration', 'VEHICLE', 'Vehicle matching CCTV footage registered to Damon Vance.', 'DMV Database Registry', '2026-10-15 08:20:00', 'State DMV Central Database', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"license_plate": "7XYZ99", "make": "Sedan", "color": "Matte Black"}', 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 08:25:00', 'INTACT', 'DMV_REG_7XYZ99_DAMON_VANCE_MATTE_BLACK'),
+(1, 'EVD-OBS-004', 'Anonymous Tip: Sighting at Docks', 'TESTIMONY_TRANSCRIPT', 'Anonymous caller stated someone looking like Marcus Vance was loading metallic crates into a motorboat at 04:15 AM.', 'Harbour Pier 9', '2026-10-15 11:00:00', 'UNKNOWN', '[{"type":"SUSPECT","id":1}]', 'UNVERIFIED_OBSERVATION', 'QUESTIONABLE', 1, '{"tip_id": "TIP-8921", "audio_recorded": true}', '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 11:05:00', 'INTACT', 'AUDIO_TRANSCRIPT_TIP8921_PIER9_CRATES'),
+(1, 'EVD-CCTV-005', 'Financial Blvd Street Camera #12', 'CCTV', 'High-definition traffic camera recording matte black sedan speeding north across Financial Blvd at 02:51:30 AM.', '4th & Financial Blvd Intersection', '2026-10-15 05:30:00', 'City Traffic Authority Archive', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"camera_id": "TRAFFIC-12", "speed_est_mph": 58, "plate_partial": "7XY"}', 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 05:35:00', 'INTACT', 'TRAFFIC_FEED_CAM12_FRAME_025130_HD'),
+(1, 'EVD-DIG-006', 'Vault Server Access Log', 'DIGITAL_DEVICE', 'Digital logs showing root cryptographic vault door override executed at 02:38:15 AM using contractor encryption credential key.', 'Depository Server Room', '2026-10-15 07:45:00', 'Vault Core Server Audit Journal', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"auth_user": "CONTRACTOR_ROOT", "ip": "10.0.4.15", "key_id": "ENC-ROSTOVA-88"}', '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 07:50:00', 'INTACT', 'SYSLOG_VAULT_ROOT_AUTH_10.0.4.15_ENC-ROSTOVA-88'),
+(1, 'EVD-BIO-007', 'Synthetic Glove Fiber Sample', 'BIOMETRIC', 'Rare nitrile-neoprene fiber strand recovered from vault door keypad frame with no logged timestamp.', 'Vault Door Keypad', NULL, 'Forensic Crime Scene Team Unit 1', '[]', 'CONFIRMED_FACT', 'PENDING_LAB', 1, '{"lab_ref": "BIO-LAB-2026-09"}', '53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 08:00:00', 'INTACT', 'LAB_SAMPLE_BIO2026_09_NITRILE_NEOPRENE'),
+(1, 'EVD-TEL-008', 'Encrypted VoIP Call Relay', 'PHONE_RECORD', 'VoIP encrypted burst data packet between Elena Rostova terminal and offshore proxy at 02:40:00 AM.', 'Sub-gateway Router 9', '2026-10-15 09:10:00', 'Cyber Telemetry Sniffer Log', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"protocol": "TLSv1.3", "packet_size_bytes": 1024}', 'd28a9b3a324392eb13812738ea0b91d6402377b2ca0ce8108c5054ea4f9c5ff5', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 09:15:00', 'INTACT', 'PCAP_BURST_ROUTEPACKET_1024B_TLS13'),
+(1, 'EVD-ISO-009', 'Abandoned Mountain Bicycle', 'PHYSICAL', 'Blue mountain bicycle found discarded in alleyway 6 miles from crime scene. No fingerprint or camera links.', 'Alleyway behind 1400 Industrial Way', '2026-10-15 14:00:00', 'Patrol Officer Beat 14', '[]', 'UNVERIFIED_OBSERVATION', 'LOW', 1, '{"serial_number": "MN-4820", "condition": "rusted_chain"}', '6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 14:05:00', 'INTACT', 'PHYSICAL_PROPERTY_TAG_MN4820_BICYCLE');
 
 -- 7. Seed Direct Evidence Relationships (Creates 2 Disconnected Clusters + 1 Isolated Node)
 INSERT INTO evidence_relationships (case_id, source_type, source_id, target_type, target_id, relation_type, confidence_weight, relationship_nature, notes, discovered_by)
@@ -387,3 +499,24 @@ INSERT INTO investigation_leads (case_id, title, hypothesis, recommended_action,
 VALUES 
 (1, 'Interrogate Damon Vance Regarding Vehicle 7XYZ99', 'Vehicle registered to Damon Vance was captured fleeing the vault loading dock 4 minutes after the breach.', 'Issue subpoena for vehicle location data and bring Damon Vance for formal questioning.', 'ASSIGNED', 92.50, 1, 'TIMELINE_CONTRADICTION', 'OFFICER_MANUAL'),
 (1, 'Subpoena Pier 9 Maritime Surveillance Footage', 'Verify whether anonymous tip regarding Pier 9 vessel departure corresponds to physical CCTV footage.', 'Contact Port Authority to retrieve 03:30 - 05:00 AM Pier 9 camera recordings.', 'OPEN', 78.00, 2, 'MISSING_EVIDENCE', 'OFFICER_MANUAL');
+
+-- 10. Seed Initial Evidence Versions (Stage 4)
+INSERT INTO evidence_versions (evidence_id, case_id, version_number, title, category, description, collection_location, collected_at, source, verification_status, reliability_assessment, content_payload, metadata_json, version_fingerprint, fingerprint_type, modified_by_officer_id, reason_for_modification)
+VALUES 
+(1, 1, 1, 'Loading Dock Camera Feed #4', 'CCTV', 'Timestamped footage showing black sedan leaving rear gate at 02:49:12 AM.', 'Metro Depository Loading Bay', '2026-10-15 04:00:00', 'Depository Security DVR Unit 2', 'CONFIRMED_FACT', 'HIGH', 'RAW_MP4_HEADER_OFFSET_004912_FPS30_HASH_VERIFIED', '{"camera_id": "CAM-04", "resolution": "1080p", "direction": "Northbound"}', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'ORIGINAL_FILE', 1, 'Initial evidence ingestion and baseline version creation.'),
+(2, 1, 1, 'Cell Tower Dump Sector 7', 'PHONE_RECORD', 'Inbound call to Marcus Vance burner device originating near loading dock at 02:44:00 AM.', 'Sector 7 Cell Relay', '2026-10-15 06:15:00', 'Telecom Subpoena Tower 7 Log', 'CONFIRMED_FACT', 'HIGH', 'CELL_DUMP_TOWER07_CDR_402_99_38S', '{"tower_id": "TOW-07", "duration_sec": 38, "cell_id": "402-99"}', '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a', 'METADATA_CANONICAL', 2, 'Initial evidence ingestion and baseline version creation.'),
+(3, 1, 1, 'Black Matte Sedan Registration', 'VEHICLE', 'Vehicle matching CCTV footage registered to Damon Vance.', 'DMV Database Registry', '2026-10-15 08:20:00', 'State DMV Central Database', 'CONFIRMED_FACT', 'HIGH', 'DMV_REG_7XYZ99_DAMON_VANCE_MATTE_BLACK', '{"license_plate": "7XYZ99", "make": "Sedan", "color": "Matte Black"}', 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d', 'METADATA_CANONICAL', 1, 'Initial evidence ingestion and baseline version creation.');
+
+-- 11. Seed Chain-of-Custody Events (Stage 2)
+INSERT INTO evidence_custody_events (evidence_id, case_id, previous_custodian, new_custodian, transfer_timestamp, transfer_reason, transfer_location, transfer_notes, transferring_officer_id, verification_status, related_fingerprint, is_successful)
+VALUES 
+(1, 1, 'Depository Security Lead Martinez', 'Det. Alexander Cross (Badge DET-8841)', '2026-10-15 04:30:00', 'Initial Evidence Seizure from DVR Unit', 'Metro Depository Security Office', 'DVR hard drive clone exported to encrypted forensic drive.', 1, 'VERIFIED', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE),
+(1, 1, 'Det. Alexander Cross (Badge DET-8841)', 'Digital Forensics Lab Technician Miller', '2026-10-15 06:00:00', 'Forensic Video Enhancement and Plate Extraction', 'Central Forensics Laboratory Room 302', 'Transferred with tamper-evident seal #7741.', 1, 'VERIFIED', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', TRUE),
+(2, 1, 'Telecom Carrier Subpoena Compliance Dept', 'Det. Sarah Lin (Badge DET-9912)', '2026-10-15 07:00:00', 'Court Order Subpoena Fulfillment', 'Major Crimes Telemetry Office', 'Digitally signed CSV packet received via secure SFTP.', 2, 'VERIFIED', '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a', TRUE),
+(3, 1, 'State DMV Liaison Agent', 'Det. Alexander Cross (Badge DET-8841)', '2026-10-15 08:45:00', 'Official DMV Record Requisition', 'Police Headquarters Records Bureau', 'Certified vehicle registration record acquired.', 1, 'VERIFIED', 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d', TRUE);
+
+-- 12. Seed Cryptographically Chained Audit Events (Stage 3)
+INSERT INTO evidence_audit_logs (audit_id, evidence_id, case_id, officer_id, action_type, previous_state, new_state, previous_state_hash, current_state_hash, previous_event_hash, current_event_hash, canonical_payload, reason_for_change, ip_address, created_at)
+VALUES 
+(1, 1, 1, 1, 'CREATED', NULL, '{"tracking_code":"EVD-CCTV-001","title":"Loading Dock Camera Feed #4","category":"CCTV","verification":"CONFIRMED_FACT"}', NULL, 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000', 'f1a238479e0811e5f84d284792a5436d8594b29c91b10a4e76c3746682bc85c1', '{"evidence_id":1,"action_type":"CREATED","officer_id":1,"prev_hash":"GENESIS_0000000000000000000000000000000000000000000000000000000000000000"}', 'Initial forensic evidence ingestion', '127.0.0.1', '2026-10-15 04:00:00'),
+(2, 1, 1, 1, 'CUSTODY_TRANSFERRED', '{"custodian":"Depository Security Lead Martinez"}', '{"custodian":"Det. Alexander Cross (Badge DET-8841)"}', 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0', 'b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef01', 'f1a238479e0811e5f84d284792a5436d8594b29c91b10a4e76c3746682bc85c1', '7b4e9f31c828d098a54627198e3b5a76c8d192e4578b9a023f6e871239c4d5e6', '{"evidence_id":1,"action_type":"CUSTODY_TRANSFERRED","officer_id":1,"prev_hash":"f1a238479e0811e5f84d284792a5436d8594b29c91b10a4e76c3746682bc85c1"}', 'Initial evidence transfer from scene', '127.0.0.1', '2026-10-15 04:30:00');

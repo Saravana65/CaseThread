@@ -13,6 +13,7 @@ flowchart LR
     P3 --> P4["Phase 4: Forensic Frontend UI (COMPLETED)"]
     P4 --> P5["Phase 5: E2E Case Simulation (COMPLETED)"]
     P5 --> P6["Phase 6: Production Hardening & Benchmarks (COMPLETED)"]
+    P6 --> P7["Phase 7: Forensic Integrity & Explainable AI (COMPLETED)"]
 ```
 
 ---
@@ -147,3 +148,46 @@ flowchart LR
   - 69 backend tests passing across 12 suites (100% pass).
   - 91 C DSA unit tests passing across 7 sections (100% pass).
   - Optimized production React bundle built with 0 errors.
+
+---
+
+### Phase 7: Forensic Evidence Integrity & Explainable Investigation Intelligence (COMPLETED)
+*Objective: Upgrade CASETHREAD from an evidence relationship and gap-detection application into a reliable forensic investigation-support platform with cryptographic verification, provenance tracking, and explainable decision support.*
+
+- [x] **Cryptographic Evidence Fingerprinting (`backend/services/cryptoService.js`)**:
+  - Automated SHA-256 fingerprint generation distinguishing raw content payload (`CONTENT_SHA256`) vs canonical metadata snapshot (`METADATA_CANONICAL`).
+  - Bit-level verification endpoint (`POST /api/v1/evidence/:id/verify-integrity`).
+  - Verification logging table (`evidence_integrity_verifications`) recording timestamp, officer, result, and calculated hash.
+  - Automatic detection and flagging of modified records (`TAMPERED_MISMATCH` vs `INTACT`).
+- [x] **Chain-of-Custody Event Tracking (`backend/controllers/custodyController.js`)**:
+  - Auditable custody event workflow recorded in `evidence_custody_events`.
+  - Chronological provenance tracking with mandatory transferred-from and transferred-to officer fields, transfer purpose, and destination location.
+  - Case-level access isolation (HTTP 403 for unauthorized cross-case transfers).
+- [x] **Tamper-Evident Audit Hash Chaining (`cryptoService.js` & `evidence_audit_logs`)**:
+  - Backward-linked cryptographic audit hash chain linking each event to `previous_event_hash` starting from `GENESIS_HASH`.
+  - Cryptographic verification algorithm (`cryptoService.verifyAuditChain`) detecting payload modification, event omission, and chronological reordering.
+  - Audit chain verification endpoints (`GET /api/v1/evidence/:id/audit-chain` and `POST /api/v1/evidence/:id/audit-chain/verify`).
+- [x] **Evidence Version Management (`evidence_versions`)**:
+  - Version history preservation: creates Version 1 baseline on evidence creation and increments to $V(N+1)$ on modification.
+  - Preserves prior metadata snapshot, modification reason, timestamp, and modifying officer ID.
+  - Version inspection endpoint (`GET /api/v1/evidence/:id/versions`).
+- [x] **Explainable Algorithm-Generated Findings (`analysisController.js`)**:
+  - Enriched C DSA analysis output with explicit structured explainability blocks.
+  - Categorized findings (`MISSING_METADATA_GAP`, `SPATIOTEMPORAL_TRAJECTORY_ANOMALY`, `HEURISTIC_INVESTIGATIVE_HYPOTHESIS`).
+  - Score calculation breakdowns ("40% Confidence + 30% Centrality + 30% Criticality").
+  - Clear statements of algorithm rules, known limitations, and academic decision-support disclaimers.
+- [x] **Verification & Integrity Dashboard (Frontend)**:
+  - `EvidenceIntegrityPanel.js`: Interactive evidence table with SHA-256 fingerprint pills, integrity badges, and quick copy utilities.
+  - Forensic Overview Metrics: Total Evidence, Fingerprinted, Verified Intact, Integrity Alerts, Awaiting Verification.
+  - Audit Chain Modal: Visualizes backward-linking SHA-256 event chains and head event hash.
+  - Version History Modal: Compares V1 vs V2+ revisions and officer modification reasons.
+  - Chain-of-Custody Drawer: Full chronological event timeline and custody transfer form.
+  - Explainability cards integrated into `EvidenceGapPanel.js` and `InvestigativeLeadsPanel.js`.
+- [x] **Structured Case Report Generation & Export (`reportController.js`)**:
+  - Structured machine-readable JSON export (`/api/v1/reports/cases/:caseId/json`).
+  - Printable official HTML/PDF dossier (`/api/v1/reports/cases/:caseId/html`) with law-enforcement typography, official seals, print stylesheet pagination, and zero credential leakage.
+  - Case isolation enforcement preventing unauthorized cross-officer report generation.
+- [x] **Comprehensive Automated Verification (`backend/tests/forensic_integrity.test.js`)**:
+  - 16 new automated forensic integrity tests (100% pass).
+  - Complete backend test suite: **85 passing tests across 13 suites** with zero failures.
+  - Production React build compiled successfully with 0 errors (75.01 kB gzipped).

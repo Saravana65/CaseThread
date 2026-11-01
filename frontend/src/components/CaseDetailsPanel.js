@@ -6,7 +6,7 @@ import AddEvidenceModal from './AddEvidenceModal';
  * @description Master forensic case dossier displaying suspects, victims, witnesses, evidence items, and timelines.
  * Provides controls for running C-Engine DSA analysis, opening the graph canvas, and ingesting evidence.
  */
-export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzing, onExploreGraph, onRefreshCase }) {
+export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzing, onExploreGraph, onRefreshCase, onOpenReport }) {
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [isAddEvidenceOpen, setIsAddEvidenceOpen] = useState(false);
 
@@ -89,6 +89,15 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
                 style={{ minWidth: '160px' }}
               >
                 🕸️ Open Graph Canvas
+              </button>
+            )}
+            {onOpenReport && (
+              <button
+                onClick={onOpenReport}
+                className="btn-secondary"
+                style={{ minWidth: '150px' }}
+              >
+                📄 Export Dossier
               </button>
             )}
           </div>
