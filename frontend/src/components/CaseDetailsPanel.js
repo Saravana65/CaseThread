@@ -60,9 +60,19 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
             <button
               onClick={() => setIsAddEvidenceOpen(true)}
               className="btn-secondary"
-              style={{ minWidth: '150px' }}
+              style={{
+                minWidth: '160px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.35rem',
+                fontWeight: '700',
+                letterSpacing: '0.5px'
+              }}
+              title="Add Evidence to this Investigation"
             >
-              📦 Ingest Evidence
+              <span>📦</span>
+              <span>ADD EVIDENCE</span>
             </button>
             <button
               onClick={() => onTriggerAnalysis && onTriggerAnalysis(caseData.case_id)}
@@ -332,7 +342,7 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
               }}
             >
               <span>➕</span>
-              <span>Ingest Evidence Record</span>
+              <span>ADD EVIDENCE</span>
             </button>
           </div>
 

@@ -3,34 +3,44 @@ import api from '../services/api';
 
 /**
  * @component LoginForm
- * @description Secure officer authentication portal with badge verification and JWT session establishment.
+ * @description Secure officer authentication portal with badge verification, show/hide password, and JWT session establishment.
  */
 export default function LoginForm({ onLoginSuccess }) {
   const [badgeNumber, setBadgeNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [generalError, setGeneralError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const validate = () => {
+    const errors = {};
+    if (!badgeNumber.trim()) {
+      errors.badgeNumber = 'Officer badge number / service ID is required.';
+    }
+    if (!password) {
+      errors.password = 'Officer security passcode is required.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setGeneralError(null);
 
-    const trimmedBadge = badgeNumber.trim();
-    if (!trimmedBadge) {
-      setError('Officer badge number / service ID is required.');
-      return;
-    }
-    if (!password) {
-      setError('Officer security passcode is required.');
+    if (!validate()) {
       return;
     }
 
     try {
       setLoading(true);
-      const res = await api.login(trimmedBadge, password);
+      const res = await api.login(badgeNumber.trim(), password);
       if (res && res.data && res.data.token) {
+        // 1. Save returned token
         api.setToken(res.data.token);
 
+        // 2. Retrieve verified officer profile
         let officerProfile = res.data.officer;
         try {
           const profileRes = await api.getProfile();
@@ -41,15 +51,23 @@ export default function LoginForm({ onLoginSuccess }) {
           console.warn('Profile sync fallback to login officer payload:', pErr.message);
         }
 
+        // 3. Store authenticated officer and load dashboard
         if (onLoginSuccess) {
           onLoginSuccess(officerProfile);
         }
       } else {
-        throw new Error('Authentication failed: Missing token in response payload.');
+        throw new Error('Authentication rejected: Missing session token in server response.');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.message || 'Invalid badge number or password combination.');
+      const msg = err.message || '';
+      if (msg.includes('suspended') || msg.includes('deactivated') || msg.includes('ACCOUNT_INACTIVE')) {
+        setGeneralError('Account Inactive: Officer credentials have been suspended or deactivated. Contact Bureau Administration.');
+      } else if (msg.includes('Invalid badge number') || msg.includes('INVALID_CREDENTIALS')) {
+        setGeneralError('Invalid Credentials: Badge number or security passcode incorrect.');
+      } else {
+        setGeneralError(msg || 'Authentication failed. Please verify credentials or server connectivity.');
+      }
     } finally {
       setLoading(false);
     }
@@ -58,8 +76,11 @@ export default function LoginForm({ onLoginSuccess }) {
   const handleFillDemo = () => {
     setBadgeNumber('DET-8841');
     setPassword('Password123!');
-    setError(null);
+    setFieldErrors({});
+    setGeneralError(null);
   };
+
+  const isDemoAllowed = process.env.NODE_ENV !== 'production' || process.env.REACT_APP_ENABLE_DEMO === 'true';
 
   return (
     <div style={{
@@ -84,8 +105,8 @@ export default function LoginForm({ onLoginSuccess }) {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '52px',
-            height: '52px',
+            width: '54px',
+            height: '54px',
             borderRadius: '50%',
             backgroundColor: 'rgba(211, 47, 47, 0.15)',
             border: '1px solid var(--accent-red)',
@@ -116,8 +137,8 @@ export default function LoginForm({ onLoginSuccess }) {
           </p>
         </div>
 
-        {/* Error Notice */}
-        {error && (
+        {/* Global Error Banner */}
+        {generalError && (
           <div style={{
             backgroundColor: 'rgba(211, 47, 47, 0.15)',
             border: '1px solid var(--accent-red)',
@@ -127,11 +148,11 @@ export default function LoginForm({ onLoginSuccess }) {
             fontSize: '0.8rem',
             color: '#ff5252',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             gap: '0.6rem'
           }}>
-            <span>⚠️</span>
-            <span>{error}</span>
+            <span style={{ fontSize: '1rem', lineHeight: 1 }}>⚠️</span>
+            <span>{generalError}</span>
           </div>
         )}
 
@@ -143,16 +164,21 @@ export default function LoginForm({ onLoginSuccess }) {
               fontSize: '0.72rem',
               fontWeight: '700',
               textTransform: 'uppercase',
-              color: 'var(--text-secondary)',
+              color: fieldErrors.badgeNumber ? '#ff5252' : 'var(--text-secondary)',
               marginBottom: '0.4rem',
               letterSpacing: '0.5px'
             }}>
-              Badge Number / Service ID
+              Badge Number / Service ID *
             </label>
             <input
               type="text"
               value={badgeNumber}
-              onChange={(e) => setBadgeNumber(e.target.value)}
+              onChange={(e) => {
+                setBadgeNumber(e.target.value);
+                if (fieldErrors.badgeNumber) {
+                  setFieldErrors(prev => ({ ...prev, badgeNumber: null }));
+                }
+              }}
               placeholder="e.g. DET-8841"
               autoFocus
               className="mono"
@@ -160,16 +186,25 @@ export default function LoginForm({ onLoginSuccess }) {
                 width: '100%',
                 padding: '0.75rem 0.9rem',
                 backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
+                border: `1px solid ${fieldErrors.badgeNumber ? '#ff5252' : 'var(--border-default)'}`,
                 borderRadius: '4px',
                 color: 'var(--text-primary)',
                 fontSize: '0.9rem',
                 outline: 'none',
                 transition: 'border-color 0.2s'
               }}
-              onFocus={(e) => (e.target.style.borderColor = 'var(--accent-red)')}
-              onBlur={(e) => (e.target.style.borderColor = 'var(--border-default)')}
+              onFocus={(e) => {
+                if (!fieldErrors.badgeNumber) e.target.style.borderColor = 'var(--accent-red)';
+              }}
+              onBlur={(e) => {
+                if (!fieldErrors.badgeNumber) e.target.style.borderColor = 'var(--border-default)';
+              }}
             />
+            {fieldErrors.badgeNumber && (
+              <div style={{ fontSize: '0.72rem', color: '#ff5252', marginTop: '0.3rem', fontFamily: 'var(--font-mono)' }}>
+                {fieldErrors.badgeNumber}
+              </div>
+            )}
           </div>
 
           <div>
@@ -178,31 +213,69 @@ export default function LoginForm({ onLoginSuccess }) {
               fontSize: '0.72rem',
               fontWeight: '700',
               textTransform: 'uppercase',
-              color: 'var(--text-secondary)',
+              color: fieldErrors.password ? '#ff5252' : 'var(--text-secondary)',
               marginBottom: '0.4rem',
               letterSpacing: '0.5px'
             }}>
-              Officer Security Passcode
+              Officer Security Passcode *
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              style={{
-                width: '100%',
-                padding: '0.75rem 0.9rem',
-                backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                borderRadius: '4px',
-                color: 'var(--text-primary)',
-                fontSize: '0.9rem',
-                outline: 'none',
-                transition: 'border-color 0.2s'
-              }}
-              onFocus={(e) => (e.target.style.borderColor = 'var(--accent-red)')}
-              onBlur={(e) => (e.target.style.borderColor = 'var(--border-default)')}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) {
+                    setFieldErrors(prev => ({ ...prev, password: null }));
+                  }
+                }}
+                placeholder="••••••••••••"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 2.8rem 0.75rem 0.9rem',
+                  backgroundColor: 'var(--bg-input)',
+                  border: `1px solid ${fieldErrors.password ? '#ff5252' : 'var(--border-default)'}`,
+                  borderRadius: '4px',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => {
+                  if (!fieldErrors.password) e.target.style.borderColor = 'var(--accent-red)';
+                }}
+                onBlur={(e) => {
+                  if (!fieldErrors.password) e.target.style.borderColor = 'var(--border-default)';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  padding: '0.2rem',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title={showPassword ? 'Hide passcode' : 'Show passcode'}
+                aria-label={showPassword ? 'Hide passcode' : 'Show passcode'}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
+            {fieldErrors.password && (
+              <div style={{ fontSize: '0.72rem', color: '#ff5252', marginTop: '0.3rem', fontFamily: 'var(--font-mono)' }}>
+                {fieldErrors.password}
+              </div>
+            )}
           </div>
 
           <button
@@ -210,7 +283,7 @@ export default function LoginForm({ onLoginSuccess }) {
             disabled={loading}
             className="btn-primary"
             style={{
-              padding: '0.8rem',
+              padding: '0.85rem',
               fontSize: '0.9rem',
               marginTop: '0.5rem',
               display: 'flex',
@@ -224,31 +297,46 @@ export default function LoginForm({ onLoginSuccess }) {
           </button>
         </form>
 
-        {/* Demo Credentials Quick-Fill Aid */}
-        <div style={{
-          marginTop: '1.75rem',
-          paddingTop: '1.25rem',
-          borderTop: '1px solid var(--border-subtle)',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-            Authorized Personnel Demo Credentials:
-          </div>
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="btn-secondary"
-            style={{
-              fontSize: '0.72rem',
-              padding: '0.35rem 0.75rem',
-              fontFamily: 'var(--font-mono)',
+        {/* Demo Credentials Quick-Fill Aid (Guarded: Dev/Evaluation Only) */}
+        {isDemoAllowed && (
+          <div style={{
+            marginTop: '1.75rem',
+            paddingTop: '1.25rem',
+            borderTop: '1px solid var(--border-subtle)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              display: 'inline-block',
+              fontSize: '0.65rem',
               color: 'var(--accent-orange)',
-              borderColor: 'var(--border-default)'
-            }}
-          >
-            📋 Use DET-8841 (Lead Detective)
-          </button>
-        </div>
+              fontFamily: 'var(--font-mono)',
+              border: '1px solid rgba(255, 152, 0, 0.4)',
+              backgroundColor: 'rgba(255, 152, 0, 0.08)',
+              padding: '0.2rem 0.5rem',
+              borderRadius: '3px',
+              marginBottom: '0.5rem'
+            }}>
+              DEMO / EVALUATION ENVIRONMENT ONLY
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+              Prefills test officer credentials. Not for production deployments.
+            </div>
+            <button
+              type="button"
+              onClick={handleFillDemo}
+              className="btn-secondary"
+              style={{
+                fontSize: '0.72rem',
+                padding: '0.35rem 0.75rem',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--accent-orange)',
+                borderColor: 'var(--border-default)'
+              }}
+            >
+              📋 Prefill DET-8841 (Lead Detective)
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

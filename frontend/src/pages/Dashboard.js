@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import CreateCaseModal from '../components/CreateCaseModal';
+import AddEvidenceModal from '../components/AddEvidenceModal';
 
 export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseId }) {
   const [cases, setCases] = useState([]);
@@ -9,19 +10,20 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAddEvidenceOpen, setIsAddEvidenceOpen] = useState(false);
 
   useEffect(() => {
     loadCases();
   }, []);
 
-  const loadCases = async () => {
+  const loadCases = async (preferredCaseId) => {
     try {
       setLoading(true);
       const res = await api.getCases();
       if (res.data) {
         setCases(res.data);
-        const targetId = selectedCaseId || (res.data.length > 0 ? res.data[0].case_id : 1);
-        loadCaseDetails(targetId);
+        const targetId = preferredCaseId || selectedCaseId || (res.data.length > 0 ? res.data[0].case_id : 1);
+        await loadCaseDetails(targetId);
       }
     } catch (err) {
       console.error('Failed to load cases:', err);
@@ -51,9 +53,17 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
   };
 
   const handleCaseCreated = async (newCase) => {
-    await loadCases();
-    if (newCase && newCase.case_id) {
-      loadCaseDetails(newCase.case_id);
+    const newId = newCase?.case_id;
+    if (newId && onSelectCaseId) {
+      onSelectCaseId(newId);
+    }
+    await loadCases(newId);
+  };
+
+  const handleEvidenceAdded = async () => {
+    if (selectedCase?.case_id) {
+      await loadCaseDetails(selectedCase.case_id);
+      await loadCases(selectedCase.case_id);
     }
   };
 
@@ -170,15 +180,17 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
                 className="btn-primary"
                 style={{
                   fontSize: '0.72rem',
-                  padding: '0.3rem 0.65rem',
+                  padding: '0.35rem 0.75rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem',
+                  letterSpacing: '0.5px',
+                  fontWeight: '700'
                 }}
-                title="Open New Investigation Case"
+                title="Create New Investigation Case"
               >
                 <span>➕</span>
-                <span>New Case</span>
+                <span>CREATE NEW CASE</span>
               </button>
             </div>
           </div>
@@ -274,6 +286,23 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <button
+                      onClick={() => setIsAddEvidenceOpen(true)}
+                      className="btn-secondary"
+                      style={{
+                        minWidth: '190px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        fontWeight: '700',
+                        letterSpacing: '0.5px'
+                      }}
+                      title="Add Evidence to this Investigation"
+                    >
+                      <span>📦</span>
+                      <span>ADD EVIDENCE</span>
+                    </button>
+                    <button
                       onClick={() => triggerAnalysis(selectedCase.case_id)}
                       disabled={analyzing}
                       className="btn-primary"
@@ -311,10 +340,69 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
                   <div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Entities Loaded</div>
                     <div style={{ color: 'var(--accent-orange)', fontFamily: 'var(--font-mono)' }}>
-                      {selectedCase.suspects?.length || 3} Suspects • {selectedCase.victims?.length || 1} Victims • {selectedCase.evidence?.length || 9} Evidence
+                      {(selectedCase.suspects ? selectedCase.suspects.length : 0)} Suspects • {(selectedCase.victims ? selectedCase.victims.length : 0)} Victims • {(selectedCase.evidence ? selectedCase.evidence.length : 0)} Evidence
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Registered Forensic Evidence Preview Section */}
+              <div className="forensic-card" style={{ borderLeft: '4px solid var(--accent-orange)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1rem' }}>📦</span>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Registered Forensic Evidence ({(selectedCase.evidence ? selectedCase.evidence.length : 0)})
+                    </h3>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => setIsAddEvidenceOpen(true)}
+                      className="btn-primary"
+                      style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem', backgroundColor: 'var(--accent-orange)', borderColor: '#e65100', fontWeight: '700' }}
+                    >
+                      ➕ ADD EVIDENCE
+                    </button>
+                    <button
+                      onClick={() => onNavigateTab && onNavigateTab('dossier')}
+                      className="btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem' }}
+                    >
+                      Full Dossier →
+                    </button>
+                  </div>
+                </div>
+
+                {(!selectedCase.evidence || selectedCase.evidence.length === 0) ? (
+                  <div style={{ textAlign: 'center', padding: '1.25rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                    No forensic evidence items logged yet for this case file. Click &ldquo;ADD EVIDENCE&rdquo; to begin ingestion.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
+                    {selectedCase.evidence.slice(0, 4).map((e) => {
+                      const isFact = e.verification_status === 'CONFIRMED_FACT';
+                      return (
+                        <div key={e.evidence_id} style={{ backgroundColor: 'var(--bg-input)', padding: '0.65rem', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--accent-orange)', fontWeight: '700' }}>{e.tracking_code}</span>
+                            <span className={`badge ${isFact ? 'badge-verified' : 'badge-unverified'}`} style={{ fontSize: '0.62rem' }}>
+                              {e.verification_status ? e.verification_status.replace(/_/g, ' ') : 'OBSERVATION'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.82rem', fontWeight: '700', marginTop: '0.25rem', color: 'var(--text-primary)' }}>{e.title}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                            Category: <strong>{e.category}</strong> • Src: {e.source}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {selectedCase.evidence && selectedCase.evidence.length > 4 && (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'right', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                    + {selectedCase.evidence.length - 4} more items cataloged in master dossier
+                  </div>
+                )}
               </div>
 
               {/* Forensic Intelligence Findings Preview Grid (No Raw JSON!) */}
@@ -421,6 +509,15 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCaseCreated={handleCaseCreated}
+      />
+
+      <AddEvidenceModal
+        isOpen={isAddEvidenceOpen}
+        onClose={() => setIsAddEvidenceOpen(false)}
+        caseId={selectedCase?.case_id}
+        caseNumber={selectedCase?.case_number}
+        cases={cases}
+        onEvidenceAdded={handleEvidenceAdded}
       />
     </div>
   );

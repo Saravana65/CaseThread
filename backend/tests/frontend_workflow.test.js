@@ -149,6 +149,48 @@ describe('CASETHREAD - Complete Frontend Integration Workflow', () => {
     createdCaseId = body.data.case_id;
   });
 
+  // 6b. Duplicate Case Number Conflict Handling
+  test('6b. Rejects duplicate case file number with 409 Conflict', async () => {
+    const duplicateRes = await fetch(`${baseUrl}/cases`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({
+        case_number: 'CASE-2026-9042',
+        title: 'Duplicate Heist Attempt',
+        incident_location: 'Pier 14',
+        incident_date: '2026-10-20 04:00:00'
+      })
+    });
+
+    assert.strictEqual(duplicateRes.status, 409);
+    const body = await duplicateRes.json();
+    assert.strictEqual(body.success, false);
+    assert.strictEqual(body.error.code, 'DUPLICATE_CASE_NUMBER');
+  });
+
+  // 6c. Case Input Validation
+  test('6c. Rejects case creation with missing required fields with 400 Validation Error', async () => {
+    const invalidRes = await fetch(`${baseUrl}/cases`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({
+        case_number: '',
+        title: ''
+      })
+    });
+
+    assert.strictEqual(invalidRes.status, 400);
+    const body = await invalidRes.json();
+    assert.strictEqual(body.success, false);
+    assert.strictEqual(body.error.code, 'VALIDATION_ERROR');
+  });
+
   // 7. Case Appears in Dashboard Roster
   test('7. Newly created case appears in the active roster', async () => {
     const listRes = await fetch(`${baseUrl}/cases`, {
@@ -192,6 +234,82 @@ describe('CASETHREAD - Complete Frontend Integration Workflow', () => {
     assert.strictEqual(body.data.verification_status, 'CONFIRMED_FACT');
   });
 
+  // 8b. Duplicate Tracking Code Handling
+  test('8b. Rejects duplicate evidence tracking code with 409 Conflict', async () => {
+    const dupEvidence = {
+      case_id: createdCaseId,
+      tracking_code: 'EVD-2026-9042-01',
+      title: 'Duplicate Tracking Code Entry',
+      category: 'CCTV',
+      description: 'Attempting duplicate submission',
+      source: 'CSI Tech'
+    };
+
+    const dupRes = await fetch(`${baseUrl}/evidence`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify(dupEvidence)
+    });
+
+    assert.strictEqual(dupRes.status, 409);
+    const body = await dupRes.json();
+    assert.strictEqual(body.success, false);
+    assert.strictEqual(body.error.code, 'DUPLICATE_TRACKING_CODE');
+  });
+
+  // 8c. Evidence Validation
+  test('8c. Rejects evidence submission with missing required fields with 400 Validation Error', async () => {
+    const invalidRes = await fetch(`${baseUrl}/evidence`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({
+        case_id: createdCaseId,
+        tracking_code: 'EVD-INVALID-001',
+        category: 'INVALID_CATEGORY_NAME'
+      })
+    });
+
+    assert.strictEqual(invalidRes.status, 400);
+    const body = await invalidRes.json();
+    assert.strictEqual(body.success, false);
+    assert.strictEqual(body.error.code, 'VALIDATION_ERROR');
+  });
+
+  // 8d. Ingest HYPOTHESIS Evidence with Structured Telemetry Metadata
+  test('8d. Ingests HYPOTHESIS evidence with structured telemetry metadata_json', async () => {
+    const hypothesisPayload = {
+      case_id: createdCaseId,
+      tracking_code: 'EVD-2026-9042-HYP',
+      title: 'Investigator Working Theory: Secondary Exit Conduit',
+      category: 'LOCATION',
+      description: 'Hypothesized covert escape route through drainage conduit.',
+      source: 'Detective Cross Investigative Hypothesis',
+      verification_status: 'HYPOTHESIS',
+      reliability_assessment: 'QUESTIONABLE',
+      metadata_json: { conduit_diameter: '1.2m', drainage_basin: 'South Industrial' }
+    };
+
+    const res = await fetch(`${baseUrl}/evidence`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify(hypothesisPayload)
+    });
+
+    assert.strictEqual(res.status, 201);
+    const body = await res.json();
+    assert.strictEqual(body.success, true);
+    assert.strictEqual(body.data.verification_status, 'HYPOTHESIS');
+  });
+
   // 9. Evidence Appears in Case Dossier
   test('9. Ingested evidence appears in case dossier details', async () => {
     const dossierRes = await fetch(`${baseUrl}/cases/${createdCaseId}`, {
@@ -201,9 +319,13 @@ describe('CASETHREAD - Complete Frontend Integration Workflow', () => {
     const body = await dossierRes.json();
     assert.strictEqual(body.success, true);
     assert.ok(Array.isArray(body.data.evidence));
-    assert.strictEqual(body.data.evidence.length, 1);
-    assert.strictEqual(body.data.evidence[0].tracking_code, 'EVD-2026-9042-01');
-    assert.strictEqual(body.data.evidence[0].verification_status, 'CONFIRMED_FACT');
+    assert.strictEqual(body.data.evidence.length, 2);
+    const confirmedEv = body.data.evidence.find(e => e.tracking_code === 'EVD-2026-9042-01');
+    const hypothesisEv = body.data.evidence.find(e => e.tracking_code === 'EVD-2026-9042-HYP');
+    assert.ok(confirmedEv, 'CONFIRMED_FACT evidence must be present in dossier');
+    assert.strictEqual(confirmedEv.verification_status, 'CONFIRMED_FACT');
+    assert.ok(hypothesisEv, 'HYPOTHESIS evidence must be present in dossier');
+    assert.strictEqual(hypothesisEv.verification_status, 'HYPOTHESIS');
   });
 
   // 10. Add Unverified Observation & Run C-Engine Pipeline

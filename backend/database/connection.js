@@ -794,6 +794,10 @@ class MemoryStore {
         const rows = this.officers.filter(o => o.officer_id === parseInt(params[0], 10));
         return [rows, []];
       }
+      if (sql.includes('FROM cases') && sql.includes('case_number = ?')) {
+        const c = this.cases.find(item => item.case_number === params[0]);
+        return [c ? [{ case_id: c.case_id, case_number: c.case_number }] : [], []];
+      }
       if (sql.includes('FROM cases') && (sql.includes('case_id = ?') || sql.includes('c.case_id = ?'))) {
         const c = this.cases.find(item => item.case_id === parseInt(params[0], 10));
         if (c) {
