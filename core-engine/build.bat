@@ -19,6 +19,9 @@ cl /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:bin\test_quadtree.exe /Iinclude
 echo Compiling benchmark_quadtree.exe...
 cl /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:bin\benchmark_quadtree.exe /Iinclude tests\benchmark_quadtree.c src\spatial\*.c
 
+echo Compiling test_dsa_deep.exe...
+cl /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:bin\test_dsa_deep.exe /Iinclude tests\test_dsa_deep.c src\structures\*.c src\hashmap\*.c src\trees\*.c src\graphs\*.c src\algorithms\*.c src\evidence.c src\spatial\*.c
+
 echo Compiling benchmark_dsa.exe...
 cl /nologo /O2 /W3 /D_CRT_SECURE_NO_WARNINGS /Fe:bin\benchmark_dsa.exe /Iinclude tests\benchmark_dsa.c src\structures\*.c src\hashmap\*.c src\trees\*.c src\graphs\*.c src\algorithms\*.c src\evidence.c src\spatial\*.c
 

@@ -9,43 +9,40 @@ const router = express.Router();
 const collaborationController = require('../controllers/collaborationController');
 const { authenticateToken } = require('../middleware/auth');
 
-// All collaboration endpoints require authenticated investigator
-router.use(authenticateToken);
-
 // 1. Case Collaboration & Team Membership
-router.get('/cases/:caseId/members', collaborationController.getCaseMembers);
-router.post('/cases/:caseId/members', collaborationController.addCaseMember);
-router.patch('/cases/:caseId/members/:memberId', collaborationController.updateCaseMember);
-router.delete('/cases/:caseId/members/:memberId', collaborationController.removeCaseMember);
-router.post('/cases/:caseId/transfer-leadership', collaborationController.transferCaseLeadership);
+router.get('/cases/:caseId/members', authenticateToken, collaborationController.getCaseMembers);
+router.post('/cases/:caseId/members', authenticateToken, collaborationController.addCaseMember);
+router.patch('/cases/:caseId/members/:memberId', authenticateToken, collaborationController.updateCaseMember);
+router.delete('/cases/:caseId/members/:memberId', authenticateToken, collaborationController.removeCaseMember);
+router.post('/cases/:caseId/transfer-leadership', authenticateToken, collaborationController.transferCaseLeadership);
 
 // 2. Investigation Task Management & Lifecycle
-router.get('/cases/:caseId/tasks', collaborationController.getCaseTasks);
-router.post('/cases/:caseId/tasks', collaborationController.createTask);
-router.get('/tasks/:taskId', collaborationController.getTaskById);
-router.patch('/tasks/:taskId', collaborationController.updateTask);
-router.post('/tasks/:taskId/assign', collaborationController.assignTask);
-router.post('/tasks/:taskId/notes', collaborationController.addTaskNote);
-router.post('/tasks/:taskId/complete', collaborationController.completeTask);
+router.get('/cases/:caseId/tasks', authenticateToken, collaborationController.getCaseTasks);
+router.post('/cases/:caseId/tasks', authenticateToken, collaborationController.createTask);
+router.get('/tasks/:taskId', authenticateToken, collaborationController.getTaskById);
+router.patch('/tasks/:taskId', authenticateToken, collaborationController.updateTask);
+router.post('/tasks/:taskId/assign', authenticateToken, collaborationController.assignTask);
+router.post('/tasks/:taskId/notes', authenticateToken, collaborationController.addTaskNote);
+router.post('/tasks/:taskId/complete', authenticateToken, collaborationController.completeTask);
 
 // 3. Task Dependencies & Workflow Rules
-router.post('/tasks/:taskId/dependencies', collaborationController.addTaskDependency);
-router.delete('/tasks/:taskId/dependencies/:dependencyId', collaborationController.removeTaskDependency);
+router.post('/tasks/:taskId/dependencies', authenticateToken, collaborationController.addTaskDependency);
+router.delete('/tasks/:taskId/dependencies/:dependencyId', authenticateToken, collaborationController.removeTaskDependency);
 
 // 4. Evidence Review Assignments & Queue
-router.get('/cases/:caseId/reviews', collaborationController.getCaseReviews);
-router.post('/evidence/:evidenceId/reviews', collaborationController.requestEvidenceReview);
-router.patch('/reviews/:reviewId', collaborationController.submitEvidenceReview);
+router.get('/cases/:caseId/reviews', authenticateToken, collaborationController.getCaseReviews);
+router.post('/evidence/:evidenceId/reviews', authenticateToken, collaborationController.requestEvidenceReview);
+router.patch('/reviews/:reviewId', authenticateToken, collaborationController.submitEvidenceReview);
 
 // 5. Investigation Activity Timeline
-router.get('/cases/:caseId/activity', collaborationController.getCaseActivity);
+router.get('/cases/:caseId/activity', authenticateToken, collaborationController.getCaseActivity);
 
 // 6. Internal Notification System
-router.get('/notifications', collaborationController.getNotifications);
-router.patch('/notifications/:notificationId/read', collaborationController.markNotificationRead);
-router.post('/notifications/read-all', collaborationController.markAllNotificationsRead);
+router.get('/notifications', authenticateToken, collaborationController.getNotifications);
+router.patch('/notifications/:notificationId/read', authenticateToken, collaborationController.markNotificationRead);
+router.post('/notifications/read-all', authenticateToken, collaborationController.markAllNotificationsRead);
 
 // 7. Case Workload & Progress Analytics
-router.get('/cases/:caseId/workflow-analytics', collaborationController.getWorkflowAnalytics);
+router.get('/cases/:caseId/workflow-analytics', authenticateToken, collaborationController.getWorkflowAnalytics);
 
 module.exports = router;

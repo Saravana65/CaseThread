@@ -12,6 +12,7 @@ import EvidenceVaultPanel from './components/EvidenceVaultPanel';
 import GeospatialMapPanel from './components/GeospatialMapPanel';
 import CollaborationPanel from './components/CollaborationPanel';
 import ReportExportModal from './components/ReportExportModal';
+import ValidationDashboard from './components/ValidationDashboard';
 import api from './services/api';
 import './styles/theme.css';
 
@@ -21,8 +22,21 @@ export default function App() {
   const [caseData, setCaseData] = useState(null);
   const [analysisData, setAnalysisData] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [officer, setOfficer] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [officer, setOfficer] = useState(() => {
+    try {
+      const cached = localStorage.getItem('casethread_officer');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [authLoading, setAuthLoading] = useState(() => {
+    const token = api.getToken();
+    const cached = localStorage.getItem('casethread_officer');
+    if (!token) return false;
+    if (cached) return false;
+    return true;
+  });
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
@@ -30,22 +44,35 @@ export default function App() {
     const token = api.getToken();
     if (!token) {
       setOfficer(null);
+      try {
+        localStorage.removeItem('casethread_officer');
+      } catch (e) {}
       setAuthLoading(false);
       return;
     }
 
     try {
       const res = await api.getProfile();
-      if (res && res.data) {
-        setOfficer(res.data);
+      const profile = res?.data?.officer || res?.data || res?.officer;
+      if (profile && (profile.badge_number || profile.officer_id || profile.full_name)) {
+        setOfficer(profile);
+        try {
+          localStorage.setItem('casethread_officer', JSON.stringify(profile));
+        } catch (e) {}
       } else {
         api.setToken(null);
         setOfficer(null);
+        try {
+          localStorage.removeItem('casethread_officer');
+        } catch (e) {}
       }
     } catch (err) {
       console.warn('Session verification notice (clearing expired session):', err.message);
       api.setToken(null);
       setOfficer(null);
+      try {
+        localStorage.removeItem('casethread_officer');
+      } catch (e) {}
     } finally {
       setAuthLoading(false);
     }
@@ -98,12 +125,21 @@ export default function App() {
   };
 
   const handleLoginSuccess = (officerProfile) => {
-    setOfficer(officerProfile);
+    const normalized = officerProfile?.officer || officerProfile?.data || officerProfile;
+    setOfficer(normalized);
+    try {
+      localStorage.setItem('casethread_officer', JSON.stringify(normalized));
+    } catch (e) {
+      console.warn('Could not cache officer profile in localStorage:', e);
+    }
     setActiveTab('dashboard');
   };
 
   const handleLogout = () => {
     api.setToken(null);
+    try {
+      localStorage.removeItem('casethread_officer');
+    } catch (e) {}
     setOfficer(null);
     setActiveTab('dashboard');
     setCaseData(null);
@@ -160,7 +196,7 @@ export default function App() {
           color: 'var(--text-muted)',
           fontFamily: 'var(--font-mono)'
         }}>
-          CASETHREAD v1.0.0 • Digital Forensics Intelligence Subsystem • C-Engine DSA Architecture (BFS • DFS • AVL • HashMaps)
+          CASETHREAD v1.0.0 • Digital Forensics Intelligence Subsystem • C-Engine Architecture (BFS • DFS • AVL • HashMaps)
         </footer>
       </div>
     );
@@ -262,6 +298,10 @@ export default function App() {
             />
           </div>
         )}
+
+        {activeTab === 'validation' && (
+          <ValidationDashboard />
+        )}
       </main>
 
       <ReportExportModal
@@ -281,7 +321,7 @@ export default function App() {
         color: 'var(--text-muted)',
         fontFamily: 'var(--font-mono)'
       }}>
-        CASETHREAD v1.0.0 • Digital Forensics Intelligence Subsystem • C-Engine DSA Architecture (BFS • DFS • AVL • HashMaps)
+        CASETHREAD v1.0.0 • Digital Forensics Intelligence Subsystem • C-Engine Architecture (BFS • DFS • AVL • HashMaps)
       </footer>
     </div>
   );

@@ -16,11 +16,13 @@ TEST_DIR := tests
 
 TARGET := $(BIN_DIR)/casethread_engine
 TEST_TARGET := $(BIN_DIR)/test_dsa
+DEEP_TEST_TARGET := $(BIN_DIR)/test_dsa_deep
 BENCHMARK_TARGET := $(BIN_DIR)/benchmark_dsa
 
 ifeq ($(OS),Windows_NT)
     TARGET := $(BIN_DIR)/casethread_engine.exe
     TEST_TARGET := $(BIN_DIR)/test_dsa.exe
+    DEEP_TEST_TARGET := $(BIN_DIR)/test_dsa_deep.exe
     BENCHMARK_TARGET := $(BIN_DIR)/benchmark_dsa.exe
 endif
 
@@ -41,6 +43,15 @@ TEST_SRCS := $(TEST_DIR)/test_dsa.c \
              $(wildcard $(SRC_DIR)/algorithms/*.c) \
              $(wildcard $(SRC_DIR)/spatial/*.c) \
              $(SRC_DIR)/evidence.c
+
+DEEP_TEST_SRCS := $(TEST_DIR)/test_dsa_deep.c \
+                  $(wildcard $(SRC_DIR)/structures/*.c) \
+                  $(wildcard $(SRC_DIR)/hashmap/*.c) \
+                  $(wildcard $(SRC_DIR)/trees/*.c) \
+                  $(wildcard $(SRC_DIR)/graphs/*.c) \
+                  $(wildcard $(SRC_DIR)/algorithms/*.c) \
+                  $(wildcard $(SRC_DIR)/spatial/*.c) \
+                  $(SRC_DIR)/evidence.c
 
 BENCHMARK_SRCS := $(TEST_DIR)/benchmark_dsa.c \
                   $(wildcard $(SRC_DIR)/structures/*.c) \
@@ -65,6 +76,10 @@ $(TARGET): $(ENGINE_SRCS)
 $(TEST_TARGET): $(TEST_SRCS)
 	$(CC) $(CFLAGS) $(TEST_SRCS) -o $(TEST_TARGET) $(LDFLAGS)
 	@echo "[SUCCESS] Built CaseThread Unit Test Suite: $(TEST_TARGET)"
+
+$(DEEP_TEST_TARGET): $(DEEP_TEST_SRCS)
+	$(CC) $(CFLAGS) $(DEEP_TEST_SRCS) -o $(DEEP_TEST_TARGET) $(LDFLAGS)
+	@echo "[SUCCESS] Built CaseThread Deep DSA Test Suite: $(DEEP_TEST_TARGET)"
 
 $(BENCHMARK_TARGET): $(BENCHMARK_SRCS)
 	$(CC) $(CFLAGS) $(BENCHMARK_SRCS) -o $(BENCHMARK_TARGET) $(LDFLAGS)

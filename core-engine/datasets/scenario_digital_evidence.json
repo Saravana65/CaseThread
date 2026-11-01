@@ -1,0 +1,75 @@
+{
+  "case_id": 104,
+  "case_name": "Investigation 104: Corporate Exfiltration & Forensics Tampering",
+  "entities": [
+    { "id": 1, "type": "SUSPECT", "label": "Devon Miller (Chief Architect)" },
+    { "id": 2, "type": "DEVICE", "label": "Encrypted Workstation WS-901" },
+    { "id": 3, "type": "DEVICE", "label": "Exfiltration USB Storage" },
+    { "id": 4, "type": "LOCATION", "label": "HQ R&D Lab" }
+  ],
+  "evidence": [
+    {
+      "id": 4001,
+      "tracking_code": "EVD-104-01",
+      "title": "Endpoint Forensic Disk Dump",
+      "category": "DIGITAL",
+      "source": "Corporate Incident Response Team",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "HQ R&D Lab",
+      "timestamp": 1772455000,
+      "reliability": "HIGH"
+    },
+    {
+      "id": 4002,
+      "tracking_code": "EVD-104-02",
+      "title": "USB Mass Storage Connection Event",
+      "category": "DIGITAL",
+      "source": "UNKNOWN",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "",
+      "timestamp": 1772455200,
+      "reliability": "MEDIUM"
+    },
+    {
+      "id": 4003,
+      "tracking_code": "EVD-104-03",
+      "title": "Anomalous Outbound SSH Stream",
+      "category": "DIGITAL",
+      "source": "Perimeter Firewall Logs",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "HQ R&D Lab",
+      "timestamp": 1772455300,
+      "reliability": "HIGH"
+    }
+  ],
+  "relationships": [
+    { "source_type": "SUSPECT", "source_id": 1, "target_type": "DEVICE", "target_id": 2, "relation_type": "PRIMARY_USER", "confidence_weight": 0.98 },
+    { "source_type": "DEVICE", "source_id": 2, "target_type": "DEVICE", "target_id": 3, "relation_type": "MOUNTED_STORAGE", "confidence_weight": 0.89 },
+    { "source_type": "DEVICE", "source_id": 2, "target_type": "LOCATION", "target_id": 4, "relation_type": "LOCATED_IN", "confidence_weight": 0.95 }
+  ],
+  "timeline": [
+    {
+      "event_id": 30,
+      "timestamp_epoch": 1772455000,
+      "entity_type": "DEVICE",
+      "entity_id": 2,
+      "location": "HQ R&D Lab",
+      "verification_status": "CONFIRMED_FACT"
+    },
+    {
+      "event_id": 31,
+      "timestamp_epoch": 1772455300,
+      "entity_type": "DEVICE",
+      "entity_id": 2,
+      "location": "HQ R&D Lab",
+      "verification_status": "CONFIRMED_FACT"
+    }
+  ],
+  "query": {
+    "action": "FIND_PATH",
+    "source_id": 1,
+    "source_type": "SUSPECT",
+    "target_id": 3,
+    "target_type": "DEVICE"
+  }
+}

@@ -423,6 +423,11 @@ class ApiService {
   getWorkflowAnalytics(caseId) {
     return this.request(`/cases/${caseId}/workflow-analytics`);
   }
+
+  // Phase 12 - Forensic Validation & Benchmarks
+  getValidationSummary() {
+    return this.request('/validation/summary');
+  }
 }
 
 export const api = new ApiService();

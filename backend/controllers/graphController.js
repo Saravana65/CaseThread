@@ -389,12 +389,16 @@ exports.saveRelationship = async (req, res, next) => {
       [caseId, source_type, source_id, target_type, target_id, relation_type, confidence_weight, relationship_nature, notes]
     );
 
-    // Audit Log
-    await execute(
-      `INSERT INTO audit_logs (case_id, officer_id, action_type, entity_affected, entity_id, change_details)
-       VALUES (?, ?, 'CREATE_RELATIONSHIP', 'EVIDENCE_RELATIONSHIP', ?, ?)`,
-      [caseId, officerId, result.insertId, JSON.stringify({ relation_type, source_type, source_id, target_type, target_id })]
-    );
+    // Activity Log
+    try {
+      await execute(
+        `INSERT INTO case_activity_logs (case_id, actor_id, event_type, related_record_id, new_state, event_description)
+         VALUES (?, ?, 'INVESTIGATION_NOTE_ADDED', ?, ?, ?)`,
+        [caseId, officerId, String(result.insertId), JSON.stringify({ relation_type, source_type, source_id, target_type, target_id }), 'Linked evidence relationship']
+      );
+    } catch (logErr) {
+      // Non-fatal logging
+    }
 
     res.status(201).json({
       success: true,

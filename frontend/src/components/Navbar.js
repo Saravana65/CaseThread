@@ -1,6 +1,12 @@
 import React from 'react';
 
 export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOpenReport, unreadCount = 0 }) {
+  const currentOfficer = officer?.officer || officer?.data || officer;
+  const isAuthenticated = Boolean(
+    currentOfficer &&
+    (currentOfficer.badge_number || currentOfficer.officer_id || currentOfficer.full_name)
+  );
+
   const navItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
     { id: 'dossier', label: '📂 Case Dossier', icon: '📂' },
@@ -11,8 +17,18 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
     { id: 'graph', label: '🕸️ Evidence Graph', icon: '🕸️' },
     { id: 'gaps', label: '🔍 Evidence Gaps', icon: '🔍' },
     { id: 'timeline', label: '⏱️ Timelines', icon: '⏱️' },
-    { id: 'leads', label: '🎯 Leads', icon: '🎯' }
+    { id: 'leads', label: '🎯 Leads', icon: '🎯' },
+    { id: 'validation', label: '🔬 Validation', icon: '🔬' }
   ];
+
+  const handleTabClick = (tabId) => {
+    if (!isAuthenticated && tabId !== 'dashboard') {
+      return;
+    }
+    if (onTabChange) {
+      onTabChange(tabId);
+    }
+  };
 
   return (
     <header style={{
@@ -30,7 +46,11 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
         {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }} onClick={() => onTabChange && onTabChange('dashboard')}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }}
+          onClick={() => handleTabClick('dashboard')}
+          title="CASETHREAD Home"
+        >
           <div style={{
             width: '12px',
             height: '12px',
@@ -66,15 +86,18 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => onTabChange && onTabChange(item.id)}
+              onClick={() => handleTabClick(item.id)}
               className={activeTab === item.id ? 'btn-primary' : 'btn-secondary'}
               style={{
                 fontSize: '0.75rem',
                 padding: '0.35rem 0.75rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.3rem'
+                gap: '0.3rem',
+                cursor: isAuthenticated ? 'pointer' : 'default',
+                opacity: isAuthenticated ? 1 : 0.75
               }}
+              title={!isAuthenticated ? 'Sign in to access module' : item.label}
             >
               <span>{item.label}</span>
             </button>
@@ -84,14 +107,32 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
 
       {/* Officer Profile & Session */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-        {officer ? (
+        {isAuthenticated ? (
           <>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                {officer.full_name || 'Det. Alexander Cross'}
-              </div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--accent-orange)', fontFamily: 'var(--font-mono)' }}>
-                BADGE: {officer.badge_number || 'DET-8841'} • {officer.role || 'LEAD_OFFICER'}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.65rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid var(--border-subtle)',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '4px'
+            }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--status-verified)',
+                boxShadow: '0 0 8px var(--status-verified)',
+                flexShrink: 0
+              }} title="Session Authenticated & Active" />
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                  {currentOfficer.full_name || 'Alexander Cross'}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--accent-orange)', fontFamily: 'var(--font-mono)' }}>
+                  BADGE: {currentOfficer.badge_number || 'DET-8841'} • {currentOfficer.role || currentOfficer.rank_designation || 'LEAD_OFFICER'}
+                </div>
               </div>
             </div>
             {onOpenReport && (
@@ -105,7 +146,7 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
               </button>
             )}
             <button
-              onClick={() => onTabChange && onTabChange('collaboration')}
+              onClick={() => handleTabClick('collaboration')}
               className="btn-secondary"
               style={{
                 fontSize: '0.7rem',
@@ -135,12 +176,15 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
               onClick={onLogout}
               className="btn-secondary"
               style={{ fontSize: '0.7rem', padding: '0.35rem 0.7rem' }}
+              title="Sign out of investigation session"
             >
               Sign Out
             </button>
           </>
         ) : (
-          <span className="badge badge-critical">AUTHENTICATION REQUIRED</span>
+          <span className="badge badge-critical" style={{ letterSpacing: '0.5px' }}>
+            AUTHENTICATION REQUIRED
+          </span>
         )}
       </div>
     </header>

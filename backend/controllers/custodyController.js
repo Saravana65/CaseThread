@@ -126,7 +126,7 @@ exports.transferCustody = async (req, res, next) => {
     };
     const stateHash = cryptoService.generateSha256(cryptoService.canonicalize(statePayload));
 
-    const eventTime = new Date().toISOString();
+    const eventTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const eventHash = cryptoService.calculateEventHash({
       previous_event_hash: prevEventHash,
       evidence_id,

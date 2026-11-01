@@ -1,0 +1,77 @@
+{
+  "case_id": 102,
+  "case_name": "Investigation 102: Commercial Vault & Warehouse Intrusion",
+  "entities": [
+    { "id": 1, "type": "SUSPECT", "label": "Vikram Singh (Known Burglar)" },
+    { "id": 2, "type": "SUSPECT", "label": "Karan Malhotra (Vault Technician)" },
+    { "id": 3, "type": "LOCATION", "label": "Warehouse Dock 4" },
+    { "id": 4, "type": "LOCATION", "label": "Main Server Room" },
+    { "id": 5, "type": "DEVICE", "label": "RF Signal Jammer" }
+  ],
+  "evidence": [
+    {
+      "id": 2001,
+      "tracking_code": "EVD-102-01",
+      "title": "Cut Padlock from Dock Gate",
+      "category": "PHYSICAL",
+      "source": "Forensic Recovery Team",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Warehouse Dock 4",
+      "timestamp": 1772442000,
+      "reliability": "HIGH"
+    },
+    {
+      "id": 2002,
+      "tracking_code": "EVD-102-02",
+      "title": "Informant Whispered Sighting",
+      "category": "TESTIMONIAL",
+      "source": "UNKNOWN",
+      "verification_status": "UNVERIFIED_OBSERVATION",
+      "location": "Warehouse Dock 4",
+      "timestamp": 1772442300,
+      "reliability": "LOW"
+    },
+    {
+      "id": 2003,
+      "tracking_code": "EVD-102-03",
+      "title": "RFID Badge Swipe Log",
+      "category": "DIGITAL",
+      "source": "Building Security Server",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Main Server Room",
+      "timestamp": 1772442600,
+      "reliability": "HIGH"
+    }
+  ],
+  "relationships": [
+    { "source_type": "SUSPECT", "source_id": 1, "target_type": "LOCATION", "target_id": 3, "relation_type": "SEEN_NEAR", "confidence_weight": 0.88 },
+    { "source_type": "SUSPECT", "source_id": 2, "target_type": "LOCATION", "target_id": 4, "relation_type": "AUTHORIZED_ACCESS", "confidence_weight": 0.95 },
+    { "source_type": "SUSPECT", "source_id": 1, "target_type": "SUSPECT", "target_id": 2, "relation_type": "FREQUENT_CALLER", "confidence_weight": 0.82 },
+    { "source_type": "DEVICE", "source_id": 5, "target_type": "LOCATION", "target_id": 3, "relation_type": "OPERATED_AT", "confidence_weight": 0.91 }
+  ],
+  "timeline": [
+    {
+      "event_id": 10,
+      "timestamp_epoch": 1772442000,
+      "entity_type": "SUSPECT",
+      "entity_id": 1,
+      "location": "Warehouse Dock 4",
+      "verification_status": "CONFIRMED_FACT"
+    },
+    {
+      "event_id": 11,
+      "timestamp_epoch": 1772442600,
+      "entity_type": "SUSPECT",
+      "entity_id": 2,
+      "location": "Main Server Room",
+      "verification_status": "CONFIRMED_FACT"
+    }
+  ],
+  "query": {
+    "action": "FIND_PATH",
+    "source_id": 1,
+    "source_type": "SUSPECT",
+    "target_id": 4,
+    "target_type": "LOCATION"
+  }
+}

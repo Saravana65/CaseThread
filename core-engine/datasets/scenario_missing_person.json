@@ -1,0 +1,78 @@
+{
+  "case_id": 101,
+  "case_name": "Investigation 101: Disappearance of Priya Sharma",
+  "entities": [
+    { "id": 1, "type": "VICTIM", "label": "Priya Sharma (Missing Person)" },
+    { "id": 2, "type": "PERSON_OF_INTEREST", "label": "Rohan Verma (Colleague)" },
+    { "id": 3, "type": "VEHICLE", "label": "Silver Sedan KA-03-MB-1234" },
+    { "id": 4, "type": "LOCATION", "label": "Metro Station Gate 2" },
+    { "id": 5, "type": "LOCATION", "label": "Central Technology Park" },
+    { "id": 6, "type": "LOCATION", "label": "Riverside Overlook (15km Away)" }
+  ],
+  "evidence": [
+    {
+      "id": 1001,
+      "tracking_code": "EVD-101-01",
+      "title": "Subway Smartcard Tap Log",
+      "category": "DIGITAL",
+      "source": "Metro Transit Authority",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Metro Station Gate 2",
+      "timestamp": 1772438400,
+      "reliability": "HIGH"
+    },
+    {
+      "id": 1002,
+      "tracking_code": "EVD-101-02",
+      "title": "Anonymous Tip via Web Hotline",
+      "category": "TESTIMONIAL",
+      "source": "Web Portal Intake",
+      "verification_status": "UNVERIFIED_OBSERVATION",
+      "location": "Riverside Overlook",
+      "timestamp": 1772438450,
+      "reliability": "LOW"
+    },
+    {
+      "id": 1003,
+      "tracking_code": "EVD-101-03",
+      "title": "Discarded SIM Card Fragment",
+      "category": "PHYSICAL",
+      "source": "UNKNOWN",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "",
+      "timestamp": 0,
+      "reliability": "MEDIUM"
+    }
+  ],
+  "relationships": [
+    { "source_type": "VICTIM", "source_id": 1, "target_type": "PERSON_OF_INTEREST", "target_id": 2, "relation_type": "COLLEAGUE_OF", "confidence_weight": 0.90 },
+    { "source_type": "PERSON_OF_INTEREST", "source_id": 2, "target_type": "VEHICLE", "target_id": 3, "relation_type": "REGISTERED_OWNER", "confidence_weight": 0.95 },
+    { "source_type": "VEHICLE", "source_id": 3, "target_type": "LOCATION", "target_id": 5, "relation_type": "PARKED_AT", "confidence_weight": 0.85 },
+    { "source_type": "VICTIM", "source_id": 1, "target_type": "LOCATION", "target_id": 4, "relation_type": "LAST_SEEN_NEAR", "confidence_weight": 0.92 }
+  ],
+  "timeline": [
+    {
+      "event_id": 1,
+      "timestamp_epoch": 1772438400,
+      "entity_type": "VICTIM",
+      "entity_id": 1,
+      "location": "Metro Station Gate 2",
+      "verification_status": "CONFIRMED_FACT"
+    },
+    {
+      "event_id": 2,
+      "timestamp_epoch": 1772438450,
+      "entity_type": "VICTIM",
+      "entity_id": 1,
+      "location": "Riverside Overlook (15km Away)",
+      "verification_status": "UNVERIFIED_OBSERVATION"
+    }
+  ],
+  "query": {
+    "action": "FIND_PATH",
+    "source_id": 1,
+    "source_type": "VICTIM",
+    "target_id": 5,
+    "target_type": "LOCATION"
+  }
+}

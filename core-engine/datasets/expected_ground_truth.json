@@ -1,0 +1,157 @@
+{
+  "description": "CASETHREAD Phase 12 - Independent Ground Truth Specifications for Controlled Investigation Datasets",
+  "version": "1.0.0-phase12",
+  "evaluation_criteria": {
+    "gap_detection": ["MISSING_TIMESTAMP", "MISSING_SOURCE", "UNVERIFIED_OBSERVATION", "INCOMPLETE_LOCATION", "DISCONNECTED_CLUSTER"],
+    "timeline_anomalies": ["IMPOSSIBLE_TRAVEL_SPEED", "OVERLAPPING_EVENT_UNVERIFIED"],
+    "lead_scoring_formula": "Score = 0.40 * Confidence + 0.30 * Centrality + 0.30 * GapWeight",
+    "graph_metrics": ["nodes_processed", "edges_evaluated", "connected_components", "isolated_nodes_count"]
+  },
+  "scenarios": {
+    "scenario_missing_person": {
+      "case_id": 101,
+      "dataset_file": "scenario_missing_person.json",
+      "expected_gaps": {
+        "total_count": 4,
+        "categories": ["MISSING_TIMESTAMP", "MISSING_SOURCE", "UNVERIFIED_OBSERVATION", "INCOMPLETE_LOCATION"]
+      },
+      "expected_timeline_anomalies": {
+        "total_count": 1,
+        "types": ["IMPOSSIBLE_TRAVEL_SPEED"]
+      },
+      "expected_graph": {
+        "nodes_processed": 9,
+        "connected_components": 3,
+        "isolated_nodes_count": 2,
+        "path_found": true,
+        "path_length_hops": 3
+      },
+      "expected_leads": {
+        "min_count": 1,
+        "top_lead_target": "Rohan Verma (Colleague)"
+      }
+    },
+    "scenario_warehouse_intrusion": {
+      "case_id": 102,
+      "dataset_file": "scenario_warehouse_intrusion.json",
+      "expected_gaps": {
+        "total_count": 2,
+        "categories": ["MISSING_SOURCE", "UNVERIFIED_OBSERVATION"]
+      },
+      "expected_timeline_anomalies": {
+        "total_count": 0
+      },
+      "expected_graph": {
+        "nodes_processed": 8,
+        "connected_components": 1,
+        "path_found": true,
+        "path_length_hops": 2
+      },
+      "expected_leads": {
+        "min_count": 1
+      }
+    },
+    "scenario_vehicle_movement": {
+      "case_id": 103,
+      "dataset_file": "scenario_vehicle_movement.json",
+      "expected_gaps": {
+        "total_count": 0
+      },
+      "expected_timeline_anomalies": {
+        "total_count": 1,
+        "types": ["IMPOSSIBLE_TRAVEL_SPEED"]
+      },
+      "expected_graph": {
+        "nodes_processed": 6,
+        "connected_components": 1,
+        "path_found": true,
+        "path_length_hops": 2
+      },
+      "expected_leads": {
+        "min_count": 1
+      }
+    },
+    "scenario_digital_evidence": {
+      "case_id": 104,
+      "dataset_file": "scenario_digital_evidence.json",
+      "expected_gaps": {
+        "total_count": 2,
+        "categories": ["MISSING_SOURCE", "INCOMPLETE_LOCATION"]
+      },
+      "expected_timeline_anomalies": {
+        "total_count": 0
+      },
+      "expected_graph": {
+        "nodes_processed": 7,
+        "connected_components": 1,
+        "path_found": true,
+        "path_length_hops": 2
+      },
+      "expected_leads": {
+        "min_count": 1
+      }
+    },
+    "scenario_witness_contradiction": {
+      "case_id": 105,
+      "dataset_file": "scenario_witness_contradiction.json",
+      "expected_gaps": {
+        "total_count": 2,
+        "categories": ["UNVERIFIED_OBSERVATION"]
+      },
+      "expected_timeline_anomalies": {
+        "total_count": 1,
+        "types": ["OVERLAPPING_EVENT_UNVERIFIED"]
+      },
+      "expected_graph": {
+        "nodes_processed": 7,
+        "connected_components": 1,
+        "path_found": true,
+        "path_length_hops": 2
+      },
+      "expected_leads": {
+        "min_count": 1
+      }
+    },
+    "scenario_disconnected_network": {
+      "case_id": 106,
+      "dataset_file": "scenario_disconnected_network.json",
+      "expected_gaps": {
+        "total_count": 1,
+        "categories": ["DISCONNECTED_CLUSTER"]
+      },
+      "expected_timeline_anomalies": {
+        "total_count": 0
+      },
+      "expected_graph": {
+        "nodes_processed": 8,
+        "connected_components": 3,
+        "isolated_nodes_count": 1,
+        "path_found": false
+      },
+      "expected_leads": {
+        "min_count": 1
+      }
+    },
+    "scenario_timeline_inconsistency": {
+      "case_id": 107,
+      "dataset_file": "scenario_timeline_inconsistency.json",
+      "expected_gaps": {
+        "total_count": 4,
+        "categories": ["MISSING_TIMESTAMP", "MISSING_SOURCE", "UNVERIFIED_OBSERVATION", "INCOMPLETE_LOCATION"]
+      },
+      "expected_timeline_anomalies": {
+        "total_count": 1,
+        "types": ["IMPOSSIBLE_TRAVEL_SPEED"]
+      },
+      "expected_graph": {
+        "nodes_processed": 7,
+        "connected_components": 2,
+        "path_found": true,
+        "path_length_hops": 1
+      },
+      "expected_leads": {
+        "min_count": 1
+      }
+    }
+  }
+}

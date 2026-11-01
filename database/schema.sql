@@ -13,6 +13,17 @@ USE casethread_db;
 -- Disable foreign key checks during schema re-creation if needed
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS officer_notifications;
+DROP TABLE IF EXISTS case_activity_logs;
+DROP TABLE IF EXISTS evidence_reviews;
+DROP TABLE IF EXISTS investigation_task_dependencies;
+DROP TABLE IF EXISTS investigation_task_notes;
+DROP TABLE IF EXISTS investigation_tasks;
+DROP TABLE IF EXISTS case_members;
+DROP TABLE IF EXISTS evidence_geospatial;
+DROP TABLE IF EXISTS evidence_derived_artifacts;
+DROP TABLE IF EXISTS evidence_metadata_extractions;
+DROP TABLE IF EXISTS evidence_files;
 DROP TABLE IF EXISTS evidence_integrity_verifications;
 DROP TABLE IF EXISTS evidence_custody_events;
 DROP TABLE IF EXISTS evidence_versions;
@@ -397,7 +408,7 @@ CREATE TABLE evidence_audit_logs (
     new_state JSON COMMENT 'Snapshot after mutation',
     previous_state_hash VARCHAR(64) COMMENT 'SHA-256 of canonical previous state',
     current_state_hash VARCHAR(64) COMMENT 'SHA-256 of canonical new state',
-    previous_event_hash VARCHAR(64) NOT NULL DEFAULT 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000' COMMENT 'Cryptographic link to prior event hash for tamper-evident chaining',
+    previous_event_hash VARCHAR(128) NOT NULL DEFAULT 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000' COMMENT 'Cryptographic link to prior event hash for tamper-evident chaining',
     current_event_hash VARCHAR(64) NOT NULL COMMENT 'SHA-256 of deterministic event payload including previous_event_hash',
     canonical_payload JSON COMMENT 'Deterministic canonical serialization of event fields',
     reason_for_change TEXT,
@@ -778,8 +789,8 @@ VALUES
 (1, 'EVD-VEH-003', 'Black Matte Sedan Registration', 'VEHICLE', 'Vehicle matching CCTV footage registered to Damon Vance.', 'DMV Database Registry', '2026-10-15 08:20:00', 'State DMV Central Database', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"license_plate": "7XYZ99", "make": "Sedan", "color": "Matte Black"}', 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 08:25:00', 'INTACT', 'DMV_REG_7XYZ99_DAMON_VANCE_MATTE_BLACK'),
 (1, 'EVD-OBS-004', 'Anonymous Tip: Sighting at Docks', 'TESTIMONY_TRANSCRIPT', 'Anonymous caller stated someone looking like Marcus Vance was loading metallic crates into a motorboat at 04:15 AM.', 'Harbour Pier 9', '2026-10-15 11:00:00', 'UNKNOWN', '[{"type":"SUSPECT","id":1}]', 'UNVERIFIED_OBSERVATION', 'QUESTIONABLE', 1, '{"tip_id": "TIP-8921", "audio_recorded": true}', '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 11:05:00', 'INTACT', 'AUDIO_TRANSCRIPT_TIP8921_PIER9_CRATES'),
 (1, 'EVD-CCTV-005', 'Financial Blvd Street Camera #12', 'CCTV', 'High-definition traffic camera recording matte black sedan speeding north across Financial Blvd at 02:51:30 AM.', '4th & Financial Blvd Intersection', '2026-10-15 05:30:00', 'City Traffic Authority Archive', '[{"type":"SUSPECT","id":2}]', 'CONFIRMED_FACT', 'HIGH', 1, '{"camera_id": "TRAFFIC-12", "speed_est_mph": 58, "plate_partial": "7XY"}', 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 05:35:00', 'INTACT', 'TRAFFIC_FEED_CAM12_FRAME_025130_HD'),
-(1, 'EVD-DIG-006', 'Vault Server Access Log', 'DIGITAL_DEVICE', 'Digital logs showing root cryptographic vault door override executed at 02:38:15 AM using contractor encryption credential key.', 'Depository Server Room', '2026-10-15 07:45:00', 'Vault Core Server Audit Journal', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"auth_user": "CONTRACTOR_ROOT", "ip": "10.0.4.15", "key_id": "ENC-ROSTOVA-88"}', '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 07:50:00', 'INTACT', 'SYSLOG_VAULT_ROOT_AUTH_10.0.4.15_ENC-ROSTOVA-88'),
-(1, 'EVD-BIO-007', 'Synthetic Glove Fiber Sample', 'BIOMETRIC', 'Rare nitrile-neoprene fiber strand recovered from vault door keypad frame with no logged timestamp.', 'Vault Door Keypad', NULL, 'Forensic Crime Scene Team Unit 1', '[]', 'CONFIRMED_FACT', 'PENDING_LAB', 1, '{"lab_ref": "BIO-LAB-2026-09"}', '53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 08:00:00', 'INTACT', 'LAB_SAMPLE_BIO2026_09_NITRILE_NEOPRENE'),
+(1, 'EVD-DIG-006', 'Vault Server Access Log', 'DIGITAL', 'Digital logs showing root cryptographic vault door override executed at 02:38:15 AM using contractor encryption credential key.', 'Depository Server Room', '2026-10-15 07:45:00', 'Vault Core Server Audit Journal', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"auth_user": "CONTRACTOR_ROOT", "ip": "10.0.4.15", "key_id": "ENC-ROSTOVA-88"}', '4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 07:50:00', 'INTACT', 'SYSLOG_VAULT_ROOT_AUTH_10.0.4.15_ENC-ROSTOVA-88'),
+(1, 'EVD-BIO-007', 'Synthetic Glove Fiber Sample', 'FORENSIC_BIO', 'Rare nitrile-neoprene fiber strand recovered from vault door keypad frame with no logged timestamp.', 'Vault Door Keypad', NULL, 'Forensic Crime Scene Team Unit 1', '[]', 'CONFIRMED_FACT', 'PENDING_LAB', 1, '{"lab_ref": "BIO-LAB-2026-09"}', '53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 08:00:00', 'INTACT', 'LAB_SAMPLE_BIO2026_09_NITRILE_NEOPRENE'),
 (1, 'EVD-TEL-008', 'Encrypted VoIP Call Relay', 'PHONE_RECORD', 'VoIP encrypted burst data packet between Elena Rostova terminal and offshore proxy at 02:40:00 AM.', 'Sub-gateway Router 9', '2026-10-15 09:10:00', 'Cyber Telemetry Sniffer Log', '[{"type":"SUSPECT","id":3}]', 'CONFIRMED_FACT', 'HIGH', 2, '{"protocol": "TLSv1.3", "packet_size_bytes": 1024}', 'd28a9b3a324392eb13812738ea0b91d6402377b2ca0ce8108c5054ea4f9c5ff5', 'SHA-256', 'ORIGINAL_FILE', '2026-10-15 09:15:00', 'INTACT', 'PCAP_BURST_ROUTEPACKET_1024B_TLS13'),
 (1, 'EVD-ISO-009', 'Abandoned Mountain Bicycle', 'PHYSICAL', 'Blue mountain bicycle found discarded in alleyway 6 miles from crime scene. No fingerprint or camera links.', 'Alleyway behind 1400 Industrial Way', '2026-10-15 14:00:00', 'Patrol Officer Beat 14', '[]', 'UNVERIFIED_OBSERVATION', 'LOW', 1, '{"serial_number": "MN-4820", "condition": "rusted_chain"}', '6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b', 'SHA-256', 'METADATA_CANONICAL', '2026-10-15 14:05:00', 'INTACT', 'PHYSICAL_PROPERTY_TAG_MN4820_BICYCLE');
 

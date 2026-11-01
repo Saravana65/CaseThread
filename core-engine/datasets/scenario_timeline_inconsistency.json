@@ -1,0 +1,75 @@
+{
+  "case_id": 107,
+  "case_name": "Investigation 107: Alibi Fabrication & Timeline Collisions",
+  "entities": [
+    { "id": 1, "type": "SUSPECT", "label": "Marcus Chen" },
+    { "id": 2, "type": "LOCATION", "label": "Airport VIP Lounge" },
+    { "id": 3, "type": "LOCATION", "label": "Eastside Safehouse (40km Away)" },
+    { "id": 4, "type": "LOCATION", "label": "Downtown Bank Vault" }
+  ],
+  "evidence": [
+    {
+      "id": 7001,
+      "tracking_code": "EVD-107-01",
+      "title": "Claimed Flight Ticket Receipt",
+      "category": "DOCUMENTARY",
+      "source": "UNKNOWN",
+      "verification_status": "UNVERIFIED_OBSERVATION",
+      "location": "Airport VIP Lounge",
+      "timestamp": 1772470000,
+      "reliability": "LOW"
+    },
+    {
+      "id": 7002,
+      "tracking_code": "EVD-107-02",
+      "title": "CCTV Still from Safehouse Gate",
+      "category": "DIGITAL",
+      "source": "Surveillance Camera Feed",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Eastside Safehouse (40km Away)",
+      "timestamp": 1772470090,
+      "reliability": "HIGH"
+    },
+    {
+      "id": 7003,
+      "tracking_code": "EVD-107-03",
+      "title": "Burner Phone SMS Log without Timestamp",
+      "category": "DIGITAL",
+      "source": "UNKNOWN",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "",
+      "timestamp": 0,
+      "reliability": "LOW"
+    }
+  ],
+  "relationships": [
+    { "source_type": "SUSPECT", "source_id": 1, "target_type": "LOCATION", "target_id": 2, "relation_type": "CLAIMED_LOCATION", "confidence_weight": 0.40 },
+    { "source_type": "SUSPECT", "source_id": 1, "target_type": "LOCATION", "target_id": 3, "relation_type": "RECORDED_PRESENCE", "confidence_weight": 0.95 },
+    { "source_type": "SUSPECT", "source_id": 1, "target_type": "LOCATION", "target_id": 4, "relation_type": "SUSPECTED_TARGET", "confidence_weight": 0.85 }
+  ],
+  "timeline": [
+    {
+      "event_id": 60,
+      "timestamp_epoch": 1772470000,
+      "entity_type": "SUSPECT",
+      "entity_id": 1,
+      "location": "Airport VIP Lounge",
+      "verification_status": "UNVERIFIED_OBSERVATION"
+    },
+    {
+      "event_id": 61,
+      "timestamp_epoch": 1772470090,
+      "entity_type": "SUSPECT",
+      "entity_id": 1,
+      "location": "Eastside Safehouse (40km Away)",
+      "verification_status": "CONFIRMED_FACT"
+    }
+  ],
+  "query": {
+    "action": "FIND_PATH",
+    "source_id": 1,
+    "source_type": "SUSPECT",
+    "target_id": 4,
+    "target_type": "LOCATION"
+  }
+}

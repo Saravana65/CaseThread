@@ -308,7 +308,8 @@ ct_status_t parse_and_ingest_json(case_ingestion_context_t *ctx, const char *jso
                 const char *loc_p = find_key(obj_start, "location");
                 if (loc_p && loc_p < obj_end) extract_string(loc_p, loc, sizeof(loc));
 
-                const char *st_p = find_key(obj_start, "status");
+                const char *st_p = find_key(obj_start, "verification_status");
+                if (!st_p || st_p >= obj_end) st_p = find_key(obj_start, "status");
                 if (st_p && st_p < obj_end) extract_string(st_p, status_str, sizeof(status_str));
 
                 verification_status_t status = evidence_status_from_str(status_str);

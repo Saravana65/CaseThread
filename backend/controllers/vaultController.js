@@ -199,7 +199,7 @@ exports.uploadEvidenceFile = async (req, res, next) => {
       ? priorLogs[priorLogs.length - 1].current_event_hash
       : cryptoService.GENESIS_HASH;
 
-    const eventTime = new Date().toISOString();
+    const eventTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const eventParams = {
       previous_event_hash: prevEventHash,
       evidence_id,
@@ -566,7 +566,7 @@ exports.verifyVaultFileIntegrity = async (req, res, next) => {
       ? priorLogs[priorLogs.length - 1].current_event_hash
       : cryptoService.GENESIS_HASH;
 
-    const eventTime = new Date().toISOString();
+    const eventTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const eventParams = {
       previous_event_hash: prevEventHash,
       evidence_id: file.evidence_id,

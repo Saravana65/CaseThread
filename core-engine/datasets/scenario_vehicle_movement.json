@@ -1,0 +1,64 @@
+{
+  "case_id": 103,
+  "case_name": "Investigation 103: Highway Courier Interception & High-Speed Transit",
+  "entities": [
+    { "id": 1, "type": "VEHICLE", "label": "Armored Transport DL-04-CC-5521" },
+    { "id": 2, "type": "PERSON", "label": "Courier Driver Ankit" },
+    { "id": 3, "type": "LOCATION", "label": "Toll Plaza North KM 24" },
+    { "id": 4, "type": "LOCATION", "label": "Toll Plaza South KM 98 (74km Away)" }
+  ],
+  "evidence": [
+    {
+      "id": 3001,
+      "tracking_code": "EVD-103-01",
+      "title": "FASTag Electronic Toll Log A",
+      "category": "DIGITAL",
+      "source": "National Highway Authority",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Toll Plaza North KM 24",
+      "timestamp": 1772450000,
+      "reliability": "HIGH"
+    },
+    {
+      "id": 3002,
+      "tracking_code": "EVD-103-02",
+      "title": "FASTag Electronic Toll Log B",
+      "category": "DIGITAL",
+      "source": "National Highway Authority",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Toll Plaza South KM 98 (74km Away)",
+      "timestamp": 1772450100,
+      "reliability": "HIGH"
+    }
+  ],
+  "relationships": [
+    { "source_type": "PERSON", "source_id": 2, "target_type": "VEHICLE", "target_id": 1, "relation_type": "ASSIGNED_DRIVER", "confidence_weight": 0.99 },
+    { "source_type": "VEHICLE", "source_id": 1, "target_type": "LOCATION", "target_id": 3, "relation_type": "TRANSITED_THROUGH", "confidence_weight": 0.95 },
+    { "source_type": "VEHICLE", "source_id": 1, "target_type": "LOCATION", "target_id": 4, "relation_type": "TRANSITED_THROUGH", "confidence_weight": 0.95 }
+  ],
+  "timeline": [
+    {
+      "event_id": 20,
+      "timestamp_epoch": 1772450000,
+      "entity_type": "VEHICLE",
+      "entity_id": 1,
+      "location": "Toll Plaza North KM 24",
+      "verification_status": "CONFIRMED_FACT"
+    },
+    {
+      "event_id": 21,
+      "timestamp_epoch": 1772450100,
+      "entity_type": "VEHICLE",
+      "entity_id": 1,
+      "location": "Toll Plaza South KM 98 (74km Away)",
+      "verification_status": "CONFIRMED_FACT"
+    }
+  ],
+  "query": {
+    "action": "FIND_PATH",
+    "source_id": 2,
+    "source_type": "PERSON",
+    "target_id": 4,
+    "target_type": "LOCATION"
+  }
+}

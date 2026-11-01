@@ -64,7 +64,7 @@ ct_status_t ct_analyze_timeline(const avl_tree_t *timeline_tree, const evidence_
                 if (time_diff_sec < 0) time_diff_sec = -time_diff_sec;
 
                 // If sightings occur within 3 minutes at distinct locations (> 5 km apart assumed)
-                if (time_diff_sec < 180) { // Under 3 minutes
+                if (time_diff_sec > 0 && time_diff_sec < 180) { // Under 3 minutes, non-zero difference
                     char explanation[256];
                     snprintf(explanation, sizeof(explanation),
                              "Entity '%s' (ID %d) logged at '%s' at %lld and '%s' at %lld (%lld sec difference). Physically improbable transit interval.",

@@ -550,7 +550,7 @@ exports.updateTask = async (req, res, next) => {
     const updatedStatus = status !== undefined ? status : task.status;
     const updatedDue = due_date !== undefined ? due_date : task.due_date;
     const updatedCompNotes = completion_notes !== undefined ? completion_notes : task.completion_notes;
-    const completedAt = updatedStatus === 'COMPLETED' ? new Date().toISOString() : task.completed_at;
+    const completedAt = updatedStatus === 'COMPLETED' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : task.completed_at;
 
     const [updateRes] = await execute(
       `UPDATE investigation_tasks 

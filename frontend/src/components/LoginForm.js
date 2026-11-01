@@ -73,14 +73,6 @@ export default function LoginForm({ onLoginSuccess }) {
     }
   };
 
-  const handleFillDemo = () => {
-    setBadgeNumber('DET-8841');
-    setPassword('Password123!');
-    setFieldErrors({});
-    setGeneralError(null);
-  };
-
-  const isDemoAllowed = process.env.NODE_ENV !== 'production' || process.env.REACT_APP_ENABLE_DEMO === 'true';
 
   return (
     <div style={{
@@ -297,46 +289,7 @@ export default function LoginForm({ onLoginSuccess }) {
           </button>
         </form>
 
-        {/* Demo Credentials Quick-Fill Aid (Guarded: Dev/Evaluation Only) */}
-        {isDemoAllowed && (
-          <div style={{
-            marginTop: '1.75rem',
-            paddingTop: '1.25rem',
-            borderTop: '1px solid var(--border-subtle)',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              display: 'inline-block',
-              fontSize: '0.65rem',
-              color: 'var(--accent-orange)',
-              fontFamily: 'var(--font-mono)',
-              border: '1px solid rgba(255, 152, 0, 0.4)',
-              backgroundColor: 'rgba(255, 152, 0, 0.08)',
-              padding: '0.2rem 0.5rem',
-              borderRadius: '3px',
-              marginBottom: '0.5rem'
-            }}>
-              DEMO / EVALUATION ENVIRONMENT ONLY
-            </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-              Prefills test officer credentials. Not for production deployments.
-            </div>
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="btn-secondary"
-              style={{
-                fontSize: '0.72rem',
-                padding: '0.35rem 0.75rem',
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--accent-orange)',
-                borderColor: 'var(--border-default)'
-              }}
-            >
-              📋 Prefill DET-8841 (Lead Detective)
-            </button>
-          </div>
-        )}
+
       </div>
     </div>
   );

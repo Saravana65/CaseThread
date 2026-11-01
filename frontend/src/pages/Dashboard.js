@@ -303,14 +303,6 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
                       <span>ADD EVIDENCE</span>
                     </button>
                     <button
-                      onClick={() => triggerAnalysis(selectedCase.case_id)}
-                      disabled={analyzing}
-                      className="btn-primary"
-                      style={{ minWidth: '190px' }}
-                    >
-                      {analyzing ? '⚡ Executing C Engine...' : '⚡ Run C DSA Analysis'}
-                    </button>
-                    <button
                       onClick={() => onNavigateTab && onNavigateTab('graph')}
                       className="btn-secondary"
                       style={{ minWidth: '190px' }}

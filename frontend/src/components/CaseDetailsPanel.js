@@ -74,14 +74,6 @@ export default function CaseDetailsPanel({ caseData, onTriggerAnalysis, analyzin
               <span>📦</span>
               <span>ADD EVIDENCE</span>
             </button>
-            <button
-              onClick={() => onTriggerAnalysis && onTriggerAnalysis(caseData.case_id)}
-              disabled={analyzing}
-              className="btn-primary"
-              style={{ minWidth: '180px' }}
-            >
-              {analyzing ? '⚡ Executing C Engine...' : '⚡ Run C DSA Analysis'}
-            </button>
             {onExploreGraph && (
               <button
                 onClick={onExploreGraph}

@@ -1,0 +1,58 @@
+{
+  "case_id": 106,
+  "case_name": "Investigation 106: Multi-Cell Cargo Thefts & Phantom Lead",
+  "entities": [
+    { "id": 1, "type": "SUSPECT", "label": "Cell Leader Farhan" },
+    { "id": 2, "type": "SUSPECT", "label": "Driver Sameer" },
+    { "id": 3, "type": "VEHICLE", "label": "Cargo Van MH-12-PQ-8811" },
+    { "id": 4, "type": "SUSPECT", "label": "Fencer Jacob (Isolated Subgraph)" },
+    { "id": 5, "type": "LOCATION", "label": "Jacob Pawnshop" },
+    { "id": 6, "type": "PERSON", "label": "Anonymous Unconnected Tipster (Isolated Node)" }
+  ],
+  "evidence": [
+    {
+      "id": 6001,
+      "tracking_code": "EVD-106-01",
+      "title": "Intercepted SMS Log Between Farhan and Sameer",
+      "category": "DIGITAL",
+      "source": "Court Authorized Wiretap",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Central Cell Tower",
+      "timestamp": 1772465000,
+      "reliability": "HIGH"
+    },
+    {
+      "id": 6002,
+      "tracking_code": "EVD-106-02",
+      "title": "Pawnshop Ledger Entry",
+      "category": "DOCUMENTARY",
+      "source": "Commercial Audit Receipt",
+      "verification_status": "CONFIRMED_FACT",
+      "location": "Jacob Pawnshop",
+      "timestamp": 1772465500,
+      "reliability": "HIGH"
+    }
+  ],
+  "relationships": [
+    { "source_type": "SUSPECT", "source_id": 1, "target_type": "SUSPECT", "target_id": 2, "relation_type": "COMMANDS", "confidence_weight": 0.95 },
+    { "source_type": "SUSPECT", "source_id": 2, "target_type": "VEHICLE", "target_id": 3, "relation_type": "OPERATES", "confidence_weight": 0.92 },
+    { "source_type": "SUSPECT", "source_id": 4, "target_type": "LOCATION", "target_id": 5, "relation_type": "PROPRIETOR_OF", "confidence_weight": 0.98 }
+  ],
+  "timeline": [
+    {
+      "event_id": 50,
+      "timestamp_epoch": 1772465000,
+      "entity_type": "SUSPECT",
+      "entity_id": 1,
+      "location": "Central Cell Tower",
+      "verification_status": "CONFIRMED_FACT"
+    }
+  ],
+  "query": {
+    "action": "FIND_PATH",
+    "source_id": 1,
+    "source_type": "SUSPECT",
+    "target_id": 6,
+    "target_type": "PERSON"
+  }
+}

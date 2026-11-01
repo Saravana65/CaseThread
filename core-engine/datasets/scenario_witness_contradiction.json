@@ -1,0 +1,66 @@
+{
+  "case_id": 105,
+  "case_name": "Investigation 105: Downtown Diamond Exchange Robbery",
+  "entities": [
+    { "id": 1, "type": "SUSPECT", "label": "Tariq Mansoor (Prime Suspect)" },
+    { "id": 2, "type": "WITNESS", "label": "Security Guard Harish" },
+    { "id": 3, "type": "WITNESS", "label": "Street Vendor Maya" },
+    { "id": 4, "type": "LOCATION", "label": "North Alley Exit" },
+    { "id": 5, "type": "LOCATION", "label": "South Entrance Lobby" }
+  ],
+  "evidence": [
+    {
+      "id": 5001,
+      "tracking_code": "EVD-105-01",
+      "title": "Guard Harish Sworn Interview",
+      "category": "TESTIMONIAL",
+      "source": "Recorded Audio Deposition",
+      "verification_status": "UNVERIFIED_OBSERVATION",
+      "location": "North Alley Exit",
+      "timestamp": 1772460000,
+      "reliability": "MEDIUM"
+    },
+    {
+      "id": 5002,
+      "tracking_code": "EVD-105-02",
+      "title": "Vendor Maya Statement",
+      "category": "TESTIMONIAL",
+      "source": "Patrol Officer Field Notes",
+      "verification_status": "UNVERIFIED_OBSERVATION",
+      "location": "South Entrance Lobby",
+      "timestamp": 1772460000,
+      "reliability": "LOW"
+    }
+  ],
+  "relationships": [
+    { "source_type": "WITNESS", "source_id": 2, "target_type": "SUSPECT", "target_id": 1, "relation_type": "CLAIMS_SAW", "confidence_weight": 0.65 },
+    { "source_type": "WITNESS", "source_id": 3, "target_type": "SUSPECT", "target_id": 1, "relation_type": "CLAIMS_SAW", "confidence_weight": 0.55 },
+    { "source_type": "WITNESS", "source_id": 2, "target_type": "LOCATION", "target_id": 4, "relation_type": "STATIONED_AT", "confidence_weight": 0.95 },
+    { "source_type": "WITNESS", "source_id": 3, "target_type": "LOCATION", "target_id": 5, "relation_type": "STATIONED_AT", "confidence_weight": 0.90 }
+  ],
+  "timeline": [
+    {
+      "event_id": 40,
+      "timestamp_epoch": 1772460000,
+      "entity_type": "SUSPECT",
+      "entity_id": 1,
+      "location": "North Alley Exit",
+      "verification_status": "UNVERIFIED_OBSERVATION"
+    },
+    {
+      "event_id": 41,
+      "timestamp_epoch": 1772460000,
+      "entity_type": "SUSPECT",
+      "entity_id": 1,
+      "location": "South Entrance Lobby",
+      "verification_status": "UNVERIFIED_OBSERVATION"
+    }
+  ],
+  "query": {
+    "action": "FIND_PATH",
+    "source_id": 2,
+    "source_type": "WITNESS",
+    "target_id": 3,
+    "target_type": "WITNESS"
+  }
+}
