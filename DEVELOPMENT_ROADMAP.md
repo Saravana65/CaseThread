@@ -14,6 +14,7 @@ flowchart LR
     P4 --> P5["Phase 5: E2E Case Simulation (COMPLETED)"]
     P5 --> P6["Phase 6: Production Hardening & Benchmarks (COMPLETED)"]
     P6 --> P7["Phase 7: Forensic Integrity & Explainable AI (COMPLETED)"]
+    P7 --> P8["Phase 8: Secure File Vault & Multi-Format Ingestion (COMPLETED)"]
 ```
 
 ---
@@ -191,3 +192,53 @@ flowchart LR
   - 16 new automated forensic integrity tests (100% pass).
   - Complete backend test suite: **85 passing tests across 13 suites** with zero failures.
   - Production React build compiled successfully with 0 errors (75.01 kB gzipped).
+
+---
+
+### Phase 8: Digital Evidence Acquisition, Secure File Vault & Multi-Format Ingestion (COMPLETED)
+*Objective: Connect physical digital evidence files (documents, images, audio, video, structured records) to existing Phase 7 integrity workflows, establishing a tamper-evident storage vault, automated format-aware metadata extraction, and derived artifact lifecycle management.*
+
+- [x] **Stage 0: Repository Audit & Gap Analysis**:
+  - Validated existing database schema, memory store, and Phase 7 integrity architecture.
+  - Formulated schema extensions (`evidence_files`, `evidence_metadata_extractions`, `evidence_derived_artifacts`) avoiding duplication.
+- [x] **Stage 1: Secure Evidence File Acquisition (`backend/services/vaultService.js`)**:
+  - Implemented multipart file uploads with `multer` memory storage.
+  - Strict 50MB file size cap preventing denial-of-service ingestion.
+  - Binary magic-byte signature validation (PDF, PNG, JPEG, MP4, WAV, MP3, CSV, TXT, JSON, XML) neutralizing MIME spoofing attacks.
+  - Sanitized filenames and UUIDv4 storage keys (`storage_key = <uuid>_<clean_filename>`).
+  - Path traversal defense preventing directory escape vectors (`..`, `\0`, absolute paths).
+- [x] **Stage 2: Secure File Vault & Storage Management (`backend/services/vaultService.js`)**:
+  - Persistent storage directories outside public web root (`storage/vault/cases/<caseId>/originals/` and `storage/vault/cases/<caseId>/artifacts/`).
+  - Docker volume mount (`evidence_vault:/app/storage/vault`) ensuring persistence across container redeployments.
+  - Streamed, byte-range capable file downloads and media preview endpoints.
+  - Case-level access isolation restricting downloads to assigned lead officers.
+  - Missing file and tampering detection at the disk filesystem layer.
+- [x] **Stage 3: Integration with Phase 7 Cryptographic Integrity (`cryptoService.js`)**:
+  - Chunked 64KB streaming SHA-256 calculation (`cryptoService.calculateFileSha256`).
+  - Storage of content hash in `evidence_files.sha256_hash` and `evidence.sha256_fingerprint`.
+  - Live disk verification comparing physical bytes with cryptographic ledger records.
+  - Logging of verification operations in `evidence_integrity_verifications`.
+- [x] **Stage 4: Automated Format-Aware Metadata Extraction (`metadataExtractor.js`)**:
+  - **Images (PNG, JPEG):** Extracted dimensions, color depth, EXIF metadata, camera make/model, ISO, exposure, and GPS geolocation coordinates.
+  - **Documents (PDF):** Extracted page count, title, author, creation date, and PDF specification version.
+  - **Audio (WAV, MP3):** Extracted duration, sample rate, channels, bitrate, and MPEG frame headers.
+  - **Video (MP4):** Extracted frame dimensions, duration, time scale, codec tags (`avc1`, `mp4a`), and ISO base media box atoms.
+  - **Data Records (CSV, JSON, XML, TXT):** Extracted encoding, line/record counts, headers, column counts, and top-level schema keys.
+- [x] **Stage 5: Evidence Classification & Normalization**:
+  - Structured extraction mapping stored in `evidence_metadata_extractions`.
+  - Officer review and acceptance workflow (`POST /api/v1/vault/extractions/:id/review`).
+  - Strict preservation of `CONFIRMED_FACT` vs `UNVERIFIED_OBSERVATION` boundaries; manual officer observations are never silently overwritten.
+- [x] **Stage 6: Derived Forensic Artifact Management (`artifactService.js`)**:
+  - Controlled generation of derived research artifacts (`EXTRACTED_TEXT`, `NORMALIZED_DATA`, `PREVIEW_IMAGE`).
+  - Independent SHA-256 fingerprinting for each derived artifact.
+  - Parent-child lineage tracking linking derived artifacts back to original evidence files without modifying original media.
+- [x] **Stage 7 & 8: Evidence Vault UI & Search Filtering (`EvidenceVaultPanel.js`)**:
+  - Modern React evidence vault interface with drag-and-drop ingestion dropzone and upload progress bar.
+  - Multi-parameter search and filtering (case, category, format, integrity status, officer).
+  - Inspection drawer displaying complete technical metadata, EXIF details, and GPS coordinates.
+  - In-browser media preview player supporting images, PDF documents, video, and audio.
+  - On-demand derived artifact generation and secure download actions.
+- [x] **Stage 9: Quality Assurance & Automated Test Suite (`tests/evidence_vault.test.js`)**:
+  - 22 dedicated automated test cases verifying file upload, magic bytes, MIME spoofing rejection, oversized file rejection, path traversal protection, downloads, media previews, integrity verification, tampering detection, missing file handling, derived artifacts, officer extraction reviews, search filters, and JSON report dossier integration.
+  - Full platform test suite: **107 passing backend tests across 14 suites** (100% pass).
+  - Optimized production React build compiled successfully (79.88 kB gzipped).

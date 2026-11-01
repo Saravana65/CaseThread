@@ -8,6 +8,7 @@ import EvidenceGapPanel from './components/EvidenceGapPanel';
 import TimelinePanel from './components/TimelinePanel';
 import InvestigativeLeadsPanel from './components/InvestigativeLeadsPanel';
 import EvidenceIntegrityPanel from './components/EvidenceIntegrityPanel';
+import EvidenceVaultPanel from './components/EvidenceVaultPanel';
 import ReportExportModal from './components/ReportExportModal';
 import api from './services/api';
 import './styles/theme.css';
@@ -191,6 +192,15 @@ export default function App() {
               onExploreGraph={() => setActiveTab('graph')}
               onRefreshCase={loadCaseInfo}
               onOpenReport={() => setReportModalOpen(true)}
+            />
+          </div>
+        )}
+
+        {activeTab === 'vault' && (
+          <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
+            <EvidenceVaultPanel
+              selectedCaseId={selectedCaseId}
+              officer={officer}
             />
           </div>
         )}

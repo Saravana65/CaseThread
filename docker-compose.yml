@@ -44,6 +44,8 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
       C_ENGINE_TIMEOUT_MS: ${C_ENGINE_TIMEOUT_MS:-8000}
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:3000}
+    volumes:
+      - evidence_vault:/app/storage/vault
     depends_on:
       database:
         condition: service_healthy
@@ -63,4 +65,6 @@ services:
 
 volumes:
   db_data:
+    driver: local
+  evidence_vault:
     driver: local

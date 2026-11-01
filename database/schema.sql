@@ -388,7 +388,10 @@ CREATE TABLE evidence_audit_logs (
         'RELATIONSHIP_LINKED',
         'CUSTODY_TRANSFERRED',
         'INTEGRITY_VERIFIED',
-        'ARCHIVED'
+        'ARCHIVED',
+        'FILE_UPLOADED',
+        'METADATA_EXTRACTED',
+        'ARTIFACT_GENERATED'
     ) NOT NULL,
     previous_state JSON COMMENT 'Snapshot before mutation',
     new_state JSON COMMENT 'Snapshot after mutation',
@@ -415,6 +418,103 @@ CREATE TABLE evidence_audit_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==============================================================================
+
+-- ------------------------------------------------------------------------------
+-- 11. Table: evidence_files (Physical & Digital Evidence Files in Secure Vault)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_files (
+    file_id INT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    storage_key VARCHAR(120) NOT NULL UNIQUE,
+    storage_path VARCHAR(500) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    sanitized_filename VARCHAR(255) NOT NULL,
+    file_extension VARCHAR(20) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    detected_mime_type VARCHAR(100) NOT NULL,
+    file_size_bytes BIGINT NOT NULL,
+    sha256_hash VARCHAR(64) NOT NULL,
+    hash_algorithm VARCHAR(32) NOT NULL DEFAULT 'SHA-256',
+    is_primary BOOLEAN NOT NULL DEFAULT TRUE,
+    uploaded_by_officer_id INT NOT NULL,
+    upload_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    integrity_status ENUM('PENDING_VERIFICATION', 'INTACT', 'TAMPERED_MISMATCH', 'FILE_MISSING') NOT NULL DEFAULT 'INTACT',
+    last_verified_at DATETIME,
+    CONSTRAINT fk_file_evidence FOREIGN KEY (evidence_id) 
+        REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_file_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_file_officer FOREIGN KEY (uploaded_by_officer_id) 
+        REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_files_evidence (evidence_id),
+    INDEX idx_files_case (case_id),
+    INDEX idx_files_hash (sha256_hash),
+    INDEX idx_files_ext (file_extension)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 12. Table: evidence_metadata_extractions (Automated Forensic Metadata Extraction)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_metadata_extractions (
+    extraction_id INT AUTO_INCREMENT PRIMARY KEY,
+    file_id INT NOT NULL,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    file_format VARCHAR(50) NOT NULL,
+    extractor_tool VARCHAR(100) NOT NULL,
+    extractor_version VARCHAR(50) NOT NULL,
+    extraction_status ENUM('SUCCESS', 'PARTIAL', 'FAILED', 'UNSUPPORTED_FORMAT') NOT NULL DEFAULT 'SUCCESS',
+    extracted_metadata_json JSON NOT NULL,
+    extracted_timestamp DATETIME,
+    extracted_gps_lat DECIMAL(10, 8),
+    extracted_gps_lon DECIMAL(11, 8),
+    officer_reviewed BOOLEAN NOT NULL DEFAULT FALSE,
+    review_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_extract_file FOREIGN KEY (file_id) 
+        REFERENCES evidence_files(file_id) ON DELETE CASCADE,
+    CONSTRAINT fk_extract_evidence FOREIGN KEY (evidence_id) 
+        REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_extract_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    INDEX idx_extract_file (file_id),
+    INDEX idx_extract_case (case_id),
+    INDEX idx_extract_status (extraction_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 13. Table: evidence_derived_artifacts (Controlled Derived Forensic Artifacts)
+-- ------------------------------------------------------------------------------
+CREATE TABLE evidence_derived_artifacts (
+    artifact_id INT AUTO_INCREMENT PRIMARY KEY,
+    parent_file_id INT NOT NULL,
+    evidence_id INT NOT NULL,
+    case_id INT NOT NULL,
+    artifact_type ENUM('THUMBNAIL', 'PREVIEW_IMAGE', 'EXTRACTED_TEXT', 'NORMALIZED_DATA', 'WAVEFORM', 'DOCUMENT_METADATA') NOT NULL,
+    storage_key VARCHAR(120) NOT NULL UNIQUE,
+    storage_path VARCHAR(500) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    file_size_bytes BIGINT NOT NULL,
+    sha256_hash VARCHAR(64) NOT NULL,
+    generator_tool VARCHAR(100) NOT NULL,
+    generator_version VARCHAR(50) NOT NULL,
+    transformation_summary TEXT,
+    created_by_officer_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_artifact_parent FOREIGN KEY (parent_file_id) 
+        REFERENCES evidence_files(file_id) ON DELETE CASCADE,
+    CONSTRAINT fk_artifact_evidence FOREIGN KEY (evidence_id) 
+        REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_artifact_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_artifact_officer FOREIGN KEY (created_by_officer_id) 
+        REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_artifact_parent (parent_file_id),
+    INDEX idx_artifact_evidence (evidence_id),
+    INDEX idx_artifact_type (artifact_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- INITIAL SEED DATA (For Verification & Development)
 -- ==============================================================================
 

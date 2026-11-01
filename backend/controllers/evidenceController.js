@@ -4,8 +4,10 @@
  * @project CASETHREAD - Phase 7 Forensic Evidence Integrity
  */
 
+const fs = require('fs');
 const { execute } = require('../database/connection');
 const cryptoService = require('../services/cryptoService');
+const vaultService = require('../services/vaultService');
 
 /**
  * Validates officer case access permissions.
@@ -506,9 +508,24 @@ exports.verifyEvidenceIntegrity = async (req, res, next) => {
       }
     }
 
-    // 1. Recalculate hash from stored content or canonical metadata
+    // 1. Recalculate hash from physical vault file, stored content, or canonical metadata
     let recalculatedHash;
-    if (ev.fingerprint_type === 'ORIGINAL_FILE') {
+    const [vFiles] = await execute('SELECT * FROM evidence_files WHERE evidence_id = ? AND is_primary = 1', [evidenceId]);
+    if (vFiles && vFiles.length > 0 && vFiles[0].storage_key) {
+      try {
+        const vPath = vaultService.resolveVaultPath(ev.case_id, vFiles[0].storage_key, false);
+        if (fs.existsSync(vPath)) {
+          const fileHashRes = await cryptoService.calculateFileSha256(vPath);
+          recalculatedHash = fileHashRes.sha256_hash;
+        } else if (ev.content_payload !== null && ev.content_payload !== undefined && ev.content_payload.length > 0) {
+          recalculatedHash = cryptoService.generateSha256(ev.content_payload);
+        } else {
+          recalculatedHash = 'FILE_MISSING_ON_DISK';
+        }
+      } catch (fErr) {
+        recalculatedHash = cryptoService.generateSha256(ev.content_payload !== null && ev.content_payload !== undefined ? ev.content_payload : '');
+      }
+    } else if (ev.fingerprint_type === 'ORIGINAL_FILE') {
       recalculatedHash = cryptoService.generateSha256(ev.content_payload !== null && ev.content_payload !== undefined ? ev.content_payload : '');
     } else {
       let parsedMeta = null;

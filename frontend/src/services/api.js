@@ -24,8 +24,9 @@ class ApiService {
 
   async request(endpoint, options = {}) {
     const token = this.getToken();
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers
     };
@@ -191,6 +192,62 @@ class ApiService {
   getCaseReportHtmlUrl(caseId) {
     const token = this.getToken();
     return `${API_BASE_URL}/reports/cases/${caseId}/html${token ? '?token=' + encodeURIComponent(token) : ''}`;
+  }
+
+  // Phase 8: Secure Evidence File Vault, Ingestion, Metadata Extraction & Artifacts
+  uploadVaultFile(formData) {
+    return this.request('/vault/upload', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  getVaultFiles(caseId) {
+    return this.request(`/vault/cases/${caseId}/files`);
+  }
+
+  getVaultFileDetails(fileId) {
+    return this.request(`/vault/files/${fileId}`);
+  }
+
+  verifyVaultFileIntegrity(fileId) {
+    return this.request(`/vault/files/${fileId}/verify-integrity`, {
+      method: 'POST'
+    });
+  }
+
+  createDerivedArtifact(fileId, artifactType, notes = '') {
+    return this.request(`/vault/files/${fileId}/artifacts`, {
+      method: 'POST',
+      body: JSON.stringify({ artifact_type: artifactType, notes })
+    });
+  }
+
+  reviewMetadataExtraction(extractionId, approved, reviewNotes = '') {
+    return this.request(`/vault/extractions/${extractionId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ approved, review_notes: reviewNotes })
+    });
+  }
+
+  searchVaultFiles(params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/vault/search${q ? '?' + q : ''}`);
+  }
+
+  getVaultDownloadUrl(fileId) {
+    const token = this.getToken();
+    return `${API_BASE_URL}/vault/files/${fileId}/download${token ? '?token=' + encodeURIComponent(token) : ''}`;
+  }
+
+  getVaultPreviewUrl(fileId) {
+    const token = this.getToken();
+    return `${API_BASE_URL}/vault/files/${fileId}/preview${token ? '?token=' + encodeURIComponent(token) : ''}`;
+  }
+
+  getArtifactDownloadUrl(artifactId) {
+    const token = this.getToken();
+    return `${API_BASE_URL}/vault/artifacts/${artifactId}/download${token ? '?token=' + encodeURIComponent(token) : ''}`;
   }
 }
 

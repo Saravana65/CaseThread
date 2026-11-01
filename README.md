@@ -314,14 +314,15 @@ build.bat && bin/test_dsa.exe
 # 2. Empirical C Benchmark Suite
 bin/benchmark_dsa.exe
 
-# 3. Backend Test Matrix (85 tests across 13 suites)
+# 3. Backend Test Matrix (107 tests across 14 suites)
 cd ../backend
 node --test tests/production_safety.test.js \
             tests/frontend_workflow.test.js \
             tests/integration.test.js \
             tests/graph.test.js \
             tests/e2e.test.js \
-            tests/forensic_integrity.test.js
+            tests/forensic_integrity.test.js \
+            tests/evidence_vault.test.js
 
 # 4. Frontend Production Build Verification
 cd ../frontend
@@ -365,3 +366,83 @@ Custody transfers are tracked in `evidence_custody_events` with complete provena
 
 ### Academic Scope & Judicial Disclaimer
 > **IMPORTANT ADMISSIBILITY NOTICE:** CASETHREAD is designed as an academic decision-support framework to demonstrate cryptographic provenance and advanced data structures. It provides mathematical and cryptographic guarantees of internal database consistency. However, it does **NOT** constitute a certified statutory forensic acquisition tool or substitute for court-recognized legal chain-of-custody documentation without independent sworn verification.
+
+---
+
+## 12. Digital Evidence Acquisition, Secure File Vault & Multi-Format Ingestion (Phase 8)
+
+Phase 8 connects actual digital evidence files (documents, images, audio, video, structured records) to the cryptographic provenance and C DSA intelligence workflows established in previous phases.
+
+### Ingestion & Verification Architecture Flowchart
+
+```mermaid
+flowchart TD
+    A["Officer Upload (Multipart)"] --> B["Backend Validation (Magic Bytes & 50MB Cap)"]
+    B --> C["Secure File Vault (storage/vault/cases/:id/originals)"]
+    C --> D["Streaming SHA-256 Fingerprinting"]
+    D --> E["Format-Aware Metadata Extraction"]
+    E --> F["MySQL Evidence Metadata Persistence"]
+    F --> G["Integrity Verification Engine"]
+    G --> H["Investigation Analysis (C DSA Engine)"]
+```
+
+### Supported Evidence Formats & Magic Byte Signatures
+
+Client-supplied file extensions and MIME headers are never trusted. All incoming files undergo binary signature (magic byte) verification before storage:
+
+| Format Category | Supported Extensions | Detected MIME Type | Binary Magic Byte Signature / Validation |
+| :--- | :--- | :--- | :--- |
+| **Documents** | `.pdf` | `application/pdf` | Header matches `%PDF-` (`0x25 0x50 0x44 0x46`) |
+| **Images** | `.png`, `.jpg`, `.jpeg` | `image/png`, `image/jpeg` | PNG: `0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A`<br>JPEG: `0xFF 0xD8 0xFF` SOI marker |
+| **Audio** | `.wav`, `.mp3` | `audio/wav`, `audio/mpeg` | WAV: `RIFF....WAVE`<br>MP3: `ID3` tag or MPEG frame sync (`0xFF 0xFB/F3/F2`) |
+| **Video** | `.mp4` | `video/mp4` | ISO Base Media File Format box atom `ftyp` at offset 4 |
+| **Structured Data** | `.csv`, `.json`, `.xml`, `.txt` | `text/csv`, `application/json`, `application/xml`, `text/plain` | Non-binary UTF-8 text validation and syntax parsing (JSON, XML tag delimiters `<...?`) |
+
+### Secure File Vault & Storage Layout
+
+Physical evidence files are stored strictly outside the public web root in an isolated hierarchical directory tree:
+
+```
+storage/vault/
+└── cases/
+    └── <case_id>/
+        ├── originals/   # Read-only original forensic evidence files (<uuid>_<filename>)
+        └── artifacts/   # Derived non-destructive research artifacts (<uuid>_<filename>)
+```
+
+- **Docker Volume Mount:** Backed by the named volume `evidence_vault:/app/storage/vault`, ensuring persistence across container upgrades and redeployments.
+- **Path Traversal Defense:** Sanitizes filenames, prohibits null bytes, absolute paths, and parent directory traversal (`..`).
+- **Streaming Transfer & Access Control:** Files are streamed via authenticated endpoints with HTTP byte-range capability. Cross-case downloads by non-assigned officers are rejected with HTTP 403 Forbidden.
+
+### Format-Aware Metadata Extraction
+
+The ingestion pipeline automatically and non-destructively extracts format-specific technical parameters stored in `evidence_metadata_extractions`:
+- **Images:** Dimensions (width/height), color depth, camera manufacturer/model, ISO, exposure time, aperture, focal length, capture timestamp, and GPS coordinates (latitude/longitude/altitude).
+- **Documents:** Page count, PDF title, author, producer, creation/modification dates, and format version.
+- **Audio:** Duration in seconds, audio format/codec, sample rate (Hz), channel count (mono/stereo), and bit rate.
+- **Video:** Frame dimensions, duration, time scale, and video/audio codec four-character tags (e.g. `avc1`, `mp4a`).
+- **Data & Text:** Character encoding, total record/line count, header column names, column counts, and top-level JSON keys.
+
+### Derived Forensic Artifacts & Lineage
+
+Detectives can generate derived research artifacts without modifying the original immutable evidence:
+- **`EXTRACTED_TEXT`:** Text stream extracted from PDF, OCR, or transcription sources.
+- **`NORMALIZED_DATA`:** Converted structured tabular data (e.g., CSV rows transformed to canonical JSON).
+- **`PREVIEW_IMAGE`:** Rescaled thumbnails or preview frames for quick officer inspection.
+
+Every derived artifact is independently hashed with its own SHA-256 fingerprint, linked to its parent file via `parent_file_id` in `evidence_derived_artifacts`, preserving complete chain-of-custody lineage.
+
+### Vault API Endpoints Reference
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/vault/cases/:caseId/upload` | Multipart evidence file upload with magic byte verification and automated metadata extraction. |
+| `GET` | `/api/v1/vault/cases/:caseId/files` | Retrieve inventory of all vault files uploaded for a specific case. |
+| `GET` | `/api/v1/vault/files/:fileId` | Detailed technical file inspection, metadata extraction, and derived artifacts. |
+| `GET` | `/api/v1/vault/files/:fileId/download` | Secure byte-stream download of original forensic file (assigned officers only). |
+| `GET` | `/api/v1/vault/files/:fileId/preview` | In-line preview rendering with range requests for images, PDFs, audio, and video. |
+| `POST` | `/api/v1/vault/files/:fileId/verify-integrity` | On-demand bit-level verification comparing live disk bytes with recorded SHA-256 fingerprint. |
+| `POST` | `/api/v1/vault/files/:fileId/artifacts` | Generate derived forensic artifact (`EXTRACTED_TEXT`, `NORMALIZED_DATA`, `PREVIEW_IMAGE`). |
+| `GET` | `/api/v1/vault/artifacts/:artifactId/download` | Download derived artifact file. |
+| `POST` | `/api/v1/vault/extractions/:extractionId/review` | Officer review and confirmation of extracted metadata attributes. |
+| `GET` | `/api/v1/vault/cases/:caseId/search` | Search and filter vault files by query, format, category, officer, or integrity status. |

@@ -991,6 +991,10 @@ class MemoryStore {
       }
     ];
 
+    
+    this.evidence_files = [];
+    this.metadata_extractions = [];
+    this.derived_artifacts = [];
     this.integrity_verifications = [
       {
         verification_id: 1,
@@ -1085,6 +1089,82 @@ class MemoryStore {
           rows = rows.filter(c => c.case_id === parseInt(params[0], 10));
         }
         rows.sort((a, b) => new Date(b.transfer_timestamp) - new Date(a.transfer_timestamp));
+        return [rows, []];
+      }
+      
+      if (sql.includes('FROM evidence_files')) {
+        let rows = [...this.evidence_files];
+        if (sql.includes('file_id = ?') || sql.includes('f.file_id = ?')) {
+          const fidParam = params.find(p => typeof p === 'number' || (!isNaN(parseInt(p, 10)) && !String(p).startsWith('.')));
+          if (fidParam !== undefined) {
+            rows = rows.filter(f => f.file_id === parseInt(fidParam, 10));
+          }
+        }
+        if (sql.includes('storage_key = ?') || sql.includes('f.storage_key = ?')) {
+          rows = rows.filter(f => f.storage_key === params[0]);
+        }
+        if (sql.includes('evidence_id = ?') || sql.includes('f.evidence_id = ?')) {
+          rows = rows.filter(f => f.evidence_id === parseInt(params[0], 10));
+        }
+        if (sql.includes('case_id = ?') || sql.includes('f.case_id = ?')) {
+          const cid = parseInt(params[0], 10);
+          if (!isNaN(cid)) {
+            rows = rows.filter(f => f.case_id === cid);
+          }
+        }
+        if (sql.includes('f.file_extension = ?')) {
+          const extParam = params.find(p => typeof p === 'string' && p.startsWith('.'));
+          if (extParam) {
+            rows = rows.filter(f => f.file_extension === extParam);
+          }
+        }
+        if (sql.includes('f.integrity_status = ?')) {
+          const statusParam = params.find(p => ['INTACT', 'TAMPERED_MISMATCH', 'FILE_MISSING'].includes(p));
+          if (statusParam) {
+            rows = rows.filter(f => f.integrity_status === statusParam);
+          }
+        }
+        rows = rows.map(f => {
+          const officer = this.officers.find(o => o.officer_id === f.uploaded_by_officer_id);
+          const ev = this.evidence.find(e => e.evidence_id === f.evidence_id);
+          return {
+            ...f,
+            tracking_code: ev?.tracking_code || 'EVD-2026-001',
+            evidence_title: ev?.title || 'Case Evidence',
+            evidence_category: ev?.category || 'DIGITAL',
+            uploaded_by_officer_name: officer?.full_name || 'Det. Alexander Cross',
+            uploaded_by_badge: officer?.badge_number || 'DET-8841'
+          };
+        });
+        if (sql.includes('ORDER BY upload_timestamp DESC') || sql.includes('ORDER BY f.upload_timestamp DESC')) {
+          rows.sort((a, b) => new Date(b.upload_timestamp) - new Date(a.upload_timestamp));
+        }
+        return [rows, []];
+      }
+      if (sql.includes('FROM evidence_metadata_extractions')) {
+        let rows = [...this.metadata_extractions];
+        if (sql.includes('extraction_id = ?') || sql.includes('m.extraction_id = ?')) {
+          rows = rows.filter(m => m.extraction_id === parseInt(params[0], 10));
+        } else if (sql.includes('file_id = ?') || sql.includes('m.file_id = ?')) {
+          rows = rows.filter(m => m.file_id === parseInt(params[0], 10));
+        } else if (sql.includes('evidence_id = ?') || sql.includes('m.evidence_id = ?')) {
+          rows = rows.filter(m => m.evidence_id === parseInt(params[0], 10));
+        } else if (sql.includes('case_id = ?') || sql.includes('m.case_id = ?')) {
+          rows = rows.filter(m => m.case_id === parseInt(params[0], 10));
+        }
+        return [rows, []];
+      }
+      if (sql.includes('FROM evidence_derived_artifacts')) {
+        let rows = [...this.derived_artifacts];
+        if (sql.includes('artifact_id = ?') || sql.includes('d.artifact_id = ?')) {
+          rows = rows.filter(d => d.artifact_id === parseInt(params[0], 10));
+        } else if (sql.includes('parent_file_id = ?') || sql.includes('d.parent_file_id = ?')) {
+          rows = rows.filter(d => d.parent_file_id === parseInt(params[0], 10));
+        } else if (sql.includes('evidence_id = ?') || sql.includes('d.evidence_id = ?')) {
+          rows = rows.filter(d => d.evidence_id === parseInt(params[0], 10));
+        } else if (sql.includes('case_id = ?') || sql.includes('d.case_id = ?')) {
+          rows = rows.filter(d => d.case_id === parseInt(params[0], 10));
+        }
         return [rows, []];
       }
       if (sql.includes('FROM evidence_integrity_verifications')) {
@@ -1328,6 +1408,78 @@ class MemoryStore {
       return [{ insertId: newId, affectedRows: 1 }, []];
     }
 
+    
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_FILES')) {
+      const newId = this.evidence_files.length + 1;
+      const fileRecord = {
+        file_id: newId,
+        evidence_id: parseInt(params[0], 10),
+        case_id: parseInt(params[1], 10),
+        storage_key: params[2],
+        storage_path: params[3],
+        original_filename: params[4],
+        sanitized_filename: params[5],
+        file_extension: params[6],
+        mime_type: params[7],
+        detected_mime_type: params[8] || params[7],
+        file_size_bytes: parseInt(params[9], 10),
+        sha256_hash: params[10],
+        hash_algorithm: params[11] || 'SHA-256',
+        is_primary: params[12] !== undefined ? (params[12] ? 1 : 0) : 1,
+        uploaded_by_officer_id: parseInt(params[13], 10),
+        upload_timestamp: new Date().toISOString(),
+        integrity_status: params[14] || 'INTACT',
+        last_verified_at: new Date().toISOString()
+      };
+      this.evidence_files.push(fileRecord);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_METADATA_EXTRACTIONS')) {
+      const newId = this.metadata_extractions.length + 1;
+      const extraction = {
+        extraction_id: newId,
+        file_id: parseInt(params[0], 10),
+        evidence_id: parseInt(params[1], 10),
+        case_id: parseInt(params[2], 10),
+        file_format: params[3],
+        extractor_tool: params[4],
+        extractor_version: params[5],
+        extraction_status: params[6] || 'SUCCESS',
+        extracted_metadata_json: typeof params[7] === 'object' ? JSON.stringify(params[7]) : params[7],
+        extracted_timestamp: params[8] || null,
+        extracted_gps_lat: params[9] !== undefined ? params[9] : null,
+        extracted_gps_lon: params[10] !== undefined ? params[10] : null,
+        officer_reviewed: params[11] ? 1 : 0,
+        review_notes: params[12] || null,
+        created_at: new Date().toISOString()
+      };
+      this.metadata_extractions.push(extraction);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
+
+    if (trimmed.startsWith('INSERT INTO EVIDENCE_DERIVED_ARTIFACTS')) {
+      const newId = this.derived_artifacts.length + 1;
+      const artifact = {
+        artifact_id: newId,
+        parent_file_id: parseInt(params[0], 10),
+        evidence_id: parseInt(params[1], 10),
+        case_id: parseInt(params[2], 10),
+        artifact_type: params[3],
+        storage_key: params[4],
+        storage_path: params[5],
+        mime_type: params[6],
+        file_size_bytes: parseInt(params[7], 10),
+        sha256_hash: params[8],
+        generator_tool: params[9],
+        generator_version: params[10],
+        transformation_summary: params[11] || null,
+        created_by_officer_id: parseInt(params[12], 10),
+        created_at: new Date().toISOString()
+      };
+      this.derived_artifacts.push(artifact);
+      return [{ insertId: newId, affectedRows: 1 }, []];
+    }
     if (trimmed.startsWith('INSERT INTO EVIDENCE_AUDIT_LOGS')) {
       const newId = this.audit_logs.length + 1;
       if (sql.includes('previous_event_hash')) {

@@ -5,6 +5,7 @@
  */
 
 const crypto = require('crypto');
+const fs = require('fs');
 
 const GENESIS_HASH = 'GENESIS_0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -170,9 +171,41 @@ function verifyAuditChain(auditEvents) {
   };
 }
 
+/**
+ * Calculates SHA-256 fingerprint from a file stream on disk.
+ * Uses chunked streaming to safely hash files of arbitrary size without memory exhaustion.
+ * @param {string} filePath Absolute path to file on disk
+ * @returns {Promise<{ sha256_hash: string, file_size_bytes: number }>}
+ */
+function calculateFileSha256(filePath) {
+  return new Promise((resolve, reject) => {
+    if (!fs.existsSync(filePath)) {
+      return reject(new Error(`File not found at path: ${filePath}`));
+    }
+    const hash = crypto.createHash('sha256');
+    const stream = fs.createReadStream(filePath);
+    let bytesRead = 0;
+
+    stream.on('data', (chunk) => {
+      bytesRead += chunk.length;
+      hash.update(chunk);
+    });
+
+    stream.on('end', () => {
+      const sha256_hash = hash.digest('hex');
+      resolve({ sha256_hash, file_size_bytes: bytesRead });
+    });
+
+    stream.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
 module.exports = {
   GENESIS_HASH,
   generateSha256,
+  calculateFileSha256,
   canonicalize,
   generateMetadataFingerprint,
   calculateEventHash,

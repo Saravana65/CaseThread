@@ -48,6 +48,8 @@ async function compileCaseDossier(caseId, officer) {
   const [custodyEvents] = await execute('SELECT * FROM evidence_custody_events WHERE case_id = ? ORDER BY transfer_timestamp DESC', [caseId]);
   const [verifications] = await execute('SELECT * FROM evidence_integrity_verifications WHERE case_id = ? ORDER BY verified_at DESC', [caseId]);
   const [auditLogs] = await execute('SELECT * FROM evidence_audit_logs WHERE case_id = ? ORDER BY created_at ASC, audit_id ASC', [caseId]);
+  const [vaultFiles] = await execute('SELECT * FROM evidence_files WHERE case_id = ? ORDER BY upload_timestamp DESC', [caseId]);
+  const [derivedArtifacts] = await execute('SELECT * FROM evidence_derived_artifacts WHERE case_id = ? ORDER BY created_at DESC', [caseId]);
 
   // Group audit logs by evidence_id and verify each cryptographic hash chain independently
   const logsByEvidence = {};
@@ -127,6 +129,8 @@ async function compileCaseDossier(caseId, officer) {
       current_version: e.current_version
     })),
     chain_of_custody_history: custodyEvents,
+    digital_vault_inventory: vaultFiles || [],
+    derived_forensic_artifacts: derivedArtifacts || [],
     integrity_verifications: verifications,
     relational_network: relationships,
     chronological_timeline: timelines,
@@ -186,7 +190,8 @@ exports.exportCaseReportJson = async (req, res, next) => {
     res.setHeader('Content-Disposition', `attachment; filename="CaseReport_${report.case_summary.case_number}.json"`);
     res.json({
       success: true,
-      report
+      report,
+      data: report
     });
   } catch (error) {
     next(error);
