@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
-export default function CollaborationPanel({ caseId, officer, onNotificationCountChange }) {
-  const [activeSubTab, setActiveSubTab] = useState('tasks'); // 'tasks' | 'team' | 'reviews' | 'activity' | 'notifications' | 'analytics'
+export default function CollaborationPanel({ caseId, officer, onNotificationCountChange, initialSubTab = 'tasks' }) {
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab || 'tasks'); // 'tasks' | 'team' | 'reviews' | 'activity' | 'notifications' | 'analytics'
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);

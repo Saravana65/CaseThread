@@ -3,7 +3,7 @@ import api from '../services/api';
 import CreateCaseModal from '../components/CreateCaseModal';
 import AddEvidenceModal from '../components/AddEvidenceModal';
 
-export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseId }) {
+export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseId, caseFilter = 'ALL', onOpenCreateCase }) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCase, setSelectedCase] = useState(null);
@@ -11,6 +11,13 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
   const [analyzing, setAnalyzing] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddEvidenceOpen, setIsAddEvidenceOpen] = useState(false);
+  const [currentFilter, setCurrentFilter] = useState(caseFilter || 'ALL');
+
+  useEffect(() => {
+    if (caseFilter) {
+      setCurrentFilter(caseFilter);
+    }
+  }, [caseFilter]);
 
   useEffect(() => {
     loadCases();
@@ -89,6 +96,16 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
                          analysisResult?.metrics?.gaps_detected || 4;
   const totalLeadsCount = analysisResult?.prioritized_leads ? analysisResult.prioritized_leads.length :
                           analysisResult?.metrics?.leads_generated || 2;
+
+  // Filter cases based on current selection
+  const filteredCases = cases.filter((c) => {
+    if (currentFilter === 'ACTIVE') return c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION';
+    if (currentFilter === 'SOLVED') return c.status === 'CLOSED' || c.status === 'ARCHIVED';
+    return true;
+  });
+
+  const activeCount = cases.filter(c => c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION').length;
+  const solvedCount = cases.filter(c => c.status === 'CLOSED' || c.status === 'ARCHIVED').length;
 
   return (
     <div style={{ padding: '1.5rem 2rem', maxWidth: '1440px', margin: '0 auto' }}>
@@ -169,14 +186,14 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
       <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '1.5rem', alignItems: 'start' }}>
         {/* Left Column: Incident Case Roster */}
         <section>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h2 style={{ fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>
-              Active Case Roster
+              Investigation Roster
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="badge badge-high">{cases.length} Files</span>
+              <span className="badge badge-high">{filteredCases.length} / {cases.length} Files</span>
               <button
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={() => onOpenCreateCase ? onOpenCreateCase() : setIsCreateModalOpen(true)}
                 className="btn-primary"
                 style={{
                   fontSize: '0.72rem',
@@ -190,16 +207,45 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
                 title="Create New Investigation Case"
               >
                 <span>➕</span>
-                <span>CREATE NEW CASE</span>
+                <span>NEW</span>
               </button>
             </div>
           </div>
 
+          {/* Filter Pills */}
+          <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.85rem' }}>
+            <button
+              onClick={() => setCurrentFilter('ALL')}
+              className={currentFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}
+              style={{ fontSize: '0.7rem', padding: '0.25rem 0.6rem' }}
+            >
+              ALL ({cases.length})
+            </button>
+            <button
+              onClick={() => setCurrentFilter('ACTIVE')}
+              className={currentFilter === 'ACTIVE' ? 'btn-primary' : 'btn-secondary'}
+              style={{ fontSize: '0.7rem', padding: '0.25rem 0.6rem' }}
+            >
+              ACTIVE ({activeCount})
+            </button>
+            <button
+              onClick={() => setCurrentFilter('SOLVED')}
+              className={currentFilter === 'SOLVED' ? 'btn-primary' : 'btn-secondary'}
+              style={{ fontSize: '0.7rem', padding: '0.25rem 0.6rem' }}
+            >
+              SOLVED ({solvedCount})
+            </button>
+          </div>
+
           {loading ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Querying case database...</div>
+          ) : filteredCases.length === 0 ? (
+            <div className="forensic-card" style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              No cases matching {currentFilter} filter.
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {cases.map((c) => (
+              {filteredCases.map((c) => (
                 <div 
                   key={c.case_id}
                   onClick={() => loadCaseDetails(c.case_id)}
@@ -373,7 +419,17 @@ export default function Dashboard({ onNavigateTab, selectedCaseId, onSelectCaseI
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
                     {selectedCase.evidence.slice(0, 4).map((e) => {
                       const isFact = e.verification_status === 'CONFIRMED_FACT';
-                      return (
+                      // Filter cases based on current selection
+  const filteredCases = cases.filter((c) => {
+    if (currentFilter === 'ACTIVE') return c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION';
+    if (currentFilter === 'SOLVED') return c.status === 'CLOSED' || c.status === 'ARCHIVED';
+    return true;
+  });
+
+  const activeCount = cases.filter(c => c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION').length;
+  const solvedCount = cases.filter(c => c.status === 'CLOSED' || c.status === 'ARCHIVED').length;
+
+  return (
                         <div key={e.evidence_id} style={{ backgroundColor: 'var(--bg-input)', padding: '0.65rem', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--accent-orange)', fontWeight: '700' }}>{e.tracking_code}</span>
