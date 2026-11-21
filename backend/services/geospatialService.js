@@ -231,7 +231,7 @@ function detectSharedLocations(points, toleranceMeters = 25.0) {
     if (group.length > 1) {
       handled.add(i);
       sharedGroups.push({
-        location_signature: `${group[0].latitude.toFixed(5)},${group[0].longitude.toFixed(5)}`,
+        location_signature: `${Number(group[0].latitude).toFixed(5)},${Number(group[0].longitude).toFixed(5)}`,
         record_count: group.length,
         anchor_location_name: group[0].location_name || 'Unlabeled Point',
         evidence_ids: group.map(g => g.evidence_id),

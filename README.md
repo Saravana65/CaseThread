@@ -1,733 +1,162 @@
-# CASETHREAD
+# CASETHREAD — Evidence Gap Detection & Investigation Support System
 
-> **"Connecting Evidence. Uncovering the Missing Pieces."**  
-> *A professional digital forensic investigation support platform powered by a high-performance C Data Structures & Algorithms (DSA) core engine.*
+A high-performance digital forensic intelligence platform powered by a **Native C99 Algorithm Engine**, **Node.js Express API**, and **React.js Dashboard**. Designed to centralize evidence, map entity relationship graphs, detect missing investigative provenance, and prioritize actionable leads.
 
----
-
-## 1. System Overview
-
-During complex criminal investigations, police authorities and forensic detectives collect massive volumes of heterogeneous, seemingly disconnected data:
-- Suspect & victim profiles
-- Witness testimonies & credibility indices
-- Timestamped CCTV surveillance records
-- Cellular tower dumps & call detail records (CDR)
-- Vehicle DMV registrations & ANPR sightings
-- Physical, digital, and bio-forensic evidence items
-
-Initially, these clues appear isolated. **CASETHREAD** ingests and parses this evidence network into advanced algorithmic structures implemented in native **C**, applying graph theory, self-balancing search trees, hash indices, and priority queues to detect:
-1. **Hidden Evidence Relationships:** Multi-hop associative chains connecting suspects, witnesses, and vehicles.
-2. **Investigation Gaps & Missing Evidence:** Broken chains of corroboration, surveillance blindspots, and unverified alibi windows.
-3. **Timeline Inconsistencies & Anomalies:** Spatiotemporal contradictions (e.g. impossible travel speed between sightings).
-4. **Actionable Investigative Leads:** Prioritized next-step recommendations for detectives.
-
-> **Forensic Integrity Notice:** CASETHREAD acts strictly as an investigative decision-support system. It never automatically declares guilt or presents unverified algorithmic hypotheses as established judicial facts.
+> **Tagline:** Connect the Threads. Expose the Gaps. Solve the Case.
 
 ---
 
-## 2. System Architecture
+## Table of Contents
+1. [Features](#1-features)
+2. [Advanced Data Structures Applied](#2-advanced-data-structures-applied)
+3. [Tech Stack](#3-tech-stack)
+4. [Project Structure](#4-project-structure)
+5. [Getting Started](#5-getting-started)
+6. [Configuration (`.env`)](#6-configuration-env)
+7. [Demo Accounts](#7-demo-accounts)
+8. [User Roles and Permissions](#8-user-roles-and-permissions)
+9. [Database Design](#9-database-design)
+10. [REST API Reference](#10-rest-api-reference)
+11. [How the Native C Engine Works](#11-how-the-native-c-engine-works)
+12. [Business Rules & Forensic Logic](#12-business-rules--forensic-logic)
+13. [Security](#13-security)
+14. [Troubleshooting](#14-troubleshooting)
+15. [Future Improvements](#15-future-improvements)
+16. [Running the Tests](#16-running-the-tests)
 
-CASETHREAD is architected across five distinct tiers:
+---
 
-```mermaid
-graph TD
-    subgraph UI ["Tier 1: Frontend Client (React.js)"]
-        F1["Forensic Dashboard"]
-        F2["Evidence Network Graph (Vis.js / SVG)"]
-        F3["Chronological Timeline Inspector"]
-    end
+## 1. Features
+- **Centralized Case Dossier:** Master investigation records linking suspects, victims, witnesses, and evidence.
+- **Interactive Relationship Graph:** SVG force-directed network displaying entity connections and BFS shortest-path chains.
+- **Rule-Based Evidence Gap Discovery:** Automatically flags items missing collection timestamps, unverified sources, or broken custody chains.
+- **Chronological AVL Timeline:** Self-balancing timeline analysis detecting impossible transit velocities.
+- **Max-Heap Lead Ranking:** Prioritizes investigative leads dynamically by centrality and evidentiary weight.
+- **2D Spatial Quadtree:** Discovers suspect co-presence within geographic radiuses using Haversine formulas.
+- **Digital Evidence Vault:** SHA-256 cryptographic fingerprinting and chain of custody tracking.
 
-    subgraph API ["Tier 2: Backend Orchestrator (Node.js & Express)"]
-        B1["REST API Router & Auth Guard"]
-        B2["Case & Evidence Controller"]
-        B3["IPC Subprocess Manager (cEngineService)"]
-    end
+---
 
-    subgraph STORAGE ["Tier 3: Relational Persistence (MySQL 8.0)"]
-        D1[("Cases, Suspects, Victims")]
-        D2[("Evidence Items & Metadata")]
-        D3[("Relationships & Audit Logs")]
-        D4[("Investigation Results Cache")]
-    end
+## 2. Advanced Data Structures Applied
+- **Hash Map (DJB2 + Separate Chaining):** Average O(1) key-based record lookup.
+- **AVL Tree (Self-Balancing BST):** Guaranteed O(log N) temporal event ordering and interval range queries.
+- **Adjacency-List Graph:** O(V + E) relationship network modeling with confidence weights.
+- **BFS & DFS Traversals:** Shortest path discovery, connected component detection, and cycle contradiction analysis.
+- **Binary Max-Heap:** O(log N) dynamic priority lead scoring.
+- **2D Quadtree:** O(log N) geographic coordinate indexing.
 
-    subgraph DSA_CORE ["Tier 4: Core Algorithm Engine (Native C99)"]
-        C1["Separate-Chaining Hash Map"]
-        C2["Self-Balancing AVL Tree"]
-        C3["Adjacency-List Graph (BFS / DFS)"]
-        C4["Evidence Gap Detector"]
-        C5["Timeline Anomaly Analyzer"]
-        C6["Max-Heap Lead Generator"]
-    end
+---
 
-    subgraph INFRA ["Tier 5: Container Orchestration (Docker)"]
-        DK1["docker-compose.yml"]
-        DK2["Backend + GCC Alpine/Debian Container"]
-        DK3["Frontend Nginx/Node Container"]
-        DK4["MySQL 8 Server Container"]
-    end
+## 3. Tech Stack
+- **Frontend:** React 18, React Router v6, Lucide Icons, Custom Forensic Dark Theme.
+- **Backend:** Node.js 22, Express.js 4, `mysql2/promise` connection pooling, JWT security, bcrypt.
+- **Computational Core:** Native C99 binary (`casethread_engine.exe`), `cJSON`.
+- **Database:** MySQL 8.0 on Port 3306.
 
-    UI -->|REST JSON / JWT| API
-    API -->|mysql2 connection pool| STORAGE
-    API -->|Standard Input JSON / Stdout IPC| DSA_CORE
-    INFRA -.->|Deploys & Networks| UI
-    INFRA -.->|Deploys & Networks| API
-    INFRA -.->|Deploys & Networks| STORAGE
+---
+
+## 4. Project Structure
+```
+CaseThread/
+├── backend/            # Express.js REST API & child-process IPC bridge
+├── core-engine/        # Native C99 source code (hashmap, avl, graph, heap, quadtree)
+├── database/           # MySQL schema and realistic forensic seed data
+├── docs/               # Complete academic documentation suite & PBL Report
+├── frontend/           # React.js Single Page Application
+├── presentation_figures/# High-resolution diagrams for presentation
+├── TEST_REPORT.md      # Test and verification report
+└── README.md           # Master repository documentation
 ```
 
 ---
 
-## 3. Data Structures & Algorithm (DSA) Specifications
-
-The core algorithm engine is developed in **C** to demonstrate rigorous, manual data structure implementations with predictable time and space bounds:
-
-| Data Structure / Algorithm | Source Location | Forensic Investigation Purpose | Time Complexity | Space Complexity |
-| :--- | :--- | :--- | :--- | :--- |
-| **Separate-Chaining Hash Map** | `core-engine/src/hashmap/` | $O(1)$ constant-time lookup for entities by tracking code, license plate, phone IMEI, or entity key. | Average: $O(1)$<br>Worst: $O(N)$ | $O(N)$ |
-| **Self-Balancing AVL Tree** | `core-engine/src/trees/` | Strict chronological event ledger ordered by epoch timestamp. Supports $O(\log N + K)$ range queries. | Insert/Search: $O(\log N)$<br>Range: $O(\log N + K)$ | $O(N)$ |
-| **Adjacency-List Graph** | `core-engine/src/graphs/` | Relational network where vertices are entities/evidence and edges are weighted associations. | Storage: $O(V + E)$<br>Edge Lookup: $O(\text{deg}(V))$ | $O(V + E)$ |
-| **Breadth-First Search (BFS)** | `core-engine/src/graphs/` | Computes unweighted shortest associative hops between suspect and victim or scene. | $O(V + E)$ | $O(V)$ |
-| **Depth-First Search (DFS)** | `core-engine/src/graphs/` | Discovers connected cliques, isolated evidence clusters, and circular relationship cycles. | $O(V + E)$ | $O(V)$ |
-| **Binary Max-Heap / Priority Queue** | `core-engine/src/structures/` | Dynamically resizable binary heap maintaining root maximum lead priority score for investigative recommendation extraction. | Insert/Extract: $O(\log K)$<br>Peek: $O(1)$ | $O(K)$ |
-| **2D Quadtree Spatial Index** | `core-engine/src/spatial/` | Hierarchical spatial index for geospatial bounding-box and geodesic Haversine radius queries. | Range: $O(\log N + K)$<br>Build: $O(N \log N)$ | $O(N)$ |
-
----
-
-## 4. Node.js to C Inter-Process Communication (IPC)
-
-The bridge between the Node.js API orchestrator and the native C algorithm engine utilizes standard POSIX/Win32 I/O streams:
-
-```
-[Node.js Backend]                                           [C Engine Executable]
-  │                                                                   │
-  ├── 1. Gather Case Entities, Timeline & Graph from MySQL            │
-  ├── 2. child_process.spawn("casethread_engine", ["--stdin"])        │
-  ├── 3. Write structured JSON stream ──────── stdin ────────────────>│
-  │                                                                   ├── 4. Ingest JSON buffer
-  │                                                                   ├── 5. Populate HashMaps & AVL Tree
-  │                                                                   ├── 6. Traverse Graph (BFS/DFS)
-  │                                                                   ├── 7. Detect Gaps & Anomalies
-  │                                                                   ├── 8. Rank Leads via Max-Heap
-  │<─── 9. Read diagnostic logs (non-blocking) ── stderr ─────────────┤
-  │<─── 10. Read analysis output JSON ─────────── stdout ─────────────┤
-  ├── 11. Parse JSON, validate schemas & persist to MySQL             │
-  └── 12. Return HTTP 200 payload to React Frontend                   ▼
-```
-
-### IPC Safety & Fault Tolerance
-1. **Process Isolation:** The C executable runs in an isolated sub-process; a segmentation fault in C does not terminate the Node.js server.
-2. **Watchdog Timer:** The Node process enforces a strict timeout (`C_ENGINE_TIMEOUT_MS = 8000ms`). Any stalled process is terminated via `SIGKILL`.
-3. **Stream Separation:** Diagnostics, memory usage, and assertions route exclusively to `stderr`, guaranteeing that `stdout` contains valid, unpolluted JSON.
+## 5. Getting Started
+1. **Import Database:**
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE casethread_db;"
+   mysql -u root -p casethread_db < database/schema.sql
+   mysql -u root -p casethread_db < database/seed.sql
+   ```
+2. **Compile Native C Engine:**
+   ```bash
+   cd core-engine && build.bat
+   ```
+3. **Launch Backend (Port 5001):**
+   ```bash
+   cd backend && node server.js
+   ```
+4. **Launch Frontend (Port 3000):**
+   ```bash
+   cd frontend && npm start
+   ```
 
 ---
 
-## 5. Directory Structure & Module Responsibilities
-
-```
-CASETHREAD/
-├── frontend/                       # React.js Forensic Dashboard Client
-│   ├── public/                     # Static assets, HTML shell, favicon, manifests
-│   └── src/
-│       ├── assets/                 # Icons, badges, forensic diagrams
-│       ├── components/             # Reusable forensic UI widgets (Navbar, GraphViewer, Cards)
-│       ├── pages/                  # Page controllers (Dashboard, CaseDetail, Login)
-│       ├── services/               # REST API client and token managers
-│       └── styles/                 # Theme tokens: Charcoal, Crimson, Amber typography
-│
-├── backend/                        # Node.js Express REST Backend Orchestrator
-│   ├── controllers/                # Business logic handlers (auth, case, evidence, analysis)
-│   ├── database/                   # MySQL connection pool configuration
-│   ├── middleware/                 # JWT authentication guard and centralized error handling
-│   ├── routes/                     # REST API route manifests
-│   ├── services/                   # IPC integration service for C engine execution
-│   └── server.js                   # Application bootstrap & HTTP server entrypoint
-│
-├── core-engine/                    # Native C Data Structures & Algorithms Subsystem
-│   ├── include/                    # C header files (.h) defining structs and interfaces
-│   │   ├── algorithms.h            # Gap detection, timeline analysis & lead ranking headers
-│   │   ├── common.h                # System enums, error codes, and memory allocators
-│   │   ├── graph.h                 # Adjacency list graph & traversal declarations
-│   │   ├── hashmap.h               # Separate-chaining hashmap interface
-│   │   └── tree.h                  # Self-balancing AVL tree interface
-│   ├── src/                        # C source implementations (.c)
-│   │   ├── algorithms/             # Gap, timeline anomaly, and heuristic lead engines
-│   │   ├── graphs/                 # Graph construction, BFS, DFS, cycle detection
-│   │   ├── hashmap/                # Hash map hashing functions and bucket handlers
-│   │   ├── trees/                  # AVL rotation, balance, and range query routines
-│   │   └── main.c                  # CLI entrypoint and standard I/O IPC driver
-│   ├── tests/                      # Unit test suites for individual DSA components
-│   └── Makefile                    # Cross-platform compilation targets (GCC / Clang / MinGW)
-│
-├── database/                       # Relational Database Schemas & Migrations
-│   └── schema.sql                  # MySQL 8.0 schema: 10 tables, constraints, seed dataset
-│
-├── docker/                         # Docker container definitions
-│   ├── Dockerfile.backend          # Node.js + GCC toolchain environment
-│   └── Dockerfile.frontend         # React production build server
-│
-├── .gitignore                      # Stack-tailored exclusion manifest
-├── .env.example                    # Environment variable configuration template
-├── docker-compose.yml              # Complete multi-container orchestration definition
-├── README.md                       # Master architecture documentation
-└── DEVELOPMENT_ROADMAP.md          # Phased execution plan and milestone criteria
-```
+## 6. Configuration (`.env`)
+- `PORT=5001`
+- `DB_HOST=127.0.0.1`
+- `DB_PORT=3306`
+- `DB_NAME=casethread_db`
+- `DB_USER=root`
+- `JWT_SECRET=your_32_character_secret`
 
 ---
 
-## 6. MySQL Database Schema
-
-The relational database is normalized and indexed for high-concurrency investigative access:
-
-1. `officers` – Authenticated detective identities, roles, departments, and badge IDs.
-2. `cases` – Master investigation records, priority levels, statuses, and lead officers.
-3. `suspects` – Profiles of interest, aliases, identifying markers, and judicial statuses.
-4. `victims` – Case victims, condition statuses, and witness connections.
-5. `witnesses` – Witness testimonies, interview timestamps, and credibility scores ($0.00 - 1.00$).
-6. `evidence_items` – Physical, digital, phone, CCTV, and vehicle evidence records.
-7. `evidence_relationships` – Explicit relational links (graph edges) with confidence ratings.
-8. `timeline_events` – Chronological event log indexed for tree-based anomaly detection.
-9. `investigation_results` – Persisted C-engine algorithmic run outputs and discovered gaps.
-10. `audit_logs` – Immutable chain-of-custody and action log for forensic compliance.
+## 7. Demo Accounts
+- **Lead Detective:** `DET-8841` / `Password123!` (Det. Alexander Cross)
+- **Forensic Analyst:** `DET-9912` / `Detective2026!` (Det. Sarah Lin)
+- **Administrator:** `ADM-1000` / `Password123!` (Raymond Holt)
 
 ---
 
-## 7. Security & Production Hardening
-
-CASETHREAD incorporates enterprise-grade production safety standards:
-
-1. **Strict Production Database Enforcement (Zero-Fallback Policy):**
-   - MemoryStore is **strictly restricted** to unit tests (`NODE_ENV === 'test'`) and explicitly flagged local testing (`ALLOW_MEMORY_STORE === 'true'`).
-   - In production (`NODE_ENV === 'production'`), fallback to in-memory state is completely eliminated.
-   - If MySQL is unreachable, crashes, or drops connections, the application terminates or reports `UNHEALTHY` (HTTP 503) rather than silently losing investigative data.
-   - Transactions (`withTransaction`) fail fast on connection loss and never masquerade as successful.
-2. **Runtime Configuration Validation (`validateConfig`):**
-   - Backend startup performs strict validation of cryptographic and operational secrets.
-   - Requires `JWT_SECRET` $\ge 32$ characters, rejecting default/insecure keys (`"secret"`, `"password"`, etc.).
-   - Rejects wildcard CORS (`*`) in production; requires explicit `CLIENT_ORIGIN` whitelisting.
-   - Blocks demo credentials (`ENABLE_DEMO_CREDENTIALS`) and in-memory stores in production.
-3. **Environment-Driven Orchestration:**
-   - Secrets and passwords are completely removed from `docker-compose.yml` and injected via `.env`.
-   - Backend Docker service waits on MySQL readiness via `condition: service_healthy` before initializing.
-4. **Resilient Health Diagnostics:**
-   - `/api/v1/health` probes the live database connection and reflects true database health (`status: 'HEALTHY'` vs `'UNHEALTHY'`).
+## 8. User Roles and Permissions
+- `ADMIN`: Full system configuration and officer management.
+- `LEAD_OFFICER`: Case creation, evidence assignment, deep analysis execution.
+- `INVESTIGATOR`: Evidence entry and task updates.
+- `REVIEWER`: Read-only evidentiary review.
 
 ---
 
-## 8. Empirical C DSA Benchmarks
-
-The core C engine contains an empirical benchmarking suite (`core-engine/tests/benchmark_dsa.c`) measuring throughput and latency across $N \in [100, 10000]$ operations:
-
-| Component | Operation | Scale ($N$) | Total Time ($\mu$s) | Mean Latency | Throughput (ops/sec) | Complexity |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Separate-Chaining Hash Map** | Sequential Insert | 10,000 | 2,752 $\mu$s | 0.28 $\mu$s | 3.63 M ops/s | $O(1)$ avg |
-| **Separate-Chaining Hash Map** | Exact Lookup | 10,000 | 1,550 $\mu$s | 0.16 $\mu$s | 6.45 M ops/s | $O(1)$ avg |
-| **Self-Balancing AVL Tree** | Chronological Insert | 10,000 | 3,115 $\mu$s | 0.31 $\mu$s | 3.21 M ops/s | $O(\log N)$ |
-| **Self-Balancing AVL Tree** | Timestamp Search | 10,000 | 172 $\mu$s | 0.02 $\mu$s | 58.07 M ops/s | $O(\log N)$ |
-| **Self-Balancing AVL Tree** | Range Query (25%) | 10,000 | 104 $\mu$s | 104 $\mu$s | 9.61 K queries/s | $O(\log N + K)$ |
-| **Binary Max-Heap** | Priority Insert | 10,000 | 1,180 $\mu$s | 0.12 $\mu$s | 8.47 M ops/s | $O(\log N)$ |
-| **Binary Max-Heap** | Root Peek Max | 10,000 | 23 $\mu$s | 0.002 $\mu$s | 442.48 M ops/s | $O(1)$ |
-| **Binary Max-Heap** | Extract Max (Heapify) | 10,000 | 1,908 $\mu$s | 0.19 $\mu$s | 5.24 M ops/s | $O(\log N)$ |
-| **Adjacency-List Graph** | BFS Shortest Path | 1,000 $V$ | 24 $\mu$s | 24 $\mu$s | 41.67 K queries/s | $O(V + E)$ |
-| **Adjacency-List Graph** | DFS Connected Cliques | 1,000 $V$ | 77 $\mu$s | 77 $\mu$s | 12.99 K traversals/s | $O(V + E)$ |
-
-Full benchmark data and asymptotic scaling curves are available in [`core-engine/benchmarks/README.md`](file:///core-engine/benchmarks/README.md).
+## 9. Database Design
+Refer to `docs/Document_D_Database_Documentation.md` for complete schema details.
 
 ---
 
-## 9. Setup & Execution Guide
-
-### Option A: Complete System via Docker Compose (Recommended)
-
-Docker Compose coordinates MySQL 8.0, the native C compiler toolchain, the Node.js orchestrator, and the React client:
-
-```bash
-# 1. Clone repository
-git clone https://github.com/Saravana65/CaseThread.git
-cd CaseThread
-
-# 2. Configure production secrets
-cp .env.example .env
-# Edit .env and supply secure MYSQL_ROOT_PASSWORD, DB_PASSWORD, and JWT_SECRET (>= 32 chars)
-
-# 3. Validate configuration
-docker-compose config
-
-# 4. Launch all services
-docker-compose up --build -d
-```
-- **Frontend Dashboard:** [http://localhost:3000](http://localhost:3000)
-- **Backend API:** [http://localhost:5000/api/v1/health](http://localhost:5000/api/v1/health)
-- **MySQL Server:** Port `3306` (`casethread_db`)
+## 10. REST API Reference
+Refer to `docs/Document_E_API_Documentation.md` for complete API documentation.
 
 ---
 
-### Option B: Local Development Execution
-
-#### 1. Database Initialization
-Import the schema into a running MySQL 8.0 instance:
-```bash
-mysql -u root -p < database/schema.sql
-```
-
-#### 2. C Core Engine Compilation & Benchmarking
-Compile the native algorithm engine using GCC or MSVC:
-```bash
-cd core-engine
-
-# Build binary and unit tests
-build.bat            # Windows MSVC
-# or: make all test  # Linux / GCC
-
-# Run C engine unit tests (91 assertions across 7 modules)
-bin/test_dsa.exe     # or: ./bin/test_dsa
-
-# Run empirical DSA benchmark suite
-bin/benchmark_dsa.exe # or: ./bin/benchmark_dsa
-cd ..
-```
-
-#### 3. Backend Setup
-```bash
-cd backend
-cp ../.env.example .env
-# Ensure JWT_SECRET is set to at least 32 characters
-npm install
-npm run dev
-```
-
-#### 4. Frontend Setup
-```bash
-cd frontend
-npm install
-npm start
-```
+## 11. How the Native C Engine Works
+Refer to `docs/Document_G_Code_Level_Explanation.md` for comprehensive C99 code explanations.
 
 ---
 
-## 10. Verification & Test Suite Summary
-
-Execute the full automated quality assurance matrix across all system tiers:
-
-```bash
-# 1. Core C Engine Unit Tests & Spatial Index (118 assertions)
-cd core-engine
-build.bat && bin/test_dsa.exe && bin/test_quadtree.exe
-
-# 2. Empirical C Benchmark Suite (DSA & Quadtree)
-bin/benchmark_dsa.exe
-bin/benchmark_quadtree.exe
-
-# 3. Backend Test Matrix (143 tests across 16 suites)
-cd ../backend
-node --test tests/production_safety.test.js \
-            tests/frontend_workflow.test.js \
-            tests/integration.test.js \
-            tests/graph.test.js \
-            tests/e2e.test.js \
-            tests/forensic_integrity.test.js \
-            tests/evidence_vault.test.js \
-            tests/geospatial.test.js \
-            tests/collaboration.test.js
-
-# 4. Frontend Production Build Verification
-cd ../frontend
-npm test -- --watchAll=false
-npm run build
-```
+## 12. Business Rules & Forensic Logic
+- Evidence missing collection timestamps is classified as an administrative gap.
+- Inter-event velocities exceeding 120 km/h in urban sectors are flagged as anomalies.
+- Lead priority scores scale with graph centrality and source verification status.
 
 ---
 
-## 11. Forensic Integrity & Explainable Intelligence (Phase 7)
-
-Phase 7 upgrades CASETHREAD into a forensic decision-support platform with cryptographic verification, auditable chain-of-custody, backward-linked audit hash chaining, and explainable algorithmic findings.
-
-### Cryptographic Fingerprinting & Integrity Verification
-Every evidence item is cryptographically sealed with a SHA-256 hash upon ingestion:
-- **Raw Content Fingerprinting (`CONTENT_SHA256`):** Computed directly over ingested binary or text payload bytes (e.g. surveillance video frames, phone call transcripts).
-- **Metadata Snapshot Fingerprinting (`METADATA_CANONICAL`):** Computed over a deterministic, sorted, canonical JSON representation of tracking code, category, title, description, and source when raw binary content is absent.
-- **Integrity Status States:**
-  - `INTACT`: Payload matches the original recorded fingerprint with zero bit-level discrepancies.
-  - `TAMPERED_MISMATCH`: Live payload or canonical metadata diverges from the recorded fingerprint. An alert is instantly triggered in the dashboard.
-  - `PENDING`: Newly ingested evidence awaiting formal forensic verification by the case lead officer.
-
-### Tamper-Evident Audit Hash Chaining
-Audit logs in `evidence_audit_logs` are linked backward in a cryptographic hash chain:
-$$\text{Event Hash}_i = \text{SHA-256}\left(\text{Event Hash}_{i-1} \parallel \text{Officer ID} \parallel \text{Action} \parallel \text{Canonical Payload} \parallel \text{Timestamp}\right)$$
-- Initial events link directly to the system constant `GENESIS_HASH` (`0000000000000000000000000000000000000000000000000000000000000000`).
-- The verification utility (`cryptoService.verifyAuditChain`) recalculates every hash in sequence:
-  - If a database administrator or malicious actor alters an event payload, `verifyAuditChain` fails with `PAYLOAD_TAMPERING_DETECTED`.
-  - If records are deleted or chronological sequence is altered, verification fails with `LINKAGE_INTEGRITY_VIOLATION`.
-
-### Chain-of-Custody Workflow
-Custody transfers are tracked in `evidence_custody_events` with complete provenance:
-- Transferring officer ID and receiving officer ID.
-- Mandatory transfer purpose (`TRANSFERRED_FOR_ANALYSIS`, `CHECKED_OUT_FOR_COURT`, `RETURNED_TO_SECURE_STORAGE`).
-- Destination location (e.g., "Forensic Crime Lab - Ballistics Unit").
-- Case isolation: Cross-case custody transfers by non-assigned officers are strictly rejected with HTTP 403 Forbidden.
-
-### Structured Case Dossier Export & Printable Reports
-- **JSON Export (`GET /api/v1/reports/cases/:caseId/json`):** Complete structured export including case summary, suspects, victims, witnesses, evidence inventory with fingerprints, custody events, relational network, chronological timeline, algorithm leads with formula breakdown, and audit verification status.
-- **Printable HTML/PDF Dossier (`GET /api/v1/reports/cases/:caseId/html`):** Formatted for law enforcement presentation with official classification banners, print pagination controls, and forensic audit seals. Zero credentials or sensitive hashes are leaked.
-
-### Academic Scope & Judicial Disclaimer
-> **IMPORTANT ADMISSIBILITY NOTICE:** CASETHREAD is designed as an academic decision-support framework to demonstrate cryptographic provenance and advanced data structures. It provides mathematical and cryptographic guarantees of internal database consistency. However, it does **NOT** constitute a certified statutory forensic acquisition tool or substitute for court-recognized legal chain-of-custody documentation without independent sworn verification.
+## 13. Security
+- Parameterized SQL queries preventing SQL injection.
+- Salted bcrypt password hashing.
+- Standard I/O IPC child process execution with timeout guards.
 
 ---
 
-## 12. Digital Evidence Acquisition, Secure File Vault & Multi-Format Ingestion (Phase 8)
-
-Phase 8 connects actual digital evidence files (documents, images, audio, video, structured records) to the cryptographic provenance and C DSA intelligence workflows established in previous phases.
-
-### Ingestion & Verification Architecture Flowchart
-
-```mermaid
-flowchart TD
-    A["Officer Upload (Multipart)"] --> B["Backend Validation (Magic Bytes & 50MB Cap)"]
-    B --> C["Secure File Vault (storage/vault/cases/:id/originals)"]
-    C --> D["Streaming SHA-256 Fingerprinting"]
-    D --> E["Format-Aware Metadata Extraction"]
-    E --> F["MySQL Evidence Metadata Persistence"]
-    F --> G["Integrity Verification Engine"]
-    G --> H["Investigation Analysis (C DSA Engine)"]
-```
-
-### Supported Evidence Formats & Magic Byte Signatures
-
-Client-supplied file extensions and MIME headers are never trusted. All incoming files undergo binary signature (magic byte) verification before storage:
-
-| Format Category | Supported Extensions | Detected MIME Type | Binary Magic Byte Signature / Validation |
-| :--- | :--- | :--- | :--- |
-| **Documents** | `.pdf` | `application/pdf` | Header matches `%PDF-` (`0x25 0x50 0x44 0x46`) |
-| **Images** | `.png`, `.jpg`, `.jpeg` | `image/png`, `image/jpeg` | PNG: `0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A`<br>JPEG: `0xFF 0xD8 0xFF` SOI marker |
-| **Audio** | `.wav`, `.mp3` | `audio/wav`, `audio/mpeg` | WAV: `RIFF....WAVE`<br>MP3: `ID3` tag or MPEG frame sync (`0xFF 0xFB/F3/F2`) |
-| **Video** | `.mp4` | `video/mp4` | ISO Base Media File Format box atom `ftyp` at offset 4 |
-| **Structured Data** | `.csv`, `.json`, `.xml`, `.txt` | `text/csv`, `application/json`, `application/xml`, `text/plain` | Non-binary UTF-8 text validation and syntax parsing (JSON, XML tag delimiters `<...?`) |
-
-### Secure File Vault & Storage Layout
-
-Physical evidence files are stored strictly outside the public web root in an isolated hierarchical directory tree:
-
-```
-storage/vault/
-└── cases/
-    └── <case_id>/
-        ├── originals/   # Read-only original forensic evidence files (<uuid>_<filename>)
-        └── artifacts/   # Derived non-destructive research artifacts (<uuid>_<filename>)
-```
-
-- **Docker Volume Mount:** Backed by the named volume `evidence_vault:/app/storage/vault`, ensuring persistence across container upgrades and redeployments.
-- **Path Traversal Defense:** Sanitizes filenames, prohibits null bytes, absolute paths, and parent directory traversal (`..`).
-- **Streaming Transfer & Access Control:** Files are streamed via authenticated endpoints with HTTP byte-range capability. Cross-case downloads by non-assigned officers are rejected with HTTP 403 Forbidden.
-
-### Format-Aware Metadata Extraction
-
-The ingestion pipeline automatically and non-destructively extracts format-specific technical parameters stored in `evidence_metadata_extractions`:
-- **Images:** Dimensions (width/height), color depth, camera manufacturer/model, ISO, exposure time, aperture, focal length, capture timestamp, and GPS coordinates (latitude/longitude/altitude).
-- **Documents:** Page count, PDF title, author, producer, creation/modification dates, and format version.
-- **Audio:** Duration in seconds, audio format/codec, sample rate (Hz), channel count (mono/stereo), and bit rate.
-- **Video:** Frame dimensions, duration, time scale, and video/audio codec four-character tags (e.g. `avc1`, `mp4a`).
-- **Data & Text:** Character encoding, total record/line count, header column names, column counts, and top-level JSON keys.
-
-### Derived Forensic Artifacts & Lineage
-
-Detectives can generate derived research artifacts without modifying the original immutable evidence:
-- **`EXTRACTED_TEXT`:** Text stream extracted from PDF, OCR, or transcription sources.
-- **`NORMALIZED_DATA`:** Converted structured tabular data (e.g., CSV rows transformed to canonical JSON).
-- **`PREVIEW_IMAGE`:** Rescaled thumbnails or preview frames for quick officer inspection.
-
-Every derived artifact is independently hashed with its own SHA-256 fingerprint, linked to its parent file via `parent_file_id` in `evidence_derived_artifacts`, preserving complete chain-of-custody lineage.
-
-### Vault API Endpoints Reference
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/v1/vault/cases/:caseId/upload` | Multipart evidence file upload with magic byte verification and automated metadata extraction. |
-| `GET` | `/api/v1/vault/cases/:caseId/files` | Retrieve inventory of all vault files uploaded for a specific case. |
-| `GET` | `/api/v1/vault/files/:fileId` | Detailed technical file inspection, metadata extraction, and derived artifacts. |
-| `GET` | `/api/v1/vault/files/:fileId/download` | Secure byte-stream download of original forensic file (assigned officers only). |
-| `GET` | `/api/v1/vault/files/:fileId/preview` | In-line preview rendering with range requests for images, PDFs, audio, and video. |
-| `POST` | `/api/v1/vault/files/:fileId/verify-integrity` | On-demand bit-level verification comparing live disk bytes with recorded SHA-256 fingerprint. |
-| `POST` | `/api/v1/vault/files/:fileId/artifacts` | Generate derived forensic artifact (`EXTRACTED_TEXT`, `NORMALIZED_DATA`, `PREVIEW_IMAGE`). |
-| `GET` | `/api/v1/vault/artifacts/:artifactId/download` | Download derived artifact file. |
-| `POST` | `/api/v1/vault/extractions/:extractionId/review` | Officer review and confirmation of extracted metadata attributes. |
-| `GET` | `/api/v1/vault/cases/:caseId/search` | Search and filter vault files by query, format, category, officer, or integrity status. |
+## 14. Troubleshooting
+- Ensure MySQL is active on `127.0.0.1:3306`.
+- Verify `casethread_engine.exe` exists in `core-engine/bin/`.
 
 ---
 
-## 13. Geospatial Evidence Intelligence & Interactive Mapping (Phase 9)
-
-Phase 9 equips CASETHREAD with spatial indexing and spatiotemporal investigation capabilities, connecting physical and digital evidence coordinates to an interactive forensic mapping workspace.
-
-### Geospatial Investigation Architecture
-
-```mermaid
-flowchart TD
-    EV["Evidence Vault & File Ingestion"] --> GPS["GPS Metadata Extraction (EXIF / Telemetry)"]
-    GPS --> GDM["Geospatial Data Model (evidence_geospatial)"]
-    GDM --> CQT["C Quadtree Spatial Index (core-engine/src/spatial/)"]
-    CQT --> SS["Spatial Search & Clustering (Bounding Box & Haversine Radius)"]
-    SS --> STC["Spatiotemporal Correlation (Velocity & Co-Presence Analysis)"]
-    STC --> EF["Explainable Spatial Findings (Disclaimers & Limitations)"]
-    EF --> MAP["Interactive Forensic Map UI (GeospatialMapPanel.js)"]
-```
-
-### C Quadtree Spatial Indexing & Geodesic Equations
-
-To achieve sub-millisecond spatial query performance across large investigations, CASETHREAD implements a native 2D hierarchical Quadtree (`core-engine/src/spatial/quadtree.c`) with configurable bucket capacity (default 8) and dynamic subdivision up to depth 24.
-
-- **Bounding Box Query:** Hierarchically intersects query regions against quadrant boundaries in $O(\log N + K)$ average time.
-- **Geodesic Haversine Distance:** Bounding box candidate pruning is followed by exact great-circle distance evaluation ($R = 6,371,008.8\text{ meters}$):
-  $$\Delta\phi = \frac{(\phi_2 - \phi_1) \cdot \pi}{180}, \quad \Delta\lambda = \frac{(\lambda_2 - \lambda_1) \cdot \pi}{180}$$
-  $$a = \sin^2\left(\frac{\Delta\phi}{2}\right) + \cos\left(\frac{\phi_1 \cdot \pi}{180}\right) \cos\left(\frac{\phi_2 \cdot \pi}{180}\right) \sin^2\left(\frac{\Delta\lambda}{2}\right)$$
-  $$d = 2 \cdot R \cdot \text{atan2}\left(\sqrt{a}, \sqrt{1 - a}\right)$$
-- **Antimeridian & Polar Handling:** Queries straddling the $+180^\circ / -180^\circ$ meridian split into disjoint sub-boxes ($[\text{min\_lon}, 180^\circ]$ and $[-180^\circ, \text{max\_lon}]$). Polar latitudes are clamped to $[-90^\circ, 90^\circ]$ with full longitude span.
-- **Duplicate Coordinates:** Identical coordinates are chained via `next_duplicate` linked lists, avoiding infinite subdivision.
-
-### Empirical Quadtree Performance vs Linear Scan
-
-Empirical benchmark execution conducted via `core-engine/bin/benchmark_quadtree.exe` across scales up to $N = 10,000$ points (`benchmarks/quadtree_benchmark_results.csv`):
-
-| Points ($N$) | Quadtree Radius Query ($\mu$s) | Linear Scan Radius ($\mu$s) | Query Parity | Empirical Quadtree Speedup |
-| :--- | :--- | :--- | :--- | :--- |
-| **100** | 11.91 $\mu$s | 8.15 $\mu$s | 100% Match | $0.68\times$ (overhead threshold) |
-| **500** | 2.55 $\mu$s | 38.84 $\mu$s | 100% Match | **$15.24\times$ Speedup** |
-| **1,000** | 5.66 $\mu$s | 79.00 $\mu$s | 100% Match | **$13.95\times$ Speedup** |
-| **5,000** | 46.74 $\mu$s | 503.25 $\mu$s | 100% Match | **$10.77\times$ Speedup** |
-| **10,000** | 90.99 $\mu$s | 1,607.29 $\mu$s | 100% Match | **$17.67\times$ Speedup** |
-
-### Geospatial Investigation Algorithms
-
-1. **Geographical Proximity Search:**
-   - Evaluates evidence within radius $R$ of a crime scene or coordinates. Supports conversion to kilometers, miles, and feet.
-2. **Spatial Density Clustering:**
-   - Connected-component density algorithm discovering clusters within configurable distance thresholds (e.g. 200m). Computes cluster centroids, spread radii, and flags isolated outlier evidence items.
-3. **Shared Location Detection:**
-   - Detects observations situated at identical or near-identical coordinates ($\le 25\text{m}$).
-4. **Spatiotemporal Travel Velocity Analysis:**
-   - Evaluates minimum transit velocity between consecutive observations:
-     $$v = \frac{d}{\Delta t} \times 3.6\text{ (km/h)}$$
-   - Transitions exceeding 180 km/h are flagged as `SPATIOTEMPORAL_SPEED_ANOMALY`.
-5. **Spatial-Temporal Co-Presence:**
-   - Detects distinct entities observed within 100m and 15 minutes of each other.
-
-### Map Privacy, Security & Judicial Disclaimers
-
-- **Zero External Geocoding:** Sensitive crime scene coordinates are processed strictly on the local backend and client. No coordinate payloads are transmitted to external geocoding or AI APIs.
-- **Configurable Basemap:** Defaults to an air-gapped Tactical Grid mode with zero external network requests, with optional CartoDB Dark Matter / OSM basemap overlays.
-- **Strict Evidence Admissibility Notice:**
-  > **IMPORTANT NOTICE:** Spatial proximity or shared location does **NOT** prove direct physical contact, mutual awareness, or criminal association. GPS coordinates extracted from media do not prove that photographed criminal activity occurred at that specific location. All spatial findings serve strictly as investigative decision-support hypotheses.
-
-### Geospatial API Endpoints Reference
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/cases/:caseId/geospatial` | Retrieve all cataloged geospatial points for a case with joined evidence metadata. |
-| `POST` | `/api/v1/cases/:caseId/geospatial/search` | Execute bounding box or Haversine radius queries with category and source filters. |
-| `GET` | `/api/v1/cases/:caseId/geospatial/clusters` | Discover spatial density clusters and isolated evidence items. |
-| `POST` | `/api/v1/cases/:caseId/geospatial/analyze` | Execute spatiotemporal velocity anomaly and co-presence correlation analysis. |
-| `POST` | `/api/v1/cases/:caseId/geospatial/points` | Manually record or associate coordinates with an evidence record. |
-| `GET` | `/api/v1/evidence/:evidenceId/location` | Retrieve coordinate history and EXIF extractions for a specific evidence item. |
-| `POST` | `/api/v1/cases/:caseId/geospatial/points/:id/review` | Officer review and sign-off on recorded geospatial coordinates. |
+## 15. Future Improvements
+- Weighted Dijkstra shortest paths and Betweenness Centrality metrics.
+- WebGL hardware-accelerated graph rendering.
 
 ---
 
-## 14. Multi-Officer Collaboration & Investigation Workflow Management (Phase 10)
-
-Phase 10 upgrades CASETHREAD from single-lead case management into a collaborative multi-officer forensic investigation workspace. Multiple authorized officers across specialized forensic divisions can collaborate on active cases, assign and sequence investigation tasks via Directed Acyclic Graphs (DAG), review vault evidence, document progress notes, track activity timelines, and monitor case operational health.
-
-### 14.1 Multi-Officer Collaboration Architecture
-
-```mermaid
-flowchart TD
-    subgraph TEAM ["Case Team & Membership (case_members)"]
-        LEAD["Lead Investigator (Full Control)"]
-        IO["Investigating Officer"]
-        FA["Forensic Analyst"]
-        ER["Evidence Reviewer"]
-        RO["Read-Only Reviewer"]
-    end
-
-    subgraph WORKFLOW ["Investigation Task DAG (investigation_tasks)"]
-        TB["Task Board & State Machine"]
-        DAG["Task Dependencies DAG (BFS Cycle Detection)"]
-        OCC["Optimistic Concurrency Control (version v1 -> v2)"]
-    end
-
-    subgraph EVIDENCE_REV ["Evidence Review Queue (evidence_reviews)"]
-        REV["Human Observations & Opinions"]
-        TRUTH["Original SHA-256 Fingerprint (Strictly Immutable)"]
-    end
-
-    subgraph TELEMETRY ["Coordination & Telemetry"]
-        LOGS["Activity Timeline (case_activity_logs)"]
-        NOTIF["Internal Notifications (officer_notifications)"]
-        METRICS["Operational Workload Analytics (/workflow-analytics)"]
-    end
-
-    TEAM -->|Assigns / Works On| WORKFLOW
-    TEAM -->|Inspects / Submits| EVIDENCE_REV
-    WORKFLOW -->|Emits Events| TELEMETRY
-    EVIDENCE_REV -->|Emits Events| TELEMETRY
-    REV -.->|Preserves| TRUTH
-```
-
-### 14.2 Role-Based Access Control (RBAC) & Case Membership
-
-Case membership is decoupled from global officer accounts via the normalized `case_members` table. Each officer operates under a specific role per case, with strict case-level isolation enforced at the database and API layers:
-
-```mermaid
-classDiagram
-    class RolePermissions {
-        +String role
-        +Boolean can_edit_case
-        +Boolean can_manage_members
-        +Boolean can_manage_tasks
-        +Boolean can_review_evidence
-        +Boolean can_view_case
-    }
-    class LEAD_INVESTIGATOR {
-        +can_edit_case: true
-        +can_manage_members: true
-        +can_manage_tasks: true
-        +can_review_evidence: true
-        +can_view_case: true
-    }
-    class INVESTIGATING_OFFICER {
-        +can_edit_case: false
-        +can_manage_members: false
-        +can_manage_tasks: true
-        +can_review_evidence: true
-        +can_view_case: true
-    }
-    class FORENSIC_ANALYST {
-        +can_edit_case: false
-        +can_manage_members: false
-        +can_manage_tasks: true
-        +can_review_evidence: true
-        +can_view_case: true
-    }
-    class EVIDENCE_REVIEWER {
-        +can_edit_case: false
-        +can_manage_members: false
-        +can_manage_tasks: false
-        +can_review_evidence: true
-        +can_view_case: true
-    }
-    class READ_ONLY_REVIEWER {
-        +can_edit_case: false
-        +can_manage_members: false
-        +can_manage_tasks: false
-        +can_review_evidence: false
-        +can_view_case: true
-    }
-    RolePermissions <|-- LEAD_INVESTIGATOR
-    RolePermissions <|-- INVESTIGATING_OFFICER
-    RolePermissions <|-- FORENSIC_ANALYST
-    RolePermissions <|-- EVIDENCE_REVIEWER
-    RolePermissions <|-- READ_ONLY_REVIEWER
-```
-
-| Role | Edit Case Dossier | Manage Members / Lead Handover | Create / Update Tasks | Submit Evidence Reviews | Read Case Records |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **`LEAD_INVESTIGATOR`** | Yes | Yes | Yes | Yes | Yes |
-| **`INVESTIGATING_OFFICER`** | No | No | Yes | Yes | Yes |
-| **`FORENSIC_ANALYST`** | No | No | Yes | Yes | Yes |
-| **`EVIDENCE_REVIEWER`** | No | No | No | Yes | Yes |
-| **`READ_ONLY_REVIEWER`** | No | No | No | No | Yes |
-
-- **Lead Delegation & Transfer:** Primary case leadership can be transferred by the current lead to another active officer, atomically swapping roles and logging an audit event.
-- **Revocation with Cause:** Members can only be removed by the lead, requiring a documented revocation reason.
-- **Cross-Case Isolation:** Officers not assigned to a case receive HTTP 403 Forbidden on all access attempts.
-
-### 14.3 Investigation Task DAG & Cycle Detection
-
-Investigations involve ordered workflows where certain investigative steps depend on prior findings (e.g. DNA extraction must precede laboratory profiling). Dependencies are modeled as a Directed Acyclic Graph (DAG) in `investigation_task_dependencies`.
-
-```mermaid
-flowchart LR
-    A["Task A: Secure Crime Scene & Ingest CCTV"] --> B["Task B: Extract Suspect License Plates"]
-    B --> C["Task C: Interview Vehicle Owner"]
-    D["Task D: Recover Latent Fingerprints"] --> E["Task E: AFIS Database Cross-Check"]
-    C --> F["Task F: Formulate Warrant Application"]
-    E --> F
-
-    style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style B fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style C fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style D fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style E fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style F fill:#1e293b,stroke:#10b981,stroke-width:2px,color:#fff
-```
-
-- **Breadth-First Search (BFS) Cycle Detection:**
-  Adding a dependency $(D \to P)$, meaning Task $D$ requires Task $P$, introduces a cycle if and only if $P \rightsquigarrow D$ already exists. The system executes a BFS from $P$ searching for $D$. If $D$ is reachable from $P$, the request is rejected with HTTP 400 `CIRCULAR_DEPENDENCY_DETECTED`.
-- **Mandatory Prerequisite Enforcement:**
-  A task cannot be marked `COMPLETED` until all prerequisite tasks are in `COMPLETED` status. Attempting to complete a task with pending dependencies is rejected with HTTP 400 `TASK_DEPENDENCIES_UNMET`.
-
-### 14.4 Task Lifecycle State Machine & Concurrency Control
-
-```mermaid
-stateDiagram-v2
-    [*] --> OPEN: Task Created
-    OPEN --> ASSIGNED: Assigned to Officer
-    ASSIGNED --> IN_PROGRESS: Investigation Started
-    IN_PROGRESS --> UNDER_REVIEW: Work Submitted
-    UNDER_REVIEW --> COMPLETED: Lead Approves (Prereqs Met)
-    IN_PROGRESS --> BLOCKED: Prerequisite Stalled / Lead Missing
-    BLOCKED --> IN_PROGRESS: Obstacle Resolved
-    OPEN --> CANCELLED: Deemed Irrelevant
-    ASSIGNED --> CANCELLED: Deemed Irrelevant
-    IN_PROGRESS --> CANCELLED: Deemed Irrelevant
-    COMPLETED --> [*]
-    CANCELLED --> [*]
-```
-
-- **Optimistic Concurrency Control:**
-  Each task row contains a `version` integer column. Updates require the expected version (`WHERE task_id = ? AND version = ?`) and atomically increment to `version + 1`. If two detectives modify a task concurrently, the second operation fails with HTTP 409 Conflict (`CONCURRENT_MODIFICATION_DETECTED`), protecting against overwrite race conditions.
-
-### 14.5 Segregation of Forensic Truth vs Human Review Opinion
-
-In judicial investigations, physical and digital evidence must never be altered by subjective opinion. CASETHREAD strictly segregates immutable forensic facts from investigator reviews:
-
-```mermaid
-flowchart TD
-    subgraph TRUTH ["Physical & Digital Ground Truth (Strictly Immutable)"]
-        EV["evidence Table"]
-        EVF["evidence_files Vault Table"]
-        HASH["Raw SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"]
-    end
-
-    subgraph OPINION ["Human Investigative Opinions (evidence_reviews Table)"]
-        REV["Review Record #42"]
-        OBS["Investigator Observation: 'Slight glare visible on driver face'"]
-        STAT["Review Status: VERIFIED"]
-        OFF["Reviewer: Detective Sarah Jenkins (Badge #104)"]
-        NOTE["Verification Note: 'Cross-checked with store lighting specs'"]
-    end
-
-    OPINION -.->|References Without Modifying| TRUTH
-```
-
-- Original evidence records, SHA-256 file fingerprints, and EXIF extraction logs remain permanently immutable.
-- Detective observations, clarification requests, and reliability assessments reside in `evidence_reviews` with author officer attribution and timestamps.
-
-### 14.6 Collaboration REST API Reference
-
-All endpoints require standard `Authorization: Bearer <JWT>` authentication and verify active case membership:
-
-| Method | Endpoint | Allowed Roles | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/cases/:caseId/members` | All Members | List all active team members assigned to a case with joined officer profiles. |
-| `POST` | `/api/v1/cases/:caseId/members` | `LEAD_INVESTIGATOR` | Assign an authorized officer to the case with an assigned role. |
-| `DELETE` | `/api/v1/cases/:caseId/members/:memberId` | `LEAD_INVESTIGATOR` | Revoke officer case access with documented audit reason. |
-| `POST` | `/api/v1/cases/:caseId/transfer-lead` | `LEAD_INVESTIGATOR` | Transfer primary case leadership to another active team member. |
-| `GET` | `/api/v1/cases/:caseId/tasks` | All Members | List investigation tasks with status, priority, and assignee filters. |
-| `POST` | `/api/v1/cases/:caseId/tasks` | Non Read-Only | Create a new investigation task with optional linked evidence and due date. |
-| `GET` | `/api/v1/tasks/:taskId` | All Members | Retrieve task details, chronological notes, and prerequisite dependencies. |
-| `PUT` | `/api/v1/tasks/:taskId` | Non Read-Only | Update task status, assignee, priority, or details with optimistic locking (`version`). |
-| `POST` | `/api/v1/tasks/:taskId/notes` | Non Read-Only | Append a timestamped progress note to an investigation task. |
-| `POST` | `/api/v1/tasks/:taskId/dependencies` | Non Read-Only | Add prerequisite task dependency with BFS cycle detection. |
-| `POST` | `/api/v1/cases/:caseId/evidence-reviews` | Non Read-Only | Request formal evidence review assignment for an officer. |
-| `POST` | `/api/v1/evidence-reviews/:reviewId` | Non Read-Only | Submit review observations, integrity sign-off, and notes without altering evidence hashes. |
-| `GET` | `/api/v1/cases/:caseId/activity` | All Members | Retrieve chronological activity audit trail across 11 case-level event types. |
-| `GET` | `/api/v1/notifications` | Authenticated Officer | List personal unread and historical notifications with bulk mark-as-read. |
-| `GET` | `/api/v1/cases/:caseId/workflow-analytics` | All Members | Retrieve real database workload metrics (completion %, overdue, blocked, avg hours). |
+## 16. Running the Tests
+Refer to `TEST_REPORT.md` for test suite execution details.

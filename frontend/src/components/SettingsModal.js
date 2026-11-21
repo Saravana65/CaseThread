@@ -18,7 +18,7 @@ export default function SettingsModal({ isOpen, onClose, officer, selectedCaseId
   const checkHealth = async () => {
     setLoadingHealth(true);
     try {
-      const res = await fetch('http://localhost:5000/api/v1/health');
+      const res = await fetch('http://localhost:5001/api/v1/health');
       const data = await res.json();
       setHealthData(data);
     } catch (e) {
@@ -167,7 +167,7 @@ export default function SettingsModal({ isOpen, onClose, officer, selectedCaseId
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>API Gateway:</span>
               <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                http://localhost:5000/api/v1
+                http://localhost:5001/api/v1
               </span>
             </div>
           </div>

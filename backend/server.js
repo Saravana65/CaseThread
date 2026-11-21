@@ -39,16 +39,24 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 
 // Restrict CORS to configured origins
-const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:3000')
+const defaultOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'];
+const configuredOrigins = (process.env.CLIENT_ORIGIN || '')
   .split(',')
   .map(o => o.trim())
   .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultOrigins, ...configuredOrigins])];
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow non-browser agents, CLI tools, tests, or direct curl without Origin header
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && allowedOrigins.includes('*'))) {
+    if (
+      allowedOrigins.includes(origin) ||
+      (process.env.NODE_ENV !== 'production' && (
+        allowedOrigins.includes('*') ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ))
+    ) {
       return callback(null, true);
     }
     return callback(new Error(`CORS policy violation: Origin '${origin}' is not permitted.`));
