@@ -395,7 +395,13 @@ export default function App() {
           )}
 
           {activeTab === 'graph' && (
-            <GraphAnalysis initialCaseId={selectedCaseId} />
+            <GraphAnalysis
+              initialCaseId={selectedCaseId}
+              onSelectCase={(id) => {
+                setSelectedCaseId(id);
+                loadCaseInfo(id);
+              }}
+            />
           )}
 
           {activeTab === 'gaps' && (

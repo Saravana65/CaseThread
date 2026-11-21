@@ -9,11 +9,18 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import GraphCanvas from '../components/GraphCanvas';
 
-export default function GraphAnalysis({ initialCaseId }) {
+export default function GraphAnalysis({ initialCaseId, onSelectCase }) {
   const [cases, setCases] = useState([]);
   const [selectedCaseId, setSelectedCaseId] = useState(initialCaseId || null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+
+  // Sync selectedCaseId when initialCaseId prop changes
+  useEffect(() => {
+    if (initialCaseId) {
+      setSelectedCaseId(initialCaseId);
+    }
+  }, [initialCaseId]);
 
   // Graph Data (Received directly from C Algorithm Engine)
   const [graphData, setGraphData] = useState({
@@ -74,7 +81,16 @@ export default function GraphAnalysis({ initialCaseId }) {
       const res = await api.getCases();
       if (res.data && res.data.length > 0) {
         setCases(res.data);
-        setSelectedCaseId(res.data[0].case_id);
+        // Retain initialCaseId or current selectedCaseId if present and valid;
+        // otherwise default to primary active case (CASE-2026-0419) or first available case.
+        setSelectedCaseId(prev => {
+          const currentId = initialCaseId || prev;
+          if (currentId && res.data.some(c => c.case_id === currentId)) {
+            return currentId;
+          }
+          const primaryCase = res.data.find(c => c.case_number === 'CASE-2026-0419');
+          return primaryCase ? primaryCase.case_id : res.data[0].case_id;
+        });
       }
     } catch (err) {
       console.error('Failed to load cases:', err);
@@ -168,7 +184,13 @@ export default function GraphAnalysis({ initialCaseId }) {
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>CASE:</span>
             <select
               value={selectedCaseId || ''}
-              onChange={(e) => setSelectedCaseId(parseInt(e.target.value, 10))}
+              onChange={(e) => {
+                const newId = parseInt(e.target.value, 10);
+                setSelectedCaseId(newId);
+                if (onSelectCase) {
+                  onSelectCase(newId);
+                }
+              }}
               className="form-control"
               style={{
                 width: '260px',
