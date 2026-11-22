@@ -693,3 +693,4 @@ exports.addTimelineEvent = async (req, res, next) => {
 // Legacy compatibility
 exports.addEvent = exports.addTimelineEvent;
 exports.getTimelineByCase = exports.getCaseTimeline;
+exports.fetchConsolidatedTimelineEvents = fetchConsolidatedTimelineEvents;

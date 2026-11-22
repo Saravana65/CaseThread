@@ -209,10 +209,10 @@ export default function Sidebar({
         },
         {
           id: 'reports',
-          action: 'open_reports',
-          label: 'Case Dossier Report',
+          tab: 'reports',
+          label: 'Report Center',
           IconComponent: ReportIcon,
-          tooltip: 'Export Comprehensive Forensic Dossier'
+          tooltip: 'Report Center & Multi-Format Document Export'
         },
         {
           id: 'settings',

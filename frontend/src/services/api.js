@@ -219,9 +219,35 @@ class ApiService {
     return this.request(`/reports/cases/${caseId}/json`);
   }
 
-  getCaseReportHtmlUrl(caseId) {
+  getCaseReportDossier(caseId) {
+    return this.request(`/reports/cases/${caseId}/dossier`);
+  }
+
+  getCaseReportHtmlUrl(caseId, template = 'COMPREHENSIVE') {
     const token = this.getToken();
-    return `${API_BASE_URL}/reports/cases/${caseId}/html${token ? '?token=' + encodeURIComponent(token) : ''}`;
+    return `${API_BASE_URL}/reports/cases/${caseId}/html?template=${encodeURIComponent(template)}${token ? '&token=' + encodeURIComponent(token) : ''}`;
+  }
+
+  getCaseReportCsvUrl(caseId, template = 'EVIDENCE') {
+    const token = this.getToken();
+    return `${API_BASE_URL}/reports/cases/${caseId}/csv?template=${encodeURIComponent(template)}${token ? '&token=' + encodeURIComponent(token) : ''}`;
+  }
+
+  getReportHistory(caseId = null) {
+    return this.request(`/reports/history${caseId ? '?caseId=' + caseId : ''}`);
+  }
+
+  recordReportGeneration(payload) {
+    return this.request('/reports/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  deleteReportHistory(reportId) {
+    return this.request(`/reports/${reportId}`, {
+      method: 'DELETE'
+    });
   }
 
   // Phase 8: Secure Evidence File Vault, Ingestion, Metadata Extraction & Artifacts

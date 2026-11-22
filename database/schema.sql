@@ -911,3 +911,30 @@ VALUES
 (3, 2, 1, 'TASK_ASSIGNED', 'New Investigation Task Assigned', 'You have been assigned to task: Cross-Reference Sedan Transit with Traffic Camera 12', 'TASK', '3', FALSE, 'TASK_ASSIGNED:3:2', '2026-10-15 05:10:00'),
 (4, 5, 1, 'EVIDENCE_REVIEW_REQUESTED', 'Evidence Review Requested', 'Review requested for Loading Dock Camera Feed #4 (EVD-CCTV-001)', 'EVIDENCE_REVIEW', '1', TRUE, 'EVIDENCE_REVIEW_REQUESTED:1:5', '2026-10-15 05:15:00'),
 (5, 1, 1, 'TASK_BLOCKED', 'Task Dependency Prerequisite Notice', 'Task Question Contractor Elena Rostova is dependent on completion of Task 4.', 'TASK', '5', FALSE, 'TASK_BLOCKED:5:1', '2026-10-15 06:00:00');
+
+-- ------------------------------------------------------------------------------
+-- 20. Table: investigation_reports (Phase 9 Investigative Reporting & Document Export)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS investigation_reports (
+    report_id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    report_name VARCHAR(255) NOT NULL,
+    template_type ENUM('OVERVIEW', 'EVIDENCE_INVENTORY', 'CHAIN_OF_CUSTODY', 'GRAPH_ANALYSIS', 'TIMELINE_ANALYSIS', 'COMPREHENSIVE') NOT NULL DEFAULT 'COMPREHENSIVE',
+    format ENUM('PDF', 'CSV', 'JSON', 'HTML') NOT NULL DEFAULT 'PDF',
+    included_sections JSON NULL,
+    generated_by_id INT NULL,
+    generated_by_name VARCHAR(150) NOT NULL DEFAULT 'Authorized Investigator',
+    file_path VARCHAR(500) NULL,
+    file_size_bytes INT NULL,
+    metadata_summary JSON NULL,
+    status ENUM('READY', 'GENERATING', 'FAILED') NOT NULL DEFAULT 'READY',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_report_case FOREIGN KEY (case_id) 
+        REFERENCES cases(case_id) ON DELETE CASCADE,
+    INDEX idx_case_reports (case_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 21. Seed Initial Report History Record
+INSERT INTO investigation_reports (report_id, case_id, report_name, template_type, format, included_sections, generated_by_id, generated_by_name, metadata_summary, status, created_at)
+VALUES
+(1, 1, 'Comprehensive Case Dossier - Metro Vault Intrusion', 'COMPREHENSIVE', 'PDF', '["overview", "evidence", "custody", "graph", "timeline", "leads", "audit"]', 1, 'Det. James Vance (DET-8492)', '{"total_evidence": 11, "total_custody_events": 4, "total_timeline_events": 32, "audit_chain_verified": true}', 'READY', '2026-10-16 09:30:00');

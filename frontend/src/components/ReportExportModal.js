@@ -5,10 +5,11 @@ import { ReportIcon, CloseIcon } from './icons/Icons';
 /**
  * @component ReportExportModal
  * @description Modal dialog for exporting comprehensive forensic investigation dossiers
- * in structured JSON format or official printable HTML/PDF format.
+ * in structured JSON, sanitized CSV, or official printable HTML/PDF format.
  */
-export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber, caseTitle }) {
+export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber, caseTitle, onNavigateToReportCenter }) {
   const [downloadingJson, setDownloadingJson] = useState(false);
+  const [template, setTemplate] = useState('COMPREHENSIVE');
   const [error, setError] = useState(null);
 
   if (!isOpen) return null;
@@ -18,7 +19,7 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
       setDownloadingJson(true);
       setError(null);
       const res = await api.getCaseReportJson(caseId);
-      const jsonBlob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const jsonBlob = new Blob([JSON.stringify(res.data || res.report, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(jsonBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -35,8 +36,15 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
   };
 
   const handleOpenPrintableHtml = () => {
-    const reportUrl = api.getCaseReportHtmlUrl(caseId);
+    const reportUrl = api.getCaseReportHtmlUrl(caseId, template);
     window.open(reportUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleDownloadCsv = () => {
+    const csvTemplate = template === 'CHAIN_OF_CUSTODY' ? 'CUSTODY' :
+                        template === 'TIMELINE_ANALYSIS' ? 'TIMELINE' : 'EVIDENCE';
+    const csvUrl = api.getCaseReportCsvUrl(caseId, csvTemplate);
+    window.open(csvUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -44,7 +52,7 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
       <div
         className="modal-sheet"
         style={{
-          maxWidth: '560px',
+          maxWidth: '640px',
           padding: '1.5rem',
           display: 'flex',
           flexDirection: 'column',
@@ -58,7 +66,7 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
               <span style={{ color: 'var(--accent-primary)', display: 'flex' }}>
                 <ReportIcon size={20} />
               </span>
-              <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
                 Export Forensic Case Dossier
               </h3>
             </div>
@@ -90,79 +98,158 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
         )}
 
         <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          Generate a standardized, tamper-evident forensic intelligence report containing the complete evidentiary inventory, cryptographic SHA-256 fingerprints, chronological chain of custody logs, relational network linkages, and heuristic algorithmic lead prioritizations.
+          Export a standardized, cryptographic forensic report containing evidentiary inventory, SHA-256 integrity digests, chain of custody logs, relational network topology, and chronological timeline reconstruction.
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* Template Selector */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+            Select Report Template:
+          </label>
+          <select
+            value={template}
+            onChange={(e) => setTemplate(e.target.value)}
+            style={{
+              backgroundColor: 'var(--bg-input)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-default)',
+              borderRadius: '6px',
+              padding: '0.45rem 0.75rem',
+              fontSize: '0.8rem',
+              outline: 'none'
+            }}
+          >
+            <option value="COMPREHENSIVE">📑 Comprehensive Case Dossier (All Sections)</option>
+            <option value="OVERVIEW">📋 Investigation Overview Report</option>
+            <option value="EVIDENCE_INVENTORY">📦 Evidence Inventory & Cryptographic Ledger</option>
+            <option value="CHAIN_OF_CUSTODY">🔐 Chain of Custody Audit Report</option>
+            <option value="GRAPH_ANALYSIS">🕸️ Evidence Relationship & Network Graph Report</option>
+            <option value="TIMELINE_ANALYSIS">⏱️ Timeline & Temporal Contradiction Report</option>
+          </select>
+        </div>
+
+        {/* Export Formats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
           {/* Printable HTML / PDF */}
           <div style={{
             backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-card)',
-            padding: '1.15rem',
+            borderRadius: '8px',
+            padding: '0.85rem',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '1rem'
+            gap: '0.75rem'
           }}>
             <div>
-              <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                Printable HTML / PDF Dossier
+              <div style={{ fontWeight: '700', fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                🖨️ Print / PDF
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.4 }}>
-                Formatted with law enforcement styling, print pagination controls, audit seal, and evidence verification tables.
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.3 }}>
+                Printable stylesheet with A4 page breaks, headers & footers.
               </div>
             </div>
             <button
               onClick={handleOpenPrintableHtml}
               className="btn-primary"
-              style={{ fontSize: '0.78rem', height: '34px', width: '100%' }}
+              style={{ fontSize: '0.75rem', padding: '0.4rem', width: '100%' }}
             >
-              Open Printable Report ↗
+              Open PDF View ↗
             </button>
           </div>
 
-          {/* Structured JSON */}
+          {/* Structured CSV */}
           <div style={{
             backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-card)',
-            padding: '1.15rem',
+            borderRadius: '8px',
+            padding: '0.85rem',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '1rem'
+            gap: '0.75rem'
           }}>
             <div>
-              <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                Machine-Readable JSON
+              <div style={{ fontWeight: '700', fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                📊 Export CSV
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.4 }}>
-                Structured raw dataset export containing all entities, hash chains, and canonical algorithms for ingestion into external tools.
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.3 }}>
+                Sanitized CSV ledger safe from spreadsheet formula injection.
+              </div>
+            </div>
+            <button
+              onClick={handleDownloadCsv}
+              className="btn-secondary"
+              style={{ fontSize: '0.75rem', padding: '0.4rem', width: '100%' }}
+            >
+              Download CSV ↓
+            </button>
+          </div>
+
+          {/* Machine JSON */}
+          <div style={{
+            backgroundColor: 'var(--bg-elevated)',
+            border: '1px solid var(--border-default)',
+            borderRadius: '8px',
+            padding: '0.85rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '0.75rem'
+          }}>
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                💾 Export JSON
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.3 }}>
+                Full structured JSON dossier for canonical data interchange.
               </div>
             </div>
             <button
               onClick={handleDownloadJson}
               disabled={downloadingJson}
               className="btn-secondary"
-              style={{ fontSize: '0.78rem', height: '34px', width: '100%' }}
+              style={{ fontSize: '0.75rem', padding: '0.4rem', width: '100%' }}
             >
-              {downloadingJson ? 'Generating JSON...' : 'Download JSON Dossier ↓'}
+              {downloadingJson ? 'Generating...' : 'Download JSON ↓'}
             </button>
           </div>
         </div>
+
+        {/* Link to Full Report Center */}
+        {onNavigateToReportCenter && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                onClose();
+                onNavigateToReportCenter();
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-primary)',
+                fontSize: '0.78rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Open Full Interactive Report Center & Live Document Builder →
+            </button>
+          </div>
+        )}
 
         {/* Academic Notice */}
         <div style={{
           backgroundColor: 'var(--bg-input)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-control)',
-          padding: '0.65rem 0.85rem',
-          fontSize: '0.7rem',
+          padding: '0.55rem 0.75rem',
+          fontSize: '0.68rem',
           color: 'var(--text-muted)',
           lineHeight: 1.4
         }}>
-          <strong>Notice:</strong> This automated report is produced by an academic decision-support framework. Algorithmic inferences and priority scores do not constitute certified legal evidence or court-admissible findings without independent sworn verification.
+          <strong>Notice:</strong> This automated report is produced by an academic decision-support framework. Algorithmic inferences do not constitute certified legal evidence without independent sworn verification.
         </div>
       </div>
     </div>

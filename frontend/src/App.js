@@ -18,6 +18,7 @@ import CreateCaseModal from './components/CreateCaseModal';
 import SettingsModal from './components/SettingsModal';
 import ValidationDashboard from './components/ValidationDashboard';
 import InvestigationLab from './pages/InvestigationLab';
+import ReportCenter from './pages/ReportCenter';
 import api from './services/api';
 import './styles/theme.css';
 
@@ -212,8 +213,8 @@ export default function App() {
       setIsCreateCaseOpen(true);
       return;
     }
-    if (options.action === 'open_reports') {
-      setReportModalOpen(true);
+    if (options.action === 'open_reports' || tabId === 'reports') {
+      setActiveTab('reports');
       return;
     }
     if (options.action === 'open_settings') {
@@ -328,7 +329,7 @@ export default function App() {
           selectedCaseId={selectedCaseId}
           caseData={caseData}
           onOpenCreateCase={() => setIsCreateCaseOpen(true)}
-          onOpenReport={() => setReportModalOpen(true)}
+          onOpenReport={() => setActiveTab('reports')}
           onOpenNotifications={() => {
             setActiveTab('collaboration');
             setCollaborationSubTab('notifications');
@@ -371,7 +372,7 @@ export default function App() {
                 analyzing={analyzing}
                 onExploreGraph={() => setActiveTab('graph')}
                 onRefreshCase={loadCaseInfo}
-                onOpenReport={() => setReportModalOpen(true)}
+                onOpenReport={() => setActiveTab('reports')}
                 onBack={() => setActiveTab('investigations')}
                 onNavigateTab={setActiveTab}
               />
@@ -465,6 +466,19 @@ export default function App() {
               }}
             />
           )}
+
+          {activeTab === 'reports' && (
+            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
+              <ReportCenter
+                caseId={selectedCaseId}
+                caseData={caseData}
+                onSelectCase={(id) => {
+                  setSelectedCaseId(id);
+                  loadCaseInfo(id);
+                }}
+              />
+            </div>
+          )}
         </main>
 
         {/* Global Forensic Application Footer */}
@@ -490,6 +504,7 @@ export default function App() {
         caseId={selectedCaseId}
         caseNumber={caseData?.case_number}
         caseTitle={caseData?.title}
+        onNavigateToReportCenter={() => setActiveTab('reports')}
       />
 
       {/* Case Registration Modal */}
