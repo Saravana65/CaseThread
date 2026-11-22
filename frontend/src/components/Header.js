@@ -1,5 +1,5 @@
 import React from 'react';
-import { MenuIcon, PlusIcon, ReportIcon, BellIcon } from './icons/Icons';
+import { MenuIcon, PlusIcon, ReportIcon, BellIcon, JarvisIcon } from './icons/Icons';
 
 /**
  * @component Header
@@ -15,6 +15,7 @@ export default function Header({
   onOpenCreateCase,
   onOpenReport,
   onOpenNotifications,
+  onOpenVoiceAssistant,
   unreadCount = 0,
   onToggleMobileSidebar,
   isMobile
@@ -37,6 +38,8 @@ export default function Header({
     graph: { section: 'Intelligence', title: 'Evidence Relationship Graph' },
     gaps: { section: 'Intelligence', title: 'Evidence Gap Analysis' },
     timeline: { section: 'Intelligence', title: 'Chronological Timeline' },
+    intelligence: { section: 'Intelligence', title: 'AI Investigation Intelligence' },
+    voice_assistant: { section: 'Intelligence', title: 'JARVIS Conversational Voice AI' },
     leads: { section: 'Intelligence', title: 'Investigative Leads Ranking' },
     lab: { section: 'System', title: 'Investigation Algorithm Lab' },
     validation: { section: 'System', title: 'Forensic Validation Benchmarks' }
@@ -171,6 +174,29 @@ export default function Header({
               >
                 <ReportIcon size={14} />
                 <span>Dossier</span>
+              </button>
+            )}
+
+            {/* Quick Action: JARVIS Voice Assistant Launcher */}
+            {onOpenVoiceAssistant && (
+              <button
+                onClick={onOpenVoiceAssistant}
+                className="btn-secondary"
+                style={{
+                  height: '32px',
+                  fontSize: '0.78rem',
+                  padding: '0 0.75rem',
+                  backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                  borderColor: 'rgba(56, 189, 248, 0.35)',
+                  color: '#38BDF8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Launch JARVIS Conversational AI Voice Assistant"
+              >
+                <JarvisIcon size={14} color="#38BDF8" />
+                <span>JARVIS AI</span>
               </button>
             )}
 

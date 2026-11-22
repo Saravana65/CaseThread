@@ -130,6 +130,56 @@ class HybridRetriever {
       }
     }
 
+    // 3.5. Ensure explicit follow-up target case is present
+    const targetRef = typeof criteria.followUpTarget === 'object' ? criteria.followUpTarget?.case_reference_number : criteria.followUpTarget;
+    if (targetRef && !candidateDocs.some(d => d.case_reference_number === targetRef)) {
+      const [targetRows] = await execute(`
+        SELECT 
+          kd.document_id, kd.case_reference_number, kd.document_title, kd.country,
+          kd.region_state, kd.city, kd.jurisdiction, kd.crime_category, kd.crime_subtype,
+          kd.incident_datetime, kd.stolen_property, kd.property_recovered,
+          kd.documented_circumstances, kd.case_outcome, kd.investigation_status,
+          kd.investigative_actions, kd.is_investigation_details_available,
+          kd.record_level, ks.source_name, ks.source_type, ks.license_terms,
+          kc.chunk_text, kc.page_number, kc.section_reference
+        FROM knowledge_documents kd
+        JOIN knowledge_sources ks ON kd.source_id = ks.source_id
+        LEFT JOIN knowledge_chunks kc ON kd.document_id = kc.document_id
+        WHERE kd.case_reference_number = ?
+        LIMIT 1
+      `, [targetRef]);
+
+      if (targetRows && targetRows.length > 0) {
+        const row = targetRows[0];
+        candidateDocs.unshift({
+          document_id: row.document_id,
+          case_reference_number: row.case_reference_number,
+          document_title: row.document_title,
+          country: row.country,
+          region_state: row.region_state,
+          city: row.city,
+          jurisdiction: row.jurisdiction,
+          crime_category: row.crime_category,
+          crime_subtype: row.crime_subtype,
+          incident_datetime: row.incident_datetime,
+          stolen_property: row.stolen_property,
+          property_recovered: row.property_recovered,
+          documented_circumstances: row.documented_circumstances,
+          case_outcome: row.case_outcome,
+          investigation_status: row.investigation_status,
+          investigative_actions: row.investigative_actions,
+          is_investigation_details_available: !!row.is_investigation_details_available,
+          record_level: row.record_level,
+          source_name: row.source_name,
+          source_type: row.source_type,
+          license_terms: row.license_terms,
+          chunk_text: row.chunk_text || row.documented_circumstances || '',
+          relevance_score: 1.0,
+          excerpt: (row.documented_circumstances || '').slice(0, 250)
+        });
+      }
+    }
+
     // 4. Calculate semantic vector similarity for each candidate
     const scoredCandidates = candidateDocs.map(doc => {
       const docText = `${doc.document_title} ${doc.crime_subtype} ${doc.stolen_property} ${doc.documented_circumstances} ${doc.investigative_actions}`;

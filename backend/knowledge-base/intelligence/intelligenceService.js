@@ -88,6 +88,7 @@ class IntelligenceService {
       is_sanitized: isSanitized,
       query_understanding: {
         engine: criteria.engine,
+        crime_category: criteria.crimeCategories[0] || 'GENERAL_CRIME',
         crime_categories: criteria.crimeCategories,
         property_keywords: criteria.propertyKeywords,
         ignored_items: criteria.ignoredItems,
@@ -95,7 +96,7 @@ class IntelligenceService {
         approximate_time: criteria.approximateTime,
         target_countries: criteria.targetCountries,
         requested_intent: criteria.requestedIntent,
-        follow_up_target: typeof criteria.followUpTarget === 'object' ? criteria.followUpTarget?.case_reference_number : criteria.followUpTarget
+        follow_up_target: (typeof criteria.followUpTarget === 'object' ? criteria.followUpTarget?.case_reference_number : criteria.followUpTarget) || null
       },
       answer: reasoningOutput.answer,
       how_previous_cases_were_solved: reasoningOutput.how_previous_cases_were_solved,

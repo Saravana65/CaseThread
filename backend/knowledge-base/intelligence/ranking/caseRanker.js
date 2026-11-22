@@ -23,6 +23,17 @@ class CaseRanker {
 
       const docText = `${candidate.crime_category || ''} ${candidate.crime_subtype || ''} ${candidate.stolen_property || ''} ${candidate.documented_circumstances || ''} ${candidate.investigative_actions || ''}`.toLowerCase();
 
+      // 0. Explicit Contextual Follow-Up Target Match (100 pts)
+      const targetCaseRef = typeof criteria.followUpTarget === 'object' ? criteria.followUpTarget?.case_reference_number : criteria.followUpTarget;
+      if (targetCaseRef && candidate.case_reference_number === targetCaseRef) {
+        rankScore += 100;
+        matchBreakdown.push({
+          attribute: 'CONTEXT_TARGET_MATCH',
+          detail: `Direct conversational precedent target (${targetCaseRef})`,
+          weight: 100
+        });
+      }
+
       // 1. Crime Category Match (30 pts)
       if (criteria.crimeCategories && criteria.crimeCategories.includes(candidate.crime_category)) {
         rankScore += 30;

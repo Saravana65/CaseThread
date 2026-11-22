@@ -39,15 +39,23 @@ class QueryParser {
       text.includes('this case') ||
       text.includes('was it solved') ||
       text.includes('how was it solved') ||
+      text.includes('how was that case') ||
+      text.includes('how was the') ||
       text.includes('what evidence') ||
-      text.includes('did they recover')
+      text.includes('did they recover') ||
+      text.includes('verify next') ||
+      text.includes('what should i verify') ||
+      text.includes('what next') ||
+      text.includes('next steps')
     );
 
     if (isFollowUp) {
       criteria.followUpTarget = conversationContext.lastReferencedCase?.case_reference_number || conversationContext.lastReferencedCase || null;
-      if (text.includes('evidence') || text.includes('how') || text.includes('method') || text.includes('steps')) {
+      if (text.includes('verify') || text.includes('what next') || text.includes('next step') || text.includes('recommend')) {
+        criteria.requestedIntent = 'NEXT_STEPS';
+      } else if (text.includes('evidence') || text.includes('how') || text.includes('investigat') || text.includes('method') || text.includes('step')) {
         criteria.requestedIntent = 'SOLVED_METHODS';
-      } else if (text.includes('recover') || text.includes('property') || text.includes('stolen items')) {
+      } else if (text.includes('recover') || text.includes('property') || text.includes('stolen item')) {
         criteria.requestedIntent = 'RECOVERY_STATUS';
       } else if (text.includes('solved') || text.includes('outcome') || text.includes('verdict')) {
         criteria.requestedIntent = 'OUTCOME_DETAILS';

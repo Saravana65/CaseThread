@@ -256,3 +256,73 @@ export const ShieldCheckIcon = createIcon(
     <polyline points="9 12 11 14 15 10" />
   </>
 );
+
+// Voice Assistant & Audio Controls
+export const MicrophoneIcon = createIcon(
+  <>
+    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+    <line x1="8" y1="23" x2="16" y2="23" />
+  </>
+);
+
+export const MicrophoneOffIcon = createIcon(
+  <>
+    <line x1="1" y1="1" x2="23" y2="23" />
+    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.68-1.33" />
+    <path d="M19 10v2a7 7 0 0 1-11.4 5.37M5 10v2a7 7 0 0 0 2 4.9" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+    <line x1="8" y1="23" x2="16" y2="23" />
+  </>
+);
+
+export const SpeakerIcon = createIcon(
+  <>
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+  </>
+);
+
+export const SpeakerMuteIcon = createIcon(
+  <>
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <line x1="23" y1="9" x2="17" y2="15" />
+    <line x1="17" y1="9" x2="23" y2="15" />
+  </>
+);
+
+export const PlayIcon = createIcon(
+  <polygon points="5 3 19 12 5 21 5 3" />
+);
+
+export const PauseIcon = createIcon(
+  <>
+    <rect x="6" y="4" width="4" height="16" />
+    <rect x="14" y="4" width="4" height="16" />
+  </>
+);
+
+export const StopIcon = createIcon(
+  <rect x="4" y="4" width="16" height="16" rx="2" />
+);
+
+export const RefreshIcon = createIcon(
+  <>
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </>
+);
+
+export const JarvisIcon = createIcon(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    <line x1="12" y1="3" x2="12" y2="5" />
+    <line x1="12" y1="19" x2="12" y2="21" />
+    <line x1="3" y1="12" x2="5" y2="12" />
+    <line x1="19" y1="12" x2="21" y2="12" />
+  </>
+);

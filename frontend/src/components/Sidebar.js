@@ -17,6 +17,7 @@ import {
   ReviewsIcon,
   ActivityIcon,
   ValidationIcon,
+  JarvisIcon,
   ReportIcon,
   SettingsIcon,
   ChevronLeft,
@@ -143,6 +144,13 @@ export default function Sidebar({
           label: 'AI Case Intelligence',
           IconComponent: ValidationIcon,
           tooltip: 'AI Precedent Search & Evidence-Grounded Reasoning'
+        },
+        {
+          id: 'voice_assistant',
+          tab: 'voice_assistant',
+          label: 'JARVIS Voice AI',
+          IconComponent: JarvisIcon,
+          tooltip: 'Conversational Voice AI Assistant (Speech Recognition & Synthesis)'
         },
         {
           id: 'leads',

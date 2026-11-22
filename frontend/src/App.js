@@ -21,6 +21,7 @@ import ValidationDashboard from './components/ValidationDashboard';
 import InvestigationLab from './pages/InvestigationLab';
 import ReportCenter from './pages/ReportCenter';
 import InvestigationIntelligencePanel from './components/InvestigationIntelligencePanel';
+import JarvisVoiceAssistant from './components/JarvisVoiceAssistant';
 import api from './services/api';
 import './styles/theme.css';
 
@@ -54,6 +55,7 @@ export default function App() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [isCreateCaseOpen, setIsCreateCaseOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [isVoiceOverlayOpen, setIsVoiceOverlayOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Authentication state
@@ -332,6 +334,7 @@ export default function App() {
           caseData={caseData}
           onOpenCreateCase={() => setIsCreateCaseOpen(true)}
           onOpenReport={() => setActiveTab('reports')}
+          onOpenVoiceAssistant={() => setIsVoiceOverlayOpen(true)}
           onOpenNotifications={() => {
             setActiveTab('collaboration');
             setCollaborationSubTab('notifications');
@@ -444,6 +447,16 @@ export default function App() {
             </div>
           )}
 
+          {activeTab === 'voice_assistant' && (
+            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 1.5rem' }}>
+              <JarvisVoiceAssistant
+                activeCase={caseData}
+                officer={officer}
+                onNavigateTab={setActiveTab}
+              />
+            </div>
+          )}
+
           {activeTab === 'timeline' && (
             <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
               <TimelinePanel
@@ -535,6 +548,40 @@ export default function App() {
         officer={officer}
         selectedCaseId={selectedCaseId}
       />
+
+      {/* Floating JARVIS Conversational Voice AI Modal */}
+      {isVoiceOverlayOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setIsVoiceOverlayOpen(false)}
+        >
+          <div
+            style={{ width: '100%', maxWidth: '1100px', maxHeight: '90vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <JarvisVoiceAssistant
+              activeCase={caseData}
+              officer={officer}
+              isOverlay={true}
+              onClose={() => setIsVoiceOverlayOpen(false)}
+              onNavigateTab={setActiveTab}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
