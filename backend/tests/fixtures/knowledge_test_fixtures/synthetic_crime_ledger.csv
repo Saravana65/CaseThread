@@ -1,0 +1,4 @@
+CaseRef,Jurisdiction,CrimeCategory,Amount,Date,FormulaTest
+SYNTH-CSV-001,District Court South,Armed Robbery,45000,2026-01-20,=SUM(A1:A5)
+SYNTH-CSV-002,District Court North,Wire Fraud,128000,2026-01-25,+CMD|' /C calc'!A0
+SYNTH-CSV-003,Central Commercial Court,Extortion,75000,2026-02-01,-@HYPERLINK("http://attacker.com")

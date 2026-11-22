@@ -1,0 +1,14 @@
+CASE NUMBER: SYNTH-2026-991
+JURISDICTION: Metropolitan Criminal Court
+CRIME CATEGORY: Cyber Fraud & Identity Theft
+DATE: 2026-03-15
+
+[NOTICE: SYNTHETIC TEST DATA FOR AUTOMATED INTEGRATION TESTS]
+
+STATEMENT OF FACTS:
+The accused engaged in unauthorized extraction of credentials using phishing vectors.
+The forensic audit retrieved digital ledgers corroborating transactions between multiple IP addresses.
+
+FINDINGS & VERDICT:
+Guilty under Section 66C and 66D of Information Technology Act.
+Restitution ordered in the amount of 500,000 currency units.

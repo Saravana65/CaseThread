@@ -1,0 +1,16 @@
+{
+  "_test_notice": "SYNTHETIC TEST DATA - NOT A REAL CASE",
+  "case_number": "SYNTH-JSON-2026-042",
+  "case_name": "State vs. Test Suspect Alpha",
+  "jurisdiction": "High Court of Forensic Testing",
+  "crime_category": "Grand Larceny & Financial Tampering",
+  "incident_date": "2026-02-10",
+  "verdict": "CONVICTED",
+  "summary": "Synthetic criminal record generated for testing automated knowledge retrieval.",
+  "statement_of_facts": "Audit ledger records show discrepancy of 120,000 units transferred through shell accounts.",
+  "analysis": "Transactional trail linked directly to defendant digital signature.",
+  "parties": {
+    "prosecution": "State Prosecution Service",
+    "defense": "Public Defender"
+  }
+}

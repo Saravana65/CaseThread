@@ -961,3 +961,84 @@ CREATE TABLE IF NOT EXISTS evidence_gap_candidate_reviews (
     INDEX idx_egcr_case (case_id),
     INDEX idx_egcr_pair (source_evidence_id, target_evidence_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 23. Table: knowledge_sources (Phase 13 Private Crime Knowledge Base)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS knowledge_sources (
+    source_id INT AUTO_INCREMENT PRIMARY KEY,
+    source_name VARCHAR(200) NOT NULL,
+    source_url VARCHAR(500) NULL,
+    source_type ENUM('COURT_JUDGMENT', 'POLICE_SUMMARY', 'PUBLIC_REPORT', 'GOVERNMENT_OPEN_DATA', 'AUTHORIZED_ARCHIVE', 'INTERNAL_HISTORICAL') NOT NULL,
+    jurisdiction VARCHAR(100) NOT NULL DEFAULT 'India',
+    license_terms VARCHAR(255) DEFAULT 'Authorized Law Enforcement & Legal Research',
+    data_classification ENUM('PUBLIC_RECORD', 'OFFICIAL_USE_ONLY', 'RESTRICTED_LAW_ENFORCEMENT', 'CONFIDENTIAL') NOT NULL DEFAULT 'OFFICIAL_USE_ONLY',
+    access_restrictions TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 24. Table: knowledge_documents (Phase 13 Historical Case Documents)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS knowledge_documents (
+    document_id INT AUTO_INCREMENT PRIMARY KEY,
+    source_id INT NOT NULL,
+    document_title VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    document_type ENUM('PDF', 'DOCX', 'TXT', 'JSON', 'CSV') NOT NULL,
+    source_url VARCHAR(500) NULL,
+    publication_date DATE NULL,
+    case_reference_number VARCHAR(100) NULL,
+    jurisdiction VARCHAR(100) NULL,
+    crime_category VARCHAR(100) NULL,
+    case_outcome VARCHAR(100) NULL,
+    original_sha256 VARCHAR(64) NOT NULL UNIQUE,
+    storage_path VARCHAR(500) NOT NULL,
+    file_size_bytes INT NOT NULL,
+    page_count INT DEFAULT 1,
+    word_count INT DEFAULT 0,
+    is_ocr_required BOOLEAN DEFAULT FALSE,
+    structured_metadata JSON NULL,
+    ingestion_status ENUM('PENDING', 'PROCESSED', 'FAILED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    last_processed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_kd_source FOREIGN KEY (source_id) 
+        REFERENCES knowledge_sources(source_id) ON DELETE CASCADE,
+    INDEX idx_kd_case_ref (case_reference_number),
+    INDEX idx_kd_crime_cat (crime_category),
+    INDEX idx_kd_sha (original_sha256)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 25. Table: knowledge_chunks (Phase 13 Searchable Text Passages & Full-Text Index)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS knowledge_chunks (
+    chunk_id INT AUTO_INCREMENT PRIMARY KEY,
+    document_id INT NOT NULL,
+    chunk_index INT NOT NULL,
+    chunk_text TEXT NOT NULL,
+    page_number INT NULL,
+    section_reference VARCHAR(150) NULL,
+    searchable_metadata JSON NULL,
+    access_classification ENUM('PUBLIC_RECORD', 'OFFICIAL_USE_ONLY', 'RESTRICTED_LAW_ENFORCEMENT', 'CONFIDENTIAL') NOT NULL DEFAULT 'OFFICIAL_USE_ONLY',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_kc_document FOREIGN KEY (document_id) 
+        REFERENCES knowledge_documents(document_id) ON DELETE CASCADE,
+    INDEX idx_kc_doc (document_id),
+    FULLTEXT INDEX ft_chunk_text (chunk_text)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------------
+-- 26. Table: knowledge_ingestion_jobs (Phase 13 Administrative Ingestion Runs)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS knowledge_ingestion_jobs (
+    job_id INT AUTO_INCREMENT PRIMARY KEY,
+    source_identifier VARCHAR(255) NOT NULL,
+    job_type VARCHAR(50) NOT NULL DEFAULT 'DIRECTORY_IMPORT',
+    status ENUM('RUNNING', 'COMPLETED', 'FAILED', 'PARTIALLY_COMPLETED') NOT NULL DEFAULT 'RUNNING',
+    documents_processed INT DEFAULT 0,
+    documents_rejected INT DEFAULT 0,
+    error_log JSON NULL,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
