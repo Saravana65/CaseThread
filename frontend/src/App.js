@@ -20,6 +20,7 @@ import SettingsModal from './components/SettingsModal';
 import ValidationDashboard from './components/ValidationDashboard';
 import InvestigationLab from './pages/InvestigationLab';
 import ReportCenter from './pages/ReportCenter';
+import InvestigationIntelligencePanel from './components/InvestigationIntelligencePanel';
 import api from './services/api';
 import './styles/theme.css';
 
@@ -431,6 +432,16 @@ export default function App() {
                 loadCaseInfo(id);
               }}
             />
+          )}
+
+          {activeTab === 'intelligence' && (
+            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
+              <InvestigationIntelligencePanel
+                activeCase={caseData}
+                officer={officer}
+                onNavigateTab={setActiveTab}
+              />
+            </div>
           )}
 
           {activeTab === 'timeline' && (

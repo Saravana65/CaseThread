@@ -146,6 +146,7 @@ app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/timeline', timelineRoutes);
 app.use('/api/v1/leads', leadRoutes);
 app.use('/api/v1/gap-analysis', require('./routes/gapAnalysisRoutes'));
+app.use('/api/v1/intelligence', require('./routes/intelligenceRoutes'));
 
 // Intensive C-Engine DSA analysis rate-limited endpoints
 app.use('/api/v1/analysis', analysisLimiter, analysisRoutes);

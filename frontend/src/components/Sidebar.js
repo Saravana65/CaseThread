@@ -138,6 +138,13 @@ export default function Sidebar({
           tooltip: 'Phase 12 Evidence Gap Intelligence & Explainable Assistant'
         },
         {
+          id: 'intelligence',
+          tab: 'intelligence',
+          label: 'AI Case Intelligence',
+          IconComponent: ValidationIcon,
+          tooltip: 'AI Precedent Search & Evidence-Grounded Reasoning'
+        },
+        {
           id: 'leads',
           tab: 'leads',
           label: 'Investigative Leads',

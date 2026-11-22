@@ -113,7 +113,7 @@ class FullTextIndexer {
 
     if (sanitized && sanitized.length > 0) {
       const terms = sanitized.split(/\s+/).filter(t => t.length > 0);
-      const booleanQuery = terms.map(t => `+${t}*`).join(' ');
+      const booleanQuery = terms.map(t => `${t}*`).join(' ');
 
       searchSqlClause = `MATCH(kc.chunk_text) AGAINST(? IN BOOLEAN MODE)`;
       countScoreClause = `MATCH(kc.chunk_text) AGAINST(? IN BOOLEAN MODE) AS score`;
@@ -164,7 +164,7 @@ class FullTextIndexer {
     let finalParams = [];
     if (sanitized && sanitized.length > 0) {
       const terms = sanitized.split(/\s+/).filter(t => t.length > 0);
-      const booleanQuery = terms.map(t => `+${t}*`).join(' ');
+      const booleanQuery = terms.map(t => `${t}*`).join(' ');
       finalParams.push(booleanQuery);
       finalParams.push(...params);
     } else {
