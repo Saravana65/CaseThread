@@ -518,6 +518,29 @@ class ApiService {
       body: JSON.stringify(eventData)
     });
   }
+
+  // Phase 12 - Evidence Gap Intelligence & Assistant
+  getEvidenceGapOptions(caseId) {
+    return this.request(`/gap-analysis/cases/${caseId}/evidence-options`);
+  }
+
+  analyzeEvidenceGap(payload) {
+    return this.request('/gap-analysis/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  reviewGapCandidate(payload) {
+    return this.request('/gap-analysis/review', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  getGapCandidateReviews(caseId) {
+    return this.request(`/gap-analysis/reviews/${caseId}`);
+  }
 }
 
 export const api = new ApiService();

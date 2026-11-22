@@ -7,6 +7,7 @@ import Investigations from './pages/Investigations';
 import CaseDetailsPanel from './components/CaseDetailsPanel';
 import GraphAnalysis from './pages/GraphAnalysis';
 import EvidenceGapPanel from './components/EvidenceGapPanel';
+import EvidenceGapWorkspace from './pages/EvidenceGapWorkspace';
 import TimelinePanel from './components/TimelinePanel';
 import InvestigativeLeadsPanel from './components/InvestigativeLeadsPanel';
 import EvidenceIntegrityPanel from './components/EvidenceIntegrityPanel';
@@ -423,11 +424,13 @@ export default function App() {
           )}
 
           {activeTab === 'gaps' && (
-            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
-              <EvidenceGapPanel
-                gaps={analysisData?.evidence_gaps || []}
-              />
-            </div>
+            <EvidenceGapWorkspace
+              caseId={selectedCaseId}
+              onSelectCase={(id) => {
+                setSelectedCaseId(id);
+                loadCaseInfo(id);
+              }}
+            />
           )}
 
           {activeTab === 'timeline' && (

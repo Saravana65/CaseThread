@@ -133,9 +133,9 @@ export default function Sidebar({
         {
           id: 'gaps',
           tab: 'gaps',
-          label: 'Evidence Gaps',
+          label: 'Gap Intelligence',
           IconComponent: GapsIcon,
-          tooltip: 'Algorithmic Detection of Missing Evidentiary Links'
+          tooltip: 'Phase 12 Evidence Gap Intelligence & Explainable Assistant'
         },
         {
           id: 'leads',

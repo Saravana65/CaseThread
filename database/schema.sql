@@ -938,3 +938,26 @@ CREATE TABLE IF NOT EXISTS investigation_reports (
 INSERT INTO investigation_reports (report_id, case_id, report_name, template_type, format, included_sections, generated_by_id, generated_by_name, metadata_summary, status, created_at)
 VALUES
 (1, 1, 'Comprehensive Case Dossier - Metro Vault Intrusion', 'COMPREHENSIVE', 'PDF', '["overview", "evidence", "custody", "graph", "timeline", "leads", "audit"]', 1, 'Det. James Vance (DET-8492)', '{"total_evidence": 11, "total_custody_events": 4, "total_timeline_events": 32, "audit_chain_verified": true}', 'READY', '2026-10-16 09:30:00');
+
+-- ------------------------------------------------------------------------------
+-- 22. Table: evidence_gap_candidate_reviews (Phase 12 Evidence Gap Intelligence)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS evidence_gap_candidate_reviews (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    source_evidence_id INT NOT NULL,
+    target_evidence_id INT NOT NULL,
+    candidate_rule VARCHAR(100) NOT NULL,
+    review_decision ENUM('INVESTIGATE', 'DISMISSED', 'CONFIRMED') NOT NULL DEFAULT 'INVESTIGATE',
+    decision_reason VARCHAR(255) NULL,
+    notes TEXT NULL,
+    reviewed_by_officer_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_egcr_case FOREIGN KEY (case_id) REFERENCES cases(case_id) ON DELETE CASCADE,
+    CONSTRAINT fk_egcr_src FOREIGN KEY (source_evidence_id) REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_egcr_tgt FOREIGN KEY (target_evidence_id) REFERENCES evidence(evidence_id) ON DELETE CASCADE,
+    CONSTRAINT fk_egcr_officer FOREIGN KEY (reviewed_by_officer_id) REFERENCES officers(officer_id) ON DELETE RESTRICT,
+    INDEX idx_egcr_case (case_id),
+    INDEX idx_egcr_pair (source_evidence_id, target_evidence_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
