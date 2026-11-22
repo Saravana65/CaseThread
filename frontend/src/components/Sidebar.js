@@ -1,9 +1,35 @@
 import React from 'react';
+import {
+  LogoMark,
+  DashboardIcon,
+  CasesIcon,
+  NewCaseIcon,
+  ActiveIcon,
+  SolvedIcon,
+  VaultIcon,
+  GraphIcon,
+  TimelineIcon,
+  GapsIcon,
+  LeadsIcon,
+  GeospatialIcon,
+  OfficersIcon,
+  TasksIcon,
+  ReviewsIcon,
+  ActivityIcon,
+  ValidationIcon,
+  ReportIcon,
+  SettingsIcon,
+  ChevronLeft,
+  ChevronRight,
+  CloseIcon,
+  SignOutIcon
+} from './icons/Icons';
 
 /**
  * @component Sidebar
- * @description Professional collapsible forensic navigation sidebar for CASETHREAD.
- * Supports desktop collapsible mode (250px / 72px) and mobile slide-out drawer mode.
+ * @description Apple-inspired minimalist navigation sidebar for CASETHREAD.
+ * Features: Restrained color tokens, crisp vector SVG iconography, smooth transitions,
+ * desktop collapsible drawer (240px / 68px), and mobile sheet overlay.
  */
 export default function Sidebar({
   isCollapsed,
@@ -21,38 +47,38 @@ export default function Sidebar({
   const currentOfficer = officer?.officer || officer?.data || officer || {};
   const officerName = currentOfficer.full_name || 'Alexander Cross';
   const officerBadge = currentOfficer.badge_number || 'DET-8841';
-  const officerRole = currentOfficer.role || currentOfficer.rank_designation || 'LEAD_OFFICER';
+  const officerRole = (currentOfficer.role || currentOfficer.rank_designation || 'LEAD_OFFICER').replace(/_/g, ' ');
 
-  // Navigation hierarchy structure
+  // Navigation hierarchy structure with vector icons
   const navigationSections = [
     {
-      heading: 'CASETHREAD',
+      heading: 'Platform',
       items: [
         {
           id: 'dashboard',
           tab: 'dashboard',
           caseFilter: 'ALL',
           label: 'Dashboard',
-          icon: '📊',
+          IconComponent: DashboardIcon,
           tooltip: 'Dashboard & Incident Case Roster'
         }
       ]
     },
     {
-      heading: 'INVESTIGATIONS',
+      heading: 'Investigations',
       items: [
         {
           id: 'all_cases',
           tab: 'dossier',
-          label: 'All Cases',
-          icon: '📂',
+          label: 'Case Dossier',
+          IconComponent: CasesIcon,
           tooltip: 'Master Case Files & Entities'
         },
         {
           id: 'new_case',
           action: 'create_case',
-          label: 'New Case',
-          icon: '➕',
+          label: 'New Investigation',
+          IconComponent: NewCaseIcon,
           tooltip: 'Initiate New Investigation File'
         },
         {
@@ -60,7 +86,7 @@ export default function Sidebar({
           tab: 'dashboard',
           caseFilter: 'ACTIVE',
           label: 'Active Cases',
-          icon: '⚡',
+          IconComponent: ActiveIcon,
           tooltip: 'Filter Active & Ongoing Investigations'
         },
         {
@@ -68,117 +94,117 @@ export default function Sidebar({
           tab: 'dashboard',
           caseFilter: 'SOLVED',
           label: 'Solved Cases',
-          icon: '📁',
+          IconComponent: SolvedIcon,
           tooltip: 'Filter Closed & Archived Investigations'
         }
       ]
     },
     {
-      heading: 'INTELLIGENCE',
+      heading: 'Intelligence',
       items: [
         {
           id: 'vault',
           tab: 'vault',
-          label: 'Evidence Management',
-          icon: '🗄️',
+          label: 'Evidence Vault',
+          IconComponent: VaultIcon,
           tooltip: 'Secure Evidence Vault & Metadata Extraction'
         },
         {
           id: 'graph',
           tab: 'graph',
           label: 'Relationship Graph',
-          icon: '🕸️',
+          IconComponent: GraphIcon,
           tooltip: 'C-Engine Dynamic Relational Graph & Traversals'
         },
         {
           id: 'timeline',
           tab: 'timeline',
           label: 'Timeline Analysis',
-          icon: '⏱️',
+          IconComponent: TimelineIcon,
           tooltip: 'Chronological Events & Spatiotemporal Anomaly Detection'
         },
         {
           id: 'gaps',
           tab: 'gaps',
           label: 'Evidence Gaps',
-          icon: '🔍',
+          IconComponent: GapsIcon,
           tooltip: 'Algorithmic Detection of Missing Evidentiary Links'
         },
         {
           id: 'leads',
           tab: 'leads',
           label: 'Investigative Leads',
-          icon: '🎯',
+          IconComponent: LeadsIcon,
           tooltip: 'Max-Heap Ranked Detective Action Items'
         },
         {
           id: 'geospatial',
           tab: 'geospatial',
-          label: 'Geospatial Analysis',
-          icon: '🗺️',
+          label: 'Geospatial Map',
+          IconComponent: GeospatialIcon,
           tooltip: 'C Quadtree Spatial Index & Forensic Proximity Mapping'
         }
       ]
     },
     {
-      heading: 'OPERATIONS',
+      heading: 'Operations',
       items: [
         {
           id: 'officers',
           tab: 'collaboration',
           subTab: 'team',
-          label: 'Investigation Officers',
-          icon: '👥',
+          label: 'Case Team',
+          IconComponent: OfficersIcon,
           tooltip: 'Case Access Roster & Detective Workload'
         },
         {
           id: 'tasks',
           tab: 'collaboration',
           subTab: 'tasks',
-          label: 'Task Management',
-          icon: '📋',
+          label: 'Investigation Tasks',
+          IconComponent: TasksIcon,
           tooltip: 'Investigation Task Lifecycle & Dependencies DAG'
         },
         {
           id: 'reviews',
           tab: 'collaboration',
           subTab: 'reviews',
-          label: 'Evidence Review',
-          icon: '🛡️',
+          label: 'Evidence Reviews',
+          IconComponent: ReviewsIcon,
           tooltip: 'Forensic Review Queue & Hash Verifications'
         },
         {
           id: 'activity',
           tab: 'collaboration',
           subTab: 'activity',
-          label: 'Activity & Audit Log',
-          icon: '📜',
+          label: 'Activity Stream',
+          IconComponent: ActivityIcon,
           tooltip: 'Cryptographic Event Stream & Audit Trail'
         }
       ]
     },
     {
-      heading: 'SYSTEM',
+      heading: 'System',
       items: [
         {
           id: 'validation',
           tab: 'validation',
-          label: 'Validation Dashboard',
-          icon: '🔬',
-          tooltip: 'Phase 12 Academic Forensic Ground-Truth Benchmarks'
+          label: 'Algorithm Validation',
+          IconComponent: ValidationIcon,
+          tooltip: 'Academic Forensic Ground-Truth Benchmarks'
         },
         {
           id: 'reports',
           action: 'open_reports',
-          label: 'Reports',
-          icon: '📄',
+          label: 'Case Dossier Report',
+          IconComponent: ReportIcon,
           tooltip: 'Export Comprehensive Forensic Dossier'
         },
         {
           id: 'settings',
           action: 'open_settings',
-          label: 'Settings',
-          icon: '⚙️',
+          label: 'System Diagnostics',
+          IconComponent: SettingsIcon,
           tooltip: 'System Configuration, Diagnostics & Theme'
         }
       ]
@@ -221,7 +247,7 @@ export default function Sidebar({
     }
   };
 
-  const sidebarWidth = isCollapsed ? '72px' : '250px';
+  const sidebarWidth = isCollapsed ? '68px' : '240px';
 
   return (
     <>
@@ -232,10 +258,11 @@ export default function Sidebar({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(0, 0, 0, 0.72)',
             zIndex: 998,
-            backdropFilter: 'blur(3px)',
-            transition: 'opacity 0.25s ease'
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            transition: 'opacity 0.2s ease'
           }}
           aria-label="Close navigation drawer"
         />
@@ -254,9 +281,9 @@ export default function Sidebar({
           display: 'flex',
           flexDirection: 'column',
           zIndex: isMobile ? 999 : 100,
-          transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'width var(--transition-normal), transform var(--transition-normal)',
           transform: isMobile ? (mobileOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
-          boxShadow: isMobile && mobileOpen ? '4px 0 24px rgba(0, 0, 0, 0.75)' : 'none',
+          boxShadow: isMobile && mobileOpen ? 'var(--shadow-elevated)' : 'none',
           overflow: 'hidden'
         }}
         aria-label="Investigation Navigation Sidebar"
@@ -264,8 +291,8 @@ export default function Sidebar({
         {/* 1. Sidebar Brand Header */}
         <div
           style={{
-            height: '62px',
-            padding: isCollapsed ? '0.75rem 0.5rem' : '0.75rem 1rem',
+            height: '56px',
+            padding: isCollapsed ? '0 0.5rem' : '0 1rem',
             borderBottom: '1px solid var(--border-default)',
             display: 'flex',
             alignItems: 'center',
@@ -285,40 +312,28 @@ export default function Sidebar({
               overflow: 'hidden',
               whiteSpace: 'nowrap'
             }}
-            title="CASETHREAD Home"
+            title="CASETHREAD Platform"
           >
-            {/* Glowing Tactical Indicator Dot */}
-            <div
-              style={{
-                width: '12px',
-                height: '12px',
-                backgroundColor: 'var(--accent-red)',
-                borderRadius: '50%',
-                boxShadow: '0 0 10px var(--accent-red)',
-                flexShrink: 0
-              }}
-            />
+            <LogoMark size={22} color="var(--accent-primary)" />
             {!isCollapsed && (
               <div>
                 <h1
                   style={{
-                    fontSize: '1.05rem',
-                    fontWeight: '800',
-                    letterSpacing: '1px',
-                    textTransform: 'uppercase',
+                    fontSize: '0.95rem',
+                    fontWeight: '700',
+                    letterSpacing: '-0.02em',
                     color: 'var(--text-primary)',
-                    lineHeight: 1.1
+                    lineHeight: 1.15
                   }}
                 >
-                  CASE<span style={{ color: 'var(--accent-red)' }}>THREAD</span>
+                  CaseThread
                 </h1>
                 <p
                   style={{
-                    fontSize: '0.58rem',
+                    fontSize: '0.65rem',
                     color: 'var(--text-muted)',
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    fontFamily: 'var(--font-mono)'
+                    letterSpacing: '0.02em',
+                    fontWeight: '400'
                   }}
                 >
                   Forensic Intelligence
@@ -331,24 +346,19 @@ export default function Sidebar({
           {!isMobile && (
             <button
               onClick={onToggleCollapse}
-              className="btn-secondary"
+              className="btn-ghost"
               style={{
-                padding: '0.3rem 0.45rem',
-                fontSize: '0.75rem',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid var(--border-subtle)',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                width: '28px',
+                height: '28px',
+                padding: 0,
+                borderRadius: 'var(--radius-control)',
                 color: 'var(--text-secondary)',
-                cursor: 'pointer',
                 marginLeft: isCollapsed ? '0' : '0.5rem'
               }}
               title={isCollapsed ? 'Expand sidebar (Ctrl+[)' : 'Collapse sidebar (Ctrl+[)'}
               aria-label={isCollapsed ? 'Expand navigation sidebar' : 'Collapse navigation sidebar'}
             >
-              {isCollapsed ? '▶' : '◀'}
+              {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
             </button>
           )}
 
@@ -356,11 +366,11 @@ export default function Sidebar({
           {isMobile && (
             <button
               onClick={onCloseMobile}
-              className="btn-secondary"
-              style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }}
+              className="btn-ghost"
+              style={{ width: '28px', height: '28px', padding: 0 }}
               aria-label="Close navigation drawer"
             >
-              ✕
+              <CloseIcon size={16} />
             </button>
           )}
         </div>
@@ -371,25 +381,24 @@ export default function Sidebar({
             flex: 1,
             overflowY: 'auto',
             overflowX: 'hidden',
-            padding: isCollapsed ? '0.5rem 0.35rem' : '0.75rem 0.65rem',
+            padding: isCollapsed ? '0.5rem 0.35rem' : '0.65rem 0.5rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '1rem'
+            gap: '0.85rem'
           }}
         >
           {navigationSections.map((section, sIdx) => (
             <div key={section.heading || sIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-              {/* Section Heading (Visible only when expanded) */}
+              {/* Section Heading */}
               {!isCollapsed ? (
                 <div
                   style={{
-                    fontSize: '0.62rem',
-                    fontWeight: '800',
+                    fontSize: '0.6875rem',
+                    fontWeight: '600',
                     color: 'var(--text-muted)',
-                    letterSpacing: '1.2px',
+                    letterSpacing: '0.04em',
                     textTransform: 'uppercase',
-                    fontFamily: 'var(--font-mono)',
-                    padding: '0.4rem 0.6rem 0.2rem',
+                    padding: '0.35rem 0.65rem 0.2rem',
                     userSelect: 'none'
                   }}
                 >
@@ -408,6 +417,8 @@ export default function Sidebar({
               {/* Navigation Items */}
               {section.items.map((item) => {
                 const active = isItemActive(item);
+                const Icon = item.IconComponent;
+
                 return (
                   <button
                     key={item.id}
@@ -418,20 +429,17 @@ export default function Sidebar({
                       gap: isCollapsed ? '0' : '0.65rem',
                       justifyContent: isCollapsed ? 'center' : 'flex-start',
                       width: '100%',
-                      padding: isCollapsed ? '0.55rem 0' : '0.5rem 0.75rem',
-                      borderRadius: '5px',
+                      height: '34px',
+                      padding: isCollapsed ? '0' : '0 0.65rem',
+                      borderRadius: 'var(--radius-control)',
                       border: 'none',
-                      borderLeft: active ? '3px solid var(--accent-red)' : '3px solid transparent',
-                      backgroundColor: active
-                        ? 'rgba(211, 47, 47, 0.16)'
-                        : 'transparent',
-                      color: active ? '#ffffff' : 'var(--text-secondary)',
+                      backgroundColor: active ? 'var(--bg-elevated)' : 'transparent',
+                      color: active ? '#FFFFFF' : 'var(--text-secondary)',
                       cursor: 'pointer',
                       textAlign: 'left',
-                      fontSize: '0.8rem',
-                      fontWeight: active ? '700' : '500',
-                      letterSpacing: '0.3px',
-                      transition: 'all 0.18s ease',
+                      fontSize: '0.8125rem',
+                      fontWeight: active ? '600' : '400',
+                      transition: 'background var(--transition-fast), color var(--transition-fast)',
                       position: 'relative'
                     }}
                     onMouseEnter={(e) => {
@@ -449,22 +457,35 @@ export default function Sidebar({
                     title={isCollapsed ? `${item.label} — ${item.tooltip}` : item.tooltip}
                     aria-label={item.label}
                   >
-                    {/* Item Icon */}
+                    {/* Active Accent Indicator Bar on Left */}
+                    {active && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          left: '2px',
+                          top: '7px',
+                          bottom: '7px',
+                          width: '3px',
+                          borderRadius: '2px',
+                          backgroundColor: 'var(--accent-primary)'
+                        }}
+                      />
+                    )}
+
+                    {/* Vector Icon */}
                     <span
                       style={{
-                        fontSize: isCollapsed ? '1.15rem' : '1rem',
-                        lineHeight: 1,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: isCollapsed ? '100%' : 'auto',
-                        filter: active ? 'drop-shadow(0 0 6px rgba(211, 47, 47, 0.6))' : 'none'
+                        color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        transition: 'color var(--transition-fast)'
                       }}
                     >
-                      {item.icon}
+                      <Icon size={16} />
                     </span>
 
-                    {/* Item Label (Visible when expanded) */}
+                    {/* Label */}
                     {!isCollapsed && (
                       <span
                         style={{
@@ -477,20 +498,6 @@ export default function Sidebar({
                         {item.label}
                       </span>
                     )}
-
-                    {/* Subtle active pill for expanded view */}
-                    {!isCollapsed && active && (
-                      <span
-                        style={{
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--accent-red)',
-                          boxShadow: '0 0 8px var(--accent-red)',
-                          flexShrink: 0
-                        }}
-                      />
-                    )}
                   </button>
                 );
               })}
@@ -502,43 +509,43 @@ export default function Sidebar({
         <div
           style={{
             borderTop: '1px solid var(--border-default)',
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-            padding: isCollapsed ? '0.65rem 0.35rem' : '0.75rem 0.85rem',
+            backgroundColor: 'var(--bg-secondary)',
+            padding: isCollapsed ? '0.5rem 0.25rem' : '0.65rem 0.75rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.5rem',
+            gap: '0.45rem',
             flexShrink: 0
           }}
         >
-          {/* User Profile Card */}
+          {/* User Profile Summary */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: isCollapsed ? '0' : '0.65rem',
+              gap: isCollapsed ? '0' : '0.6rem',
               justifyContent: isCollapsed ? 'center' : 'flex-start',
-              padding: isCollapsed ? '0.25rem 0' : '0.35rem 0.4rem',
-              borderRadius: '4px',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid var(--border-subtle)',
+              padding: isCollapsed ? '0.2rem 0' : '0.3rem 0.4rem',
+              borderRadius: 'var(--radius-control)',
+              backgroundColor: isCollapsed ? 'transparent' : 'rgba(255, 255, 255, 0.02)',
+              border: isCollapsed ? 'none' : '1px solid var(--border-subtle)',
               overflow: 'hidden'
             }}
-            title={isCollapsed ? `${officerName} (${officerBadge}) • ${officerRole}` : 'Investigator Profile'}
+            title={isCollapsed ? `${officerName} (${officerBadge}) • ${officerRole}` : 'Active Detective Session'}
           >
-            {/* Officer Avatar / Status Circle */}
+            {/* Initials Avatar */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <div
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '28px',
+                  height: '28px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-highlight)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '0.8rem',
-                  fontWeight: '700',
+                  fontSize: '0.72rem',
+                  fontWeight: '600',
                   color: 'var(--text-primary)'
                 }}
               >
@@ -550,30 +557,29 @@ export default function Sidebar({
                   .join('')
                   .toUpperCase() || 'CT'}
               </div>
-              {/* Online Green Pulsing Indicator */}
+              {/* Online Green Status Dot */}
               <span
                 style={{
                   position: 'absolute',
                   bottom: '-1px',
                   right: '-1px',
-                  width: '8px',
-                  height: '8px',
+                  width: '7px',
+                  height: '7px',
                   borderRadius: '50%',
-                  backgroundColor: 'var(--status-verified)',
-                  border: '2px solid var(--bg-secondary)',
-                  boxShadow: '0 0 6px var(--status-verified)'
+                  backgroundColor: 'var(--status-success)',
+                  border: '1.5px solid var(--bg-secondary)'
                 }}
-                title="Active Forensic Session"
+                title="Active Session"
               />
             </div>
 
-            {/* Officer Details (When expanded) */}
+            {/* Officer Details (Expanded) */}
             {!isCollapsed && (
               <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', flex: 1 }}>
                 <div
                   style={{
-                    fontSize: '0.8rem',
-                    fontWeight: '700',
+                    fontSize: '0.78rem',
+                    fontWeight: '600',
                     color: 'var(--text-primary)',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -583,9 +589,8 @@ export default function Sidebar({
                 </div>
                 <div
                   style={{
-                    fontSize: '0.66rem',
-                    color: 'var(--accent-orange)',
-                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.67rem',
+                    color: 'var(--text-muted)',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
                   }}
@@ -599,36 +604,32 @@ export default function Sidebar({
           {/* Logout Action Button */}
           <button
             onClick={onLogout}
+            className="btn-ghost"
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: isCollapsed ? 'center' : 'flex-start',
-              gap: isCollapsed ? '0' : '0.6rem',
+              gap: isCollapsed ? '0' : '0.5rem',
               width: '100%',
-              padding: isCollapsed ? '0.45rem 0' : '0.45rem 0.6rem',
-              borderRadius: '4px',
-              border: '1px solid var(--border-subtle)',
-              backgroundColor: 'rgba(211, 47, 47, 0.08)',
-              color: '#ff6b6b',
-              cursor: 'pointer',
-              fontSize: '0.76rem',
-              fontWeight: '600',
-              transition: 'all 0.18s ease'
+              height: '32px',
+              padding: isCollapsed ? '0' : '0 0.5rem',
+              borderRadius: 'var(--radius-control)',
+              color: 'var(--text-muted)',
+              fontSize: '0.75rem',
+              fontWeight: '500'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--accent-red)';
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.borderColor = 'var(--accent-red-deep)';
+              e.currentTarget.style.color = 'var(--status-danger)';
+              e.currentTarget.style.backgroundColor = 'var(--status-danger-dim)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(211, 47, 47, 0.08)';
-              e.currentTarget.style.color = '#ff6b6b';
-              e.currentTarget.style.borderColor = 'var(--border-subtle)';
+              e.currentTarget.style.color = 'var(--text-muted)';
+              e.currentTarget.style.backgroundColor = 'transparent';
             }}
             title={isCollapsed ? 'Sign out of investigation session' : ''}
             aria-label="Sign out of investigation session"
           >
-            <span style={{ fontSize: '0.95rem', lineHeight: 1 }}>🚪</span>
+            <SignOutIcon size={14} />
             {!isCollapsed && <span>Sign Out</span>}
           </button>
         </div>

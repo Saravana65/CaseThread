@@ -1,56 +1,173 @@
 /* ==============================================================================
-   CASETHREAD FORENSIC INTELLIGENCE DESIGN SYSTEM
-   Palette: Charcoal, Carbon, Deep Crimson, Tactical Amber/Orange, Cold White
+   CASETHREAD — PREMIUM FORENSIC INTELLIGENCE DESIGN SYSTEM (PHASE 2)
+   Inspiration: Apple Design Principles (Clarity, Precision, Hierarchy, Restraint)
+   Palette: Deep Neutral Charcoal, Layered Surfaces, Restrained Electric Blue Accent
    ============================================================================== */
 
 :root {
-  --bg-primary: #090c10;
-  --bg-secondary: #0d1117;
-  --bg-card: #161b22;
-  --bg-card-hover: #1c2129;
-  --bg-input: #04070b;
+  /* ----------------------------------------------------------------------------
+     1. COLOR PALETTE (Dark Theme — Primary)
+     ---------------------------------------------------------------------------- */
+  --bg-primary: #101114;        /* Main application canvas */
+  --bg-secondary: #19191E;      /* Primary structural surface (Sidebar, Header) */
+  --bg-card: #19191E;           /* Primary content card surface */
+  --bg-card-hover: #222228;     /* Hover state for cards and rows */
+  --bg-elevated: #222228;       /* Elevated container surface */
+  --bg-higher: #28282F;         /* Modals, popovers, high-elevation surfaces */
+  --bg-input: #121317;          /* Form inputs and deep inset surfaces */
+  --bg-active: #28282F;         /* Active state highlight */
 
-  --accent-red-deep: #8b0000;
-  --accent-red: #d32f2f;
-  --accent-red-glow: rgba(211, 47, 47, 0.25);
-  
-  --accent-orange: #ff8c00;
-  --accent-orange-dim: rgba(255, 140, 0, 0.15);
+  /* Text Hierarchy */
+  --text-primary: #F4F4F6;      /* High contrast primary text */
+  --text-secondary: #A1A1AA;    /* Secondary supportive body and labels */
+  --text-muted: #71717A;        /* Tertiary metadata and placeholder text */
+  --text-inverse: #0F1012;      /* Text over light elements */
+  --text-accent: #60A5FA;       /* Informational text highlight */
 
-  --text-primary: #f0f6fc;
-  --text-secondary: #c9d1d9;
-  --text-muted: #8b949e;
-  --text-accent: #ff5252;
+  /* Neutral Borders */
+  --border-subtle: rgba(255, 255, 255, 0.05);   /* Hairline divider */
+  --border-default: #26272F;                     /* Standard control / card border */
+  --border-highlight: #3A3B46;                   /* Hover / active border */
+  --border-focus: #4D83F7;                       /* Keyboard focus border */
 
-  --border-subtle: #21262d;
-  --border-default: #30363d;
-  --border-highlight: #484f58;
-  --border-accent-red: #b71c1c;
+  /* Primary Accent & States (Restrained Apple-inspired Blue) */
+  --accent-primary: #4D83F7;
+  --accent-primary-hover: #3B72E6;
+  --accent-primary-active: #2D63D8;
+  --accent-primary-dim: rgba(77, 131, 247, 0.12);
+  --accent-primary-glow: rgba(77, 131, 247, 0.25);
 
-  --status-critical: #d32f2f;
-  --status-high: #f57c00;
-  --status-medium: #fbc02d;
-  --status-low: #388e3c;
-  --status-verified: #00e676;
+  /* Semantic Status Colors (Muted, Professional) */
+  --status-success: #10B981;
+  --status-success-dim: rgba(16, 185, 129, 0.12);
+  --status-success-border: rgba(16, 185, 129, 0.28);
 
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --status-warning: #F59E0B;
+  --status-warning-dim: rgba(245, 158, 11, 0.12);
+  --status-warning-border: rgba(245, 158, 11, 0.28);
+
+  --status-danger: #EF4444;
+  --status-danger-dim: rgba(239, 68, 68, 0.12);
+  --status-danger-border: rgba(239, 68, 68, 0.28);
+
+  --status-info: #4D83F7;
+  --status-info-dim: rgba(77, 131, 247, 0.12);
+  --status-info-border: rgba(77, 131, 247, 0.28);
+
+  /* Backward Compatibility Aliases (To preserve existing components) */
+  --accent-red: #EF4444;
+  --accent-red-deep: #DC2626;
+  --accent-red-glow: rgba(239, 68, 68, 0.16);
+  --accent-orange: #F59E0B;
+  --accent-orange-dim: rgba(245, 158, 11, 0.12);
+  --border-accent-red: rgba(239, 68, 68, 0.35);
+  --status-critical: #EF4444;
+  --status-high: #F59E0B;
+  --status-medium: #EAB308;
+  --status-low: #10B981;
+  --status-verified: #10B981;
+
+  /* ----------------------------------------------------------------------------
+     2. SPACING SCALE (8-point rhythm base)
+     ---------------------------------------------------------------------------- */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ----------------------------------------------------------------------------
+     3. BORDER RADIUS TOKENS
+     ---------------------------------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-control: 8px;     /* Buttons, small selectors, badges */
+  --radius-input: 10px;      /* Text fields, dropdowns */
+  --radius-card: 14px;       /* Content cards, containers */
+  --radius-dialog: 18px;     /* Modals, sheets, floating panels */
+  --radius-pill: 9999px;     /* Full rounded badges, status pills */
+
+  /* ----------------------------------------------------------------------------
+     4. ELEVATION & SHADOWS
+     ---------------------------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.22);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-modal: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  /* ----------------------------------------------------------------------------
+     5. TYPOGRAPHY
+     ---------------------------------------------------------------------------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SFMono-Regular", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+
+  /* ----------------------------------------------------------------------------
+     6. MOTION & TRANSITIONS
+     ---------------------------------------------------------------------------- */
+  --transition-fast: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ----------------------------------------------------------------------------
+   LIGHT THEME TOKENS (Prepared & Architecture-Aligned)
+   ---------------------------------------------------------------------------- */
+[data-theme="light"] {
+  --bg-primary: #F5F6F8;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8F9FA;
+  --bg-elevated: #F0F2F5;
+  --bg-higher: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --bg-active: #EAECEF;
+
+  --text-primary: #18181B;
+  --text-secondary: #52525B;
+  --text-muted: #8E8E93;
+  --text-inverse: #FFFFFF;
+  --text-accent: #2563EB;
+
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: #E4E4E7;
+  --border-highlight: #D1D1D6;
+  --border-focus: #3B82F6;
+
+  --accent-primary: #2563EB;
+  --accent-primary-hover: #1D4ED8;
+  --accent-primary-active: #1E40AF;
+  --accent-primary-dim: rgba(37, 99, 235, 0.08);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 8px 20px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 16px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* ----------------------------------------------------------------------------
+   BASE RESET & GLOBAL STYLES
+   ---------------------------------------------------------------------------- */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
+html, body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   min-height: 100vh;
+  letter-spacing: -0.01em;
 }
 
 code, pre, .mono {
@@ -59,113 +176,396 @@ code, pre, .mono {
 
 /* Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-default);
-  border-radius: 4px;
+  border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-highlight);
 }
 
-/* Card & Panels */
+/* ----------------------------------------------------------------------------
+   SHARED CARD SYSTEM
+   ---------------------------------------------------------------------------- */
 .forensic-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-default);
-  border-radius: 6px;
-  padding: 1.25rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: var(--radius-card);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .forensic-card:hover {
   border-color: var(--border-highlight);
 }
 
+/* Refined, Apple-inspired subtle accent border treatments */
 .forensic-card.accent-red-border {
-  border-left: 4px solid var(--accent-red);
+  border-left: 3px solid var(--status-danger);
 }
 
 .forensic-card.accent-orange-border {
-  border-left: 4px solid var(--accent-orange);
+  border-left: 3px solid var(--status-warning);
 }
 
-/* Buttons */
+.forensic-card.accent-blue-border {
+  border-left: 3px solid var(--accent-primary);
+}
+
+/* ----------------------------------------------------------------------------
+   SHARED BUTTON COMPONENT SYSTEM
+   ---------------------------------------------------------------------------- */
+button {
+  font-family: var(--font-sans);
+}
+
 .btn-primary {
-  background: var(--accent-red);
-  color: #ffffff;
-  border: 1px solid var(--accent-red-deep);
-  padding: 0.55rem 1.1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border-radius: 4px;
+  background: var(--accent-primary);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  padding: 0.5rem 1rem;
+  height: 36px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-control);
   cursor: pointer;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  user-select: none;
 }
 
-.btn-primary:hover {
-  background: #b71c1c;
-  box-shadow: 0 0 12px var(--accent-red-glow);
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+  box-shadow: 0 2px 6px var(--accent-primary-glow);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--accent-primary-active);
+  transform: scale(0.985);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: var(--bg-card);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   border: 1px solid var(--border-default);
-  padding: 0.55rem 1.1rem;
-  font-size: 0.875rem;
+  padding: 0.5rem 0.95rem;
+  height: 36px;
+  font-size: 0.8125rem;
   font-weight: 500;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   cursor: pointer;
-  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  user-select: none;
 }
 
-.btn-secondary:hover {
-  background: var(--bg-card-hover);
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-higher);
   border-color: var(--border-highlight);
+  color: #FFFFFF;
 }
 
-/* Status Badges */
+.btn-secondary:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  padding: 0.5rem 0.95rem;
+  height: 36px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition: all var(--transition-fast);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-highlight);
+  color: var(--text-primary);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 0.45rem 0.75rem;
+  height: 34px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  background: var(--status-danger-dim);
+  color: #F87171;
+  border: 1px solid var(--status-danger-border);
+  padding: 0.5rem 0.95rem;
+  height: 36px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition: all var(--transition-fast);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--status-danger);
+  color: #FFFFFF;
+  border-color: var(--status-danger);
+}
+
+/* ----------------------------------------------------------------------------
+   SHARED FORM CONTROLS & INPUTS
+   ---------------------------------------------------------------------------- */
+.form-control,
+input[type="text"],
+input[type="password"],
+input[type="search"],
+input[type="email"],
+input[type="number"],
+input[type="datetime-local"],
+select,
+textarea {
+  font-family: var(--font-sans);
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-input);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  width: 100%;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.form-control:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="datetime-local"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(77, 131, 247, 0.18);
+  background-color: var(--bg-elevated);
+}
+
+.form-control:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+/* ----------------------------------------------------------------------------
+   SHARED STATUS BADGES (Restrained, Muted Aesthetic)
+   ---------------------------------------------------------------------------- */
 .badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
   padding: 0.2rem 0.6rem;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.6875rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  line-height: 1.25;
 }
 
 .badge-critical {
-  background-color: rgba(211, 47, 47, 0.2);
-  color: #ff5252;
-  border: 1px solid #d32f2f;
+  background-color: var(--status-danger-dim);
+  color: #F87171;
+  border: 1px solid var(--status-danger-border);
 }
 
 .badge-high {
-  background-color: rgba(255, 140, 0, 0.2);
-  color: #ffa726;
-  border: 1px solid #ff9800;
+  background-color: var(--status-warning-dim);
+  color: #FBBF24;
+  border: 1px solid var(--status-warning-border);
 }
 
 .badge-medium {
-  background-color: rgba(251, 192, 45, 0.15);
-  color: #fbc02d;
-  border: 1px solid #fbc02d;
+  background-color: rgba(234, 179, 8, 0.12);
+  color: #FACC15;
+  border: 1px solid rgba(234, 179, 8, 0.25);
 }
 
-.badge-open {
-  background-color: rgba(0, 230, 118, 0.15);
-  color: #00e676;
-  border: 1px solid #00e676;
+.badge-low {
+  background-color: rgba(148, 163, 184, 0.12);
+  color: #94A3B8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.badge-open,
+.badge-verified {
+  background-color: var(--status-success-dim);
+  color: #34D399;
+  border: 1px solid var(--status-success-border);
+}
+
+.badge-unverified {
+  background-color: rgba(244, 63, 94, 0.12);
+  color: #FB7185;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.badge-hypothesis {
+  background-color: rgba(168, 85, 247, 0.12);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+/* ----------------------------------------------------------------------------
+   SHARED TABLE SYSTEM
+   ---------------------------------------------------------------------------- */
+.forensic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.forensic-table th {
+  padding: 0.65rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-card);
+}
+
+.forensic-table td {
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.forensic-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.forensic-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* ----------------------------------------------------------------------------
+   MODAL BACKDROP & DIALOG SHEETS
+   ---------------------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  animation: modalFadeIn var(--transition-normal);
+}
+
+.modal-sheet {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-highlight);
+  border-radius: var(--radius-dialog);
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideUp var(--transition-normal);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ----------------------------------------------------------------------------
+   ACCESSIBILITY & REDUCED MOTION
+   ---------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @keyframes spin {

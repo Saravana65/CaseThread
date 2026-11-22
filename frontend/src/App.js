@@ -280,7 +280,7 @@ export default function App() {
   }
 
   // 3. Authenticated Officer Forensic Workspace: Left Sidebar + Top Header Layout
-  const currentSidebarWidth = isMobile ? 0 : (sidebarCollapsed ? 72 : 250);
+  const currentSidebarWidth = isMobile ? 0 : (sidebarCollapsed ? 68 : 240);
 
   return (
     <div

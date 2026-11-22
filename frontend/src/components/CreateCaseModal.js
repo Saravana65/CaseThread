@@ -135,39 +135,19 @@ export default function CreateCaseModal({ isOpen, onClose, onCaseCreated }) {
 
   return (
     <div
+      className="modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget && !submitting) onClose();
       }}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(4, 7, 11, 0.85)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '1rem'
-      }}
     >
       <div
-        className="forensic-card accent-red-border"
+        className="modal-sheet"
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-case-title"
         style={{
           maxWidth: '580px',
-          width: '100%',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          backgroundColor: 'var(--bg-secondary)',
-          border: '1px solid var(--border-default)',
-          borderRadius: '8px',
-          boxShadow: '0 12px 48px rgba(0, 0, 0, 0.8)',
-          padding: '2rem'
+          padding: '1.75rem'
         }}
       >
         {/* Modal Header */}

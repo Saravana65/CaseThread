@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import { ReportIcon, CloseIcon } from './icons/Icons';
 
 /**
  * @component ReportExportModal
@@ -39,25 +40,25 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '1rem'
-    }}>
-      <div className="forensic-card" style={{ maxWidth: '600px', width: '100%', padding: '1.75rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-default)', paddingBottom: '0.85rem', marginBottom: '1.25rem' }}>
+    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div
+        className="modal-sheet"
+        style={{
+          maxWidth: '560px',
+          padding: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.25rem'
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-default)', paddingBottom: '0.85rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '1.3rem' }}>📄</span>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-primary)', textTransform: 'uppercase' }}>
+              <span style={{ color: 'var(--accent-primary)', display: 'flex' }}>
+                <ReportIcon size={20} />
+              </span>
+              <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>
                 Export Forensic Case Dossier
               </h3>
             </div>
@@ -67,46 +68,45 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
           </div>
           <button
             onClick={onClose}
-            className="btn-secondary"
-            style={{ fontSize: '0.8rem', padding: '0.25rem 0.55rem' }}
+            className="btn-ghost"
+            style={{ width: '28px', height: '28px', padding: 0 }}
+            aria-label="Close export dialog"
           >
-            ✕
+            <CloseIcon size={16} />
           </button>
         </div>
 
         {error && (
           <div style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid var(--accent-red)',
-            color: 'var(--accent-red)',
+            backgroundColor: 'var(--status-danger-dim)',
+            border: '1px solid var(--status-danger-border)',
+            color: '#F87171',
             padding: '0.65rem 0.85rem',
-            borderRadius: '4px',
-            fontSize: '0.8rem',
-            marginBottom: '1rem'
+            borderRadius: 'var(--radius-control)',
+            fontSize: '0.78rem'
           }}>
             {error}
           </div>
         )}
 
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
           Generate a standardized, tamper-evident forensic intelligence report containing the complete evidentiary inventory, cryptographic SHA-256 fingerprints, chronological chain of custody logs, relational network linkages, and heuristic algorithmic lead prioritizations.
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {/* Printable HTML / PDF */}
           <div style={{
-            backgroundColor: 'var(--bg-secondary)',
+            backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border-default)',
-            borderRadius: '6px',
-            padding: '1.25rem',
+            borderRadius: 'var(--radius-card)',
+            padding: '1.15rem',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             gap: '1rem'
           }}>
             <div>
-              <div style={{ fontSize: '1.1rem', marginBottom: '0.3rem' }}>🖨️</div>
-              <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+              <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
                 Printable HTML / PDF Dossier
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.4 }}>
@@ -116,7 +116,7 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
             <button
               onClick={handleOpenPrintableHtml}
               className="btn-primary"
-              style={{ fontSize: '0.78rem', padding: '0.45rem', width: '100%' }}
+              style={{ fontSize: '0.78rem', height: '34px', width: '100%' }}
             >
               Open Printable Report ↗
             </button>
@@ -124,18 +124,17 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
 
           {/* Structured JSON */}
           <div style={{
-            backgroundColor: 'var(--bg-secondary)',
+            backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border-default)',
-            borderRadius: '6px',
-            padding: '1.25rem',
+            borderRadius: 'var(--radius-card)',
+            padding: '1.15rem',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             gap: '1rem'
           }}>
             <div>
-              <div style={{ fontSize: '1.1rem', marginBottom: '0.3rem' }}>💾</div>
-              <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+              <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
                 Machine-Readable JSON
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.4 }}>
@@ -146,7 +145,7 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
               onClick={handleDownloadJson}
               disabled={downloadingJson}
               className="btn-secondary"
-              style={{ fontSize: '0.78rem', padding: '0.45rem', width: '100%' }}
+              style={{ fontSize: '0.78rem', height: '34px', width: '100%' }}
             >
               {downloadingJson ? 'Generating JSON...' : 'Download JSON Dossier ↓'}
             </button>
@@ -157,7 +156,7 @@ export default function ReportExportModal({ isOpen, onClose, caseId, caseNumber,
         <div style={{
           backgroundColor: 'var(--bg-input)',
           border: '1px solid var(--border-subtle)',
-          borderRadius: '4px',
+          borderRadius: 'var(--radius-control)',
           padding: '0.65rem 0.85rem',
           fontSize: '0.7rem',
           color: 'var(--text-muted)',

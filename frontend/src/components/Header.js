@@ -1,10 +1,11 @@
 import React from 'react';
+import { MenuIcon, PlusIcon, ReportIcon, BellIcon } from './icons/Icons';
 
 /**
  * @component Header
- * @description Top header bar positioned at the top of the main content area.
- * Contains breadcrumbs, active case context badge, quick action buttons, and mobile menu trigger.
- * Does NOT contain the horizontal navigation tabs (now housed in the Left Sidebar).
+ * @description Apple-inspired minimalist top header bar for CASETHREAD.
+ * Features: Clean typographic breadcrumb, active case context chip,
+ * vector action triggers, and responsive mobile drawer toggle.
  */
 export default function Header({
   officer,
@@ -26,27 +27,28 @@ export default function Header({
 
   // Map active tab to a readable breadcrumb label
   const tabBreadcrumbMap = {
-    dashboard: { section: 'CASETHREAD', title: 'Investigation Dashboard' },
-    dossier: { section: 'INVESTIGATIONS', title: 'Case Dossier & Entities' },
-    collaboration: { section: 'OPERATIONS', title: 'Multi-Officer Collaboration' },
-    vault: { section: 'INTELLIGENCE', title: 'Digital Evidence Vault' },
-    geospatial: { section: 'INTELLIGENCE', title: 'Geospatial Intelligence Map' },
-    integrity: { section: 'OPERATIONS', title: 'Evidence Integrity & Custody' },
-    graph: { section: 'INTELLIGENCE', title: 'Evidence Relationship Graph' },
-    gaps: { section: 'INTELLIGENCE', title: 'Evidence Gap Analysis' },
-    timeline: { section: 'INTELLIGENCE', title: 'Chronological Timeline' },
-    leads: { section: 'INTELLIGENCE', title: 'Investigative Leads Ranking' },
-    validation: { section: 'SYSTEM', title: 'Forensic Validation Benchmarks' }
+    dashboard: { section: 'Platform', title: 'Dashboard' },
+    dossier: { section: 'Investigations', title: 'Case Dossier & Entities' },
+    collaboration: { section: 'Operations', title: 'Multi-Officer Collaboration' },
+    vault: { section: 'Intelligence', title: 'Evidence Vault & Files' },
+    geospatial: { section: 'Intelligence', title: 'Geospatial Intelligence Map' },
+    integrity: { section: 'Operations', title: 'Evidence Integrity & Custody' },
+    graph: { section: 'Intelligence', title: 'Evidence Relationship Graph' },
+    gaps: { section: 'Intelligence', title: 'Evidence Gap Analysis' },
+    timeline: { section: 'Intelligence', title: 'Chronological Timeline' },
+    leads: { section: 'Intelligence', title: 'Investigative Leads Ranking' },
+    validation: { section: 'System', title: 'Forensic Validation Benchmarks' }
   };
 
-  const breadcrumb = tabBreadcrumbMap[activeTab] || { section: 'CASETHREAD', title: 'Forensic Workspace' };
+  const breadcrumb = tabBreadcrumbMap[activeTab] || { section: 'Platform', title: 'Forensic Workspace' };
 
   return (
     <header
       style={{
         backgroundColor: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--border-default)',
-        padding: '0.75rem 1.5rem',
+        padding: '0 1.5rem',
+        height: '56px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -59,51 +61,43 @@ export default function Header({
       aria-label="Main Application Header"
     >
       {/* Left: Mobile Drawer Trigger & Current Section Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         {/* Mobile Hamburger Trigger */}
         {isMobile && (
           <button
             onClick={onToggleMobileSidebar}
             className="btn-secondary"
             style={{
-              padding: '0.35rem 0.55rem',
-              fontSize: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              width: '32px',
+              height: '32px',
+              padding: 0,
+              borderRadius: 'var(--radius-control)'
             }}
             aria-label="Open navigation sidebar"
             title="Open navigation menu"
           >
-            ☰
+            <MenuIcon size={16} />
           </button>
         )}
 
         {/* Section & Page Title Breadcrumb */}
-        <div>
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span
             style={{
-              fontSize: '0.65rem',
+              fontSize: '0.75rem',
               color: 'var(--text-muted)',
-              fontFamily: 'var(--font-mono)',
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem'
+              fontWeight: '500'
             }}
           >
-            <span>{breadcrumb.section}</span>
-            <span style={{ color: 'var(--border-highlight)' }}>/</span>
-            <span style={{ color: 'var(--accent-orange)' }}>{breadcrumb.title}</span>
-          </div>
+            {breadcrumb.section}
+          </span>
+          <span style={{ color: 'var(--border-highlight)', fontSize: '0.8rem' }}>/</span>
           <h2
             style={{
-              fontSize: '1.05rem',
-              fontWeight: '800',
+              fontSize: '0.875rem',
+              fontWeight: '600',
               color: 'var(--text-primary)',
-              lineHeight: 1.2,
-              marginTop: '0.1rem'
+              lineHeight: 1
             }}
           >
             {breadcrumb.title}
@@ -112,7 +106,7 @@ export default function Header({
       </div>
 
       {/* Center / Right: Active Case Context Badge & Quick Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
         {isAuthenticated ? (
           <>
             {/* Active Case Context Chip */}
@@ -122,28 +116,31 @@ export default function Header({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
                   padding: '0.3rem 0.65rem',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem'
+                  borderRadius: 'var(--radius-pill)',
+                  fontSize: '0.75rem',
+                  height: '32px'
                 }}
                 title={`Active Case: ${caseData.title}`}
               >
                 <span
                   style={{
-                    width: '8px',
-                    height: '8px',
+                    width: '6px',
+                    height: '6px',
                     borderRadius: '50%',
-                    backgroundColor: 'var(--status-verified)',
-                    boxShadow: '0 0 6px var(--status-verified)'
+                    backgroundColor: 'var(--status-success)'
                   }}
                 />
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>CASE:</span>
-                <span className="mono" style={{ color: 'var(--accent-orange)', fontWeight: '700' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: '500' }}>CASE</span>
+                <span className="mono" style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '0.75rem' }}>
                   {caseData.case_number}
                 </span>
-                <span className={`badge ${caseData.priority === 'CRITICAL' ? 'badge-critical' : 'badge-high'}`} style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}>
+                <span
+                  className={`badge ${caseData.priority === 'CRITICAL' ? 'badge-critical' : 'badge-high'}`}
+                  style={{ fontSize: '0.625rem', padding: '0.1rem 0.45rem' }}
+                >
                   {caseData.priority || 'MEDIUM'}
                 </span>
               </div>
@@ -154,18 +151,11 @@ export default function Header({
               <button
                 onClick={onOpenCreateCase}
                 className="btn-primary"
-                style={{
-                  fontSize: '0.72rem',
-                  padding: '0.35rem 0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  fontWeight: '700'
-                }}
+                style={{ height: '32px', fontSize: '0.78rem', padding: '0 0.75rem' }}
                 title="Create a new criminal investigation case"
               >
-                <span>➕</span>
-                <span>NEW CASE</span>
+                <PlusIcon size={14} />
+                <span>New Case</span>
               </button>
             )}
 
@@ -174,17 +164,11 @@ export default function Header({
               <button
                 onClick={onOpenReport}
                 className="btn-secondary"
-                style={{
-                  fontSize: '0.72rem',
-                  padding: '0.35rem 0.7rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem'
-                }}
+                style={{ height: '32px', fontSize: '0.78rem', padding: '0 0.75rem' }}
                 title="Export comprehensive case dossier report (HTML / JSON)"
               >
-                <span>📄</span>
-                <span>REPORT</span>
+                <ReportIcon size={14} />
+                <span>Dossier</span>
               </button>
             )}
 
@@ -194,25 +178,26 @@ export default function Header({
                 onClick={onOpenNotifications}
                 className="btn-secondary"
                 style={{
-                  fontSize: '0.72rem',
-                  padding: '0.35rem 0.65rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
+                  width: '32px',
+                  height: '32px',
+                  padding: 0,
                   position: 'relative'
                 }}
                 title="Investigation Notifications & Alerts"
                 aria-label="Investigation Notifications"
               >
-                <span>🔔</span>
+                <BellIcon size={15} color="var(--text-secondary)" />
                 {unreadCount > 0 && (
                   <span
                     style={{
-                      backgroundColor: 'var(--accent-red)',
-                      color: '#ffffff',
-                      fontSize: '0.6rem',
-                      fontWeight: '800',
-                      borderRadius: '10px',
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      backgroundColor: 'var(--status-danger)',
+                      color: '#FFFFFF',
+                      fontSize: '0.58rem',
+                      fontWeight: '700',
+                      borderRadius: 'var(--radius-pill)',
                       padding: '0.1rem 0.35rem',
                       lineHeight: 1
                     }}
@@ -224,8 +209,8 @@ export default function Header({
             )}
           </>
         ) : (
-          <span className="badge badge-critical" style={{ letterSpacing: '0.5px' }}>
-            AUTHENTICATION REQUIRED
+          <span className="badge badge-critical">
+            Authentication Required
           </span>
         )}
       </div>
