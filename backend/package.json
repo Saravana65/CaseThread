@@ -10,7 +10,8 @@
     "test:all": "node --test tests/*.test.js",
     "seed:demo": "node ../scripts/seed_demo_case.js",
     "reset:demo": "node ../scripts/reset_demo_case.js",
-    "knowledge:import": "node knowledge-base/jobs/importJob.js"
+    "knowledge:import": "node knowledge-base/jobs/importJob.js",
+    "knowledge:global-sync": "node knowledge-base/jobs/globalSyncJob.js"
   },
   "keywords": [
     "investigation",

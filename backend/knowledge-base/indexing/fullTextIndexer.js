@@ -67,6 +67,24 @@ class FullTextIndexer {
       params.push(...filters.allowedClassifications);
     }
 
+    // Filter by country
+    if (filters.country) {
+      conditions.push(`kd.country = ?`);
+      params.push(filters.country);
+    }
+
+    // Filter by language
+    if (filters.language) {
+      conditions.push(`kd.language = ?`);
+      params.push(filters.language);
+    }
+
+    // Filter by record level
+    if (filters.recordLevel) {
+      conditions.push(`kd.record_level = ?`);
+      params.push(filters.recordLevel);
+    }
+
     // Filter by crime category
     if (filters.crimeCategory) {
       conditions.push(`kd.crime_category = ?`);
@@ -117,9 +135,20 @@ class FullTextIndexer {
         kc.access_classification,
         kd.document_title,
         kd.case_reference_number,
+        kd.country,
+        kd.region_state,
+        kd.city,
         kd.jurisdiction,
         kd.crime_category,
+        kd.crime_subtype,
+        kd.incident_datetime,
+        kd.stolen_property,
+        kd.property_recovered,
         kd.case_outcome,
+        kd.investigation_status,
+        kd.is_investigation_details_available,
+        kd.language,
+        kd.record_level,
         kd.publication_date,
         ks.source_name,
         ks.source_type,
@@ -161,9 +190,20 @@ class FullTextIndexer {
             kc.access_classification,
             kd.document_title,
             kd.case_reference_number,
+            kd.country,
+            kd.region_state,
+            kd.city,
             kd.jurisdiction,
             kd.crime_category,
+            kd.crime_subtype,
+            kd.incident_datetime,
+            kd.stolen_property,
+            kd.property_recovered,
             kd.case_outcome,
+            kd.investigation_status,
+            kd.is_investigation_details_available,
+            kd.language,
+            kd.record_level,
             kd.publication_date,
             ks.source_name,
             ks.source_type,
@@ -188,7 +228,20 @@ class FullTextIndexer {
       document_id: row.document_id,
       document_title: row.document_title,
       case_reference_number: row.case_reference_number,
+      country: row.country,
+      region_state: row.region_state,
+      city: row.city,
       jurisdiction: row.jurisdiction,
+      crime_category: row.crime_category,
+      crime_subtype: row.crime_subtype,
+      incident_datetime: row.incident_datetime,
+      stolen_property: row.stolen_property,
+      property_recovered: row.property_recovered,
+      case_outcome: row.case_outcome,
+      investigation_status: row.investigation_status,
+      is_investigation_details_available: !!row.is_investigation_details_available,
+      language: row.language,
+      record_level: row.record_level,
       crime_category: row.crime_category,
       case_outcome: row.case_outcome,
       publication_date: row.publication_date,

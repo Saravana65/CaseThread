@@ -7,6 +7,7 @@
 
 const FullTextIndexer = require('../indexing/fullTextIndexer');
 const KnowledgeSecurity = require('../security/knowledgeSecurity');
+const SimilarCaseEngine = require('./similarCaseEngine');
 const { execute } = require('../../database/connection');
 
 class RetrievalService {
@@ -97,10 +98,21 @@ class RetrievalService {
         chunk_id: r.chunk_id,
         document_id: r.document_id,
         document_title: r.document_title,
-        case_number: r.case_number,
+        case_reference_number: r.case_reference_number,
+        country: r.country,
+        region_state: r.region_state,
+        city: r.city,
         jurisdiction: r.jurisdiction,
         crime_category: r.crime_category,
-        incident_date: r.incident_date,
+        crime_subtype: r.crime_subtype,
+        incident_datetime: r.incident_datetime,
+        stolen_property: r.stolen_property,
+        property_recovered: r.property_recovered,
+        case_outcome: r.case_outcome,
+        investigation_status: r.investigation_status,
+        is_investigation_details_available: r.is_investigation_details_available,
+        language: r.language,
+        record_level: r.record_level,
         classification_level: r.classification_level,
         page_number: r.page_number,
         section_reference: r.section_reference,
@@ -109,6 +121,14 @@ class RetrievalService {
         text: r.chunk_text
       }))
     };
+  }
+
+  /**
+   * Performs investigative similarity retrieval across worldwide crime records.
+   * Recognizes crime category, property keywords, approximate incident hour, and premises.
+   */
+  static async findSimilarCases(params) {
+    return await SimilarCaseEngine.findSimilarCases(params);
   }
 }
 

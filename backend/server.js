@@ -171,7 +171,7 @@ app.use(errorHandler);
 // Server Startup
 let serverInstance = null;
 
-if (process.env.NODE_ENV !== 'test') {
+if (require.main === module) {
   const configValidation = validateConfig();
   if (!configValidation.valid) {
     console.error('[SECURITY CRITICAL] Server startup aborted due to configuration errors:');

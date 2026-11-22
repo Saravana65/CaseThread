@@ -971,14 +971,18 @@ CREATE TABLE IF NOT EXISTS knowledge_sources (
     source_url VARCHAR(500) NULL,
     source_type ENUM('COURT_JUDGMENT', 'POLICE_SUMMARY', 'PUBLIC_REPORT', 'GOVERNMENT_OPEN_DATA', 'AUTHORIZED_ARCHIVE', 'INTERNAL_HISTORICAL') NOT NULL,
     jurisdiction VARCHAR(100) NOT NULL DEFAULT 'India',
+    country VARCHAR(100) NOT NULL DEFAULT 'Global',
     license_terms VARCHAR(255) DEFAULT 'Authorized Law Enforcement & Legal Research',
+    source_reliability ENUM('OFFICIAL_GOVERNMENT', 'JUDICIAL_RECORD', 'POLICE_DEPARTMENT', 'OPEN_DATA_PORTAL', 'AUTHORIZED_ARCHIVE', 'UNVERIFIED') NOT NULL DEFAULT 'OFFICIAL_GOVERNMENT',
     data_classification ENUM('PUBLIC_RECORD', 'OFFICIAL_USE_ONLY', 'RESTRICTED_LAW_ENFORCEMENT', 'CONFIDENTIAL') NOT NULL DEFAULT 'OFFICIAL_USE_ONLY',
     access_restrictions TEXT NULL,
+    update_frequency VARCHAR(50) DEFAULT 'MONTHLY',
+    last_sync_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------------------------
--- 24. Table: knowledge_documents (Phase 13 Historical Case Documents)
+-- 24. Table: knowledge_documents (Phase 13/14 Global Historical Case Documents)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS knowledge_documents (
     document_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -989,9 +993,25 @@ CREATE TABLE IF NOT EXISTS knowledge_documents (
     source_url VARCHAR(500) NULL,
     publication_date DATE NULL,
     case_reference_number VARCHAR(100) NULL,
+    country VARCHAR(100) NOT NULL DEFAULT 'India',
+    region_state VARCHAR(100) NULL,
+    city VARCHAR(100) NULL,
     jurisdiction VARCHAR(100) NULL,
     crime_category VARCHAR(100) NULL,
+    crime_subtype VARCHAR(100) NULL,
+    incident_datetime DATETIME NULL,
     case_outcome VARCHAR(100) NULL,
+    stolen_property TEXT NULL,
+    property_recovered BOOLEAN DEFAULT NULL,
+    documented_circumstances TEXT NULL,
+    investigation_status VARCHAR(100) NULL,
+    investigative_actions TEXT NULL,
+    evidence_types TEXT NULL,
+    is_investigation_details_available BOOLEAN NOT NULL DEFAULT FALSE,
+    language VARCHAR(20) NOT NULL DEFAULT 'en',
+    translated_text LONGTEXT NULL,
+    translation_status ENUM('NONE', 'AUTO_TRANSLATED', 'OFFICIAL_VERIFIED') NOT NULL DEFAULT 'NONE',
+    record_level ENUM('CASE_LEVEL', 'COURT_JUDGMENT', 'POLICE_INCIDENT', 'AGGREGATE_STATISTIC') NOT NULL DEFAULT 'CASE_LEVEL',
     original_sha256 VARCHAR(64) NOT NULL UNIQUE,
     storage_path VARCHAR(500) NOT NULL,
     file_size_bytes INT NOT NULL,
@@ -1006,11 +1026,14 @@ CREATE TABLE IF NOT EXISTS knowledge_documents (
         REFERENCES knowledge_sources(source_id) ON DELETE CASCADE,
     INDEX idx_kd_case_ref (case_reference_number),
     INDEX idx_kd_crime_cat (crime_category),
-    INDEX idx_kd_sha (original_sha256)
+    INDEX idx_kd_sha (original_sha256),
+    INDEX idx_kd_country_crime (country, crime_category),
+    INDEX idx_kd_incident_dt (incident_datetime),
+    INDEX idx_kd_record_level (record_level)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------------------------
--- 25. Table: knowledge_chunks (Phase 13 Searchable Text Passages & Full-Text Index)
+-- 25. Table: knowledge_chunks (Phase 13/14 Searchable Text Passages & Full-Text Index)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS knowledge_chunks (
     chunk_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1019,6 +1042,7 @@ CREATE TABLE IF NOT EXISTS knowledge_chunks (
     chunk_text TEXT NOT NULL,
     page_number INT NULL,
     section_reference VARCHAR(150) NULL,
+    language VARCHAR(20) NOT NULL DEFAULT 'en',
     searchable_metadata JSON NULL,
     access_classification ENUM('PUBLIC_RECORD', 'OFFICIAL_USE_ONLY', 'RESTRICTED_LAW_ENFORCEMENT', 'CONFIDENTIAL') NOT NULL DEFAULT 'OFFICIAL_USE_ONLY',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
