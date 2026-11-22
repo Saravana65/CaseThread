@@ -194,6 +194,13 @@ export default function Sidebar({
       heading: 'System',
       items: [
         {
+          id: 'lab',
+          tab: 'lab',
+          label: 'Investigation Lab',
+          IconComponent: ValidationIcon,
+          tooltip: 'Native C Algorithm Investigation Lab & ADS Showcase'
+        },
+        {
           id: 'validation',
           tab: 'validation',
           label: 'Algorithm Validation',

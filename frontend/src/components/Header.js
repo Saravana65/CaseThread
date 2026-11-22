@@ -38,6 +38,7 @@ export default function Header({
     gaps: { section: 'Intelligence', title: 'Evidence Gap Analysis' },
     timeline: { section: 'Intelligence', title: 'Chronological Timeline' },
     leads: { section: 'Intelligence', title: 'Investigative Leads Ranking' },
+    lab: { section: 'System', title: 'Investigation Algorithm Lab' },
     validation: { section: 'System', title: 'Forensic Validation Benchmarks' }
   };
 

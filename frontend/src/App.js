@@ -17,6 +17,7 @@ import ReportExportModal from './components/ReportExportModal';
 import CreateCaseModal from './components/CreateCaseModal';
 import SettingsModal from './components/SettingsModal';
 import ValidationDashboard from './components/ValidationDashboard';
+import InvestigationLab from './pages/InvestigationLab';
 import api from './services/api';
 import './styles/theme.css';
 
@@ -451,6 +452,16 @@ export default function App() {
 
           {activeTab === 'validation' && (
             <ValidationDashboard />
+          )}
+
+          {activeTab === 'lab' && (
+            <InvestigationLab
+              selectedCaseId={selectedCaseId}
+              onSelectCaseId={(id) => {
+                setSelectedCaseId(id);
+                loadCaseInfo(id);
+              }}
+            />
           )}
         </main>
 

@@ -31,6 +31,7 @@ const vaultRoutes = require('./routes/vaultRoutes');
 const geospatialRoutes = require('./routes/geospatialRoutes');
 const collaborationRoutes = require('./routes/collaborationRoutes');
 const validationRoutes = require('./routes/validationRoutes');
+const labRoutes = require('./routes/labRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -148,6 +149,7 @@ app.use('/api/v1/leads', leadRoutes);
 // Intensive C-Engine DSA analysis rate-limited endpoints
 app.use('/api/v1/analysis', analysisLimiter, analysisRoutes);
 app.use('/api/v1/validation', analysisLimiter, validationRoutes);
+app.use('/api/v1/lab', labRoutes);
 app.use('/api/v1', graphRoutes);
 app.use('/api/v1', collaborationRoutes);
 

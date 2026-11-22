@@ -458,6 +458,22 @@ class ApiService {
   getValidationSummary() {
     return this.request('/validation/summary');
   }
+
+  // Phase 7 - Native C Algorithm Investigation Lab
+  getLabCatalog() {
+    return this.request('/lab/catalog');
+  }
+
+  getLabDemoDatasets() {
+    return this.request('/lab/demo-datasets');
+  }
+
+  executeLabAlgorithm(payload) {
+    return this.request('/lab/execute', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
 }
 
 export const api = new ApiService();

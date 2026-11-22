@@ -356,6 +356,53 @@ ct_status_t parse_and_ingest_json(case_ingestion_context_t *ctx, const char *jso
                 const char *dep_p = find_key(obj_start, "depth");
                 if (dep_p && dep_p < obj_end) ctx->query.depth = extract_int(dep_p);
                 if (ctx->query.depth <= 0) ctx->query.depth = 2;
+
+                const char *algo_p = find_key(obj_start, "algorithm");
+                if (algo_p && algo_p < obj_end) extract_string(algo_p, ctx->lab_req.algorithm, sizeof(ctx->lab_req.algorithm));
+
+                const char *mode_p = find_key(obj_start, "mode");
+                if (mode_p && mode_p < obj_end) extract_string(mode_p, ctx->lab_req.mode, sizeof(ctx->lab_req.mode));
+
+                const char *term_p = find_key(obj_start, "search_term");
+                if (term_p && term_p < obj_end) extract_string(term_p, ctx->lab_req.search_term, sizeof(ctx->lab_req.search_term));
+
+                const char *oper_p = find_key(obj_start, "operation");
+                if (oper_p && oper_p < obj_end) extract_string(oper_p, ctx->lab_req.operation, sizeof(ctx->lab_req.operation));
+
+                if (strcmp(ctx->query.action, "ALGORITHM_LAB") == 0 || ctx->lab_req.algorithm[0] != '\0') {
+                    ctx->has_lab_query = true;
+                    ctx->lab_req.start_node_id = ctx->query.source_id >= 0 ? ctx->query.source_id : ctx->query.node_id;
+                    ctx->lab_req.target_node_id = ctx->query.target_id;
+                }
+            }
+        }
+    }
+
+    // 6. Ingest Dedicated Lab Query (Optional)
+    const char *lq_pos = strstr(json_str, "\"lab_query\"");
+    if (lq_pos) {
+        const char *obj_start = strchr(lq_pos, '{');
+        if (obj_start) {
+            const char *obj_end = strchr(obj_start, '}');
+            if (obj_end) {
+                ctx->has_lab_query = true;
+                const char *algo_p = find_key(obj_start, "algorithm");
+                if (algo_p && algo_p < obj_end) extract_string(algo_p, ctx->lab_req.algorithm, sizeof(ctx->lab_req.algorithm));
+
+                const char *mode_p = find_key(obj_start, "mode");
+                if (mode_p && mode_p < obj_end) extract_string(mode_p, ctx->lab_req.mode, sizeof(ctx->lab_req.mode));
+
+                const char *sid_p = find_key(obj_start, "start_node_id");
+                if (sid_p && sid_p < obj_end) ctx->lab_req.start_node_id = extract_int(sid_p);
+
+                const char *tid_p = find_key(obj_start, "target_node_id");
+                if (tid_p && tid_p < obj_end) ctx->lab_req.target_node_id = extract_int(tid_p);
+
+                const char *term_p = find_key(obj_start, "search_term");
+                if (term_p && term_p < obj_end) extract_string(term_p, ctx->lab_req.search_term, sizeof(ctx->lab_req.search_term));
+
+                const char *oper_p = find_key(obj_start, "operation");
+                if (oper_p && oper_p < obj_end) extract_string(oper_p, ctx->lab_req.operation, sizeof(ctx->lab_req.operation));
             }
         }
     }
@@ -654,6 +701,12 @@ void emit_analysis_json(FILE *out, const analysis_result_t *res, const case_inge
             lead = lead->next;
         }
     }
-    fprintf(out, "  ]\n");
+    fprintf(out, "  ]");
+    if (ctx->has_lab_query) {
+        fprintf(out, ",\n");
+        run_algorithm_lab_query(out, ctx->graph, &ctx->lab_req);
+    } else {
+        fprintf(out, "\n");
+    }
     fprintf(out, "}\n");
 }

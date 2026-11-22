@@ -13,6 +13,7 @@
 #include "tree.h"
 #include "graph.h"
 #include "analysis.h"
+#include "lab_tracer.h"
 
 /* Target Query Action for Graph Exploration */
 typedef struct {
@@ -34,6 +35,8 @@ typedef struct {
     avl_tree_t *timeline_avl;
     bst_t *timeline_bst;
     graph_query_t query;
+    lab_request_t lab_req;
+    bool has_lab_query;
 } case_ingestion_context_t;
 
 case_ingestion_context_t* context_create(void);
