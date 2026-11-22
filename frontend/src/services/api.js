@@ -474,6 +474,24 @@ class ApiService {
       body: JSON.stringify(payload)
     });
   }
+
+  // Phase 8 - Investigative Timeline & Contradiction Analysis
+  getTimeline(caseId, params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/timeline/case/${caseId}${q ? '?' + q : ''}`);
+  }
+
+  getTimelineAnalysis(caseId, params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/timeline/case/${caseId}/analysis${q ? '?' + q : ''}`);
+  }
+
+  addTimelineEvent(caseId, eventData) {
+    return this.request(`/timeline/case/${caseId}`, {
+      method: 'POST',
+      body: JSON.stringify(eventData)
+    });
+  }
 }
 
 export const api = new ApiService();

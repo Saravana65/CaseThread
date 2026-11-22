@@ -432,8 +432,10 @@ export default function App() {
           {activeTab === 'timeline' && (
             <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
               <TimelinePanel
-                timeline={caseData?.timelines || []}
-                anomalies={analysisData?.timeline_anomalies || []}
+                caseId={selectedCaseId}
+                caseData={caseData}
+                onSelectCase={(id) => { setSelectedCaseId(id); loadCaseInfo(id); }}
+                onRefreshCase={() => loadCaseInfo(selectedCaseId)}
               />
             </div>
           )}
