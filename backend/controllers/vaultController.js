@@ -792,7 +792,7 @@ exports.reviewExtraction = async (req, res, next) => {
  */
 exports.searchVaultFiles = async (req, res, next) => {
   try {
-    const { case_id, file_format, integrity_status, q } = req.query;
+    const { case_id, evidence_id, file_format, integrity_status, q } = req.query;
     let sql = `
       SELECT f.*, e.tracking_code, e.title AS evidence_title, e.category AS evidence_category,
              o.full_name AS uploaded_by_officer_name, o.badge_number AS uploaded_by_badge
@@ -806,6 +806,10 @@ exports.searchVaultFiles = async (req, res, next) => {
     if (case_id) {
       sql += ' AND f.case_id = ?';
       params.push(parseInt(case_id, 10));
+    }
+    if (evidence_id) {
+      sql += ' AND f.evidence_id = ?';
+      params.push(parseInt(evidence_id, 10));
     }
     if (file_format) {
       sql += ' AND f.file_extension = ?';

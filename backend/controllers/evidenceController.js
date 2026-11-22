@@ -729,11 +729,13 @@ exports.verifyAuditChainEndpoint = async (req, res, next) => {
  */
 exports.searchEvidence = async (req, res, next) => {
   try {
-    const { q, category, verification_status, case_id } = req.query;
+    const { q, category, verification_status, reliability_assessment, case_id } = req.query;
     let sql = `
-      SELECT e.*, c.case_number, c.title AS case_title 
+      SELECT e.*, c.case_number, c.title AS case_title,
+             o.full_name AS entered_by_officer_name, o.badge_number AS entered_by_badge
       FROM evidence e
       LEFT JOIN cases c ON e.case_id = c.case_id
+      LEFT JOIN officers o ON e.entered_by_officer_id = o.officer_id
       WHERE e.is_archived = 0
     `;
     const params = [];
@@ -749,6 +751,10 @@ exports.searchEvidence = async (req, res, next) => {
     if (verification_status) {
       sql += ' AND e.verification_status = ?';
       params.push(verification_status);
+    }
+    if (reliability_assessment) {
+      sql += ' AND e.reliability_assessment = ?';
+      params.push(reliability_assessment);
     }
     if (q) {
       sql += ' AND (e.title LIKE ? OR e.description LIKE ? OR e.tracking_code LIKE ? OR e.source LIKE ?)';

@@ -10,6 +10,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { validate, addEvidenceRules } = require('../middleware/validators');
 
 router.post('/', authenticateToken, addEvidenceRules, validate, evidenceController.addEvidence);
+router.get('/', authenticateToken, evidenceController.searchEvidence);
 router.get('/case/:caseId', authenticateToken, evidenceController.listEvidenceByCase);
 router.get('/search', authenticateToken, evidenceController.searchEvidence);
 router.get('/:id', authenticateToken, evidenceController.getEvidenceById);

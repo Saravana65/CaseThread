@@ -9,6 +9,7 @@ export default function Navbar({ officer, onLogout, activeTab, onTabChange, onOp
 
   const navItems = [
     { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
+    { id: 'investigations', label: '📁 Investigations', icon: '📁' },
     { id: 'dossier', label: '📂 Case Dossier', icon: '📂' },
     { id: 'collaboration', label: '🤝 Collaboration', icon: '🤝' },
     { id: 'vault', label: '🗄️ Evidence Vault', icon: '🗄️' },

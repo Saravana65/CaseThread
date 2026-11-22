@@ -1832,6 +1832,30 @@ class MemoryStore {
         return [matches, []];
       }
 
+      if (sql.includes('FROM evidence e') && sql.includes('e.is_archived = 0')) {
+        let matches = this.evidence.filter(e => !e.is_archived);
+        if (sql.includes('e.case_id = ?') && params.length > 0) {
+          matches = matches.filter(e => e.case_id === parseInt(params[0], 10));
+        }
+        if (sql.includes('e.category = ?')) {
+          const catP = params.find(p => typeof p === 'string' && !p.startsWith('%') && !['CONFIRMED_FACT', 'UNVERIFIED_OBSERVATION', 'HYPOTHESIS'].includes(p));
+          if (catP) matches = matches.filter(e => e.category === catP);
+        }
+        if (sql.includes('e.verification_status = ?')) {
+          const vsP = params.find(p => ['CONFIRMED_FACT', 'UNVERIFIED_OBSERVATION', 'HYPOTHESIS'].includes(p));
+          if (vsP) matches = matches.filter(e => e.verification_status === vsP);
+        }
+        const enriched = matches.map(e => {
+          const c = this.cases.find(cItem => cItem.case_id === e.case_id);
+          return {
+            ...e,
+            case_number: c ? c.case_number : 'CASE-2026-0419',
+            case_title: c ? c.title : 'Active Investigation'
+          };
+        });
+        return [enriched, []];
+      }
+
       // --- Phase 10: Case Members ---
       if (sql.includes('FROM case_members') || sql.includes('FROM CASE_MEMBERS')) {
         let members = [...this.case_members];

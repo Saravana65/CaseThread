@@ -322,16 +322,39 @@ export default function AddEvidenceModal({ isOpen, onClose, caseId, caseNumber, 
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label htmlFor="tracking_code" style={{
-                display: 'block',
-                fontSize: '0.72rem',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                color: fieldErrors.tracking_code ? '#ff5252' : 'var(--text-secondary)',
-                marginBottom: '0.35rem'
-              }}>
-                Tracking Code / Barcode *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <label htmlFor="tracking_code" style={{
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  color: fieldErrors.tracking_code ? '#ff5252' : 'var(--text-secondary)'
+                }}>
+                  Tracking Code / Barcode *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const catPrefix = formData.category.replace(/[^A-Z]/g, '').slice(0, 4) || 'EVD';
+                    const randCode = `EVD-${catPrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+                    setFormData(prev => ({ ...prev, tracking_code: randCode }));
+                    if (fieldErrors.tracking_code) {
+                      setFieldErrors(prev => ({ ...prev, tracking_code: null }));
+                    }
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--accent-blue)',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer',
+                    padding: '0 0.2rem',
+                    textDecoration: 'underline'
+                  }}
+                  title="Generate a unique tracking identifier"
+                >
+                  ⚡ Auto Generate
+                </button>
+              </div>
               <input
                 id="tracking_code"
                 type="text"

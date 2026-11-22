@@ -97,6 +97,11 @@ class ApiService {
   }
 
   // Evidence
+  getAllEvidence(params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/evidence${q ? '?' + q : ''}`);
+  }
+
   addEvidence(evidenceData) {
     return this.request('/evidence', {
       method: 'POST',
@@ -106,6 +111,17 @@ class ApiService {
 
   getEvidenceByCase(caseId) {
     return this.request(`/evidence/case/${caseId}`);
+  }
+
+  getEvidenceById(evidenceId) {
+    return this.request(`/evidence/${evidenceId}`);
+  }
+
+  updateEvidence(evidenceId, data) {
+    return this.request(`/evidence/${evidenceId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
   }
 
   // C Algorithm Engine Analysis
