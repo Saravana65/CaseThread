@@ -16,6 +16,9 @@ const CaseComparator = require('./case-comparison/caseComparator');
 const CitationValidator = require('./citations/citationValidator');
 const EvidenceReasoner = require('./reasoning/evidenceReasoner');
 const ConversationMemory = require('./conversation/conversationMemory');
+const CrossCaseGraphBuilder = require('./cross-case/crossCaseGraphBuilder');
+const NativeGraphService = require('./cross-case/nativeGraphService');
+const PatternDetector = require('./cross-case/patternDetector');
 
 class IntelligenceService {
   /**
@@ -68,13 +71,28 @@ class IntelligenceService {
     // 6. Source Citation Validation
     const citations = CitationValidator.buildCitations(rankedCases);
 
+    // 6.5. Cross-Case Graph Construction & Pattern Discovery
+    const graphData = CrossCaseGraphBuilder.buildGraph(rankedCases);
+    const patterns = PatternDetector.detectPatterns(rankedCases, criteria);
+    let graphExecution = null;
+
+    if (criteria.requestedIntent === 'GRAPH_ANALYSIS' && graphData.nodes.length > 0) {
+      try {
+        graphExecution = await NativeGraphService.runBfs(graphData.cPayload, 0);
+      } catch (e) {
+        console.warn('Native C graph BFS execution notice:', e.message);
+      }
+    }
+
     // 7. Evidence-Grounded Reasoning & Synthesis
     const reasoningOutput = EvidenceReasoner.reason({
       query: safeQuery,
       criteria,
       rankedCases,
       comparisons,
-      citations
+      citations,
+      patterns,
+      graphExecution
     });
 
     // 8. Record Turn in Conversation Memory
@@ -123,6 +141,12 @@ class IntelligenceService {
         investigative_notice: c.investigative_notice
       })),
       case_comparisons: comparisons,
+      patterns_detected: patterns,
+      cross_case_graph: {
+        nodes: graphData.nodes,
+        edges: graphData.edges
+      },
+      graph_execution: graphExecution,
       citations: citations,
       limitations: reasoningOutput.limitations
     };

@@ -22,6 +22,7 @@ import InvestigationLab from './pages/InvestigationLab';
 import ReportCenter from './pages/ReportCenter';
 import InvestigationIntelligencePanel from './components/InvestigationIntelligencePanel';
 import JarvisVoiceAssistant from './components/JarvisVoiceAssistant';
+import CrossCaseGraphView from './components/CrossCaseGraphView';
 import api from './services/api';
 import './styles/theme.css';
 
@@ -453,6 +454,18 @@ export default function App() {
                 activeCase={caseData}
                 officer={officer}
                 onNavigateTab={setActiveTab}
+              />
+            </div>
+          )}
+
+          {activeTab === 'cross_case_graph' && (
+            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 1.5rem' }}>
+              <CrossCaseGraphView
+                selectedCaseId={selectedCaseId}
+                onSelectCase={(id) => {
+                  setSelectedCaseId(id);
+                  loadCaseInfo(id);
+                }}
               />
             </div>
           )}

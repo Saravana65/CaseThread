@@ -59,6 +59,25 @@ class QueryParser {
         criteria.requestedIntent = 'RECOVERY_STATUS';
       } else if (text.includes('solved') || text.includes('outcome') || text.includes('verdict')) {
         criteria.requestedIntent = 'OUTCOME_DETAILS';
+      } else if (text.includes('connected') || text.includes('direct') || text.includes('link')) {
+        criteria.requestedIntent = 'DIRECT_CONNECTION_CHECK';
+      } else if (text.includes('pattern')) {
+        criteria.requestedIntent = 'CROSS_CASE_PATTERNS';
+      } else if (text.includes('graph')) {
+        criteria.requestedIntent = 'GRAPH_ANALYSIS';
+      } else if (text.includes('missing')) {
+        criteria.requestedIntent = 'MISSING_DATA';
+      }
+    } else {
+      // Direct inquiry intents without conversational context
+      if (text.includes('pattern') || text.includes('patterns do these')) {
+        criteria.requestedIntent = 'CROSS_CASE_PATTERNS';
+      } else if (text.includes('connected') || text.includes('direct connection') || text.includes('are these incidents directly connected')) {
+        criteria.requestedIntent = 'DIRECT_CONNECTION_CHECK';
+      } else if (text.includes('graph analysis') || text.includes('shortest path') || text.includes('graph')) {
+        criteria.requestedIntent = 'GRAPH_ANALYSIS';
+      } else if (text.includes('missing') || text.includes('what information is missing')) {
+        criteria.requestedIntent = 'MISSING_DATA';
       }
     }
 

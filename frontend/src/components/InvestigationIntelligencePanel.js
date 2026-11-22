@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import CrossCaseGraphView from './CrossCaseGraphView';
 
 const SUGGESTED_QUERIES = [
   'A robbery happened around 9 PM targeting electronics and cash. Have similar cases happened elsewhere?',
@@ -15,6 +16,8 @@ const SUGGESTED_QUERIES = [
 ];
 
 export default function InvestigationIntelligencePanel({ activeCase, officer, onNavigateTab }) {
+  const [activeViewMode, setActiveViewMode] = useState('DIALOGUE'); // 'DIALOGUE' | 'CROSS_CASE_GRAPH'
+  const [lastQuery, setLastQuery] = useState('');
   const [queryInput, setQueryInput] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('ALL');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +48,7 @@ export default function InvestigationIntelligencePanel({ activeCase, officer, on
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setLastQuery(textToSend.trim());
     setQueryInput('');
     setIsLoading(true);
     setErrorMessage(null);
@@ -142,40 +146,86 @@ export default function InvestigationIntelligencePanel({ activeCase, officer, on
           </div>
         </div>
 
-        {/* Country Filter Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#94A3B8' }}>Jurisdiction:</span>
-          {['ALL', 'India', 'United Kingdom', 'United States'].map(c => (
+        {/* View Mode & Country Filter Selectors */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {/* View Mode Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#0F172A', borderRadius: '6px', padding: '2px', border: '1px solid #334155' }}>
             <button
-              key={c}
-              onClick={() => setSelectedCountry(c)}
+              onClick={() => setActiveViewMode('DIALOGUE')}
               style={{
                 fontSize: '12px',
                 padding: '4px 10px',
-                borderRadius: '6px',
-                border: '1px solid',
-                borderColor: selectedCountry === c ? '#38BDF8' : '#334155',
-                backgroundColor: selectedCountry === c ? '#0284C7' : '#0F172A',
-                color: selectedCountry === c ? '#FFFFFF' : '#94A3B8',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: activeViewMode === 'DIALOGUE' ? '#0284C7' : 'transparent',
+                color: activeViewMode === 'DIALOGUE' ? '#FFFFFF' : '#94A3B8',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                fontWeight: 600
               }}
             >
-              {c === 'ALL' ? 'Worldwide (All)' : c}
+              Intelligence Q&A
             </button>
-          ))}
+            <button
+              onClick={() => setActiveViewMode('CROSS_CASE_GRAPH')}
+              style={{
+                fontSize: '12px',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                border: 'none',
+                backgroundColor: activeViewMode === 'CROSS_CASE_GRAPH' ? '#0284C7' : 'transparent',
+                color: activeViewMode === 'CROSS_CASE_GRAPH' ? '#FFFFFF' : '#94A3B8',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Cross-Case Graph (Native C Engine)
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', color: '#94A3B8' }}>Jurisdiction:</span>
+            {['ALL', 'India', 'United Kingdom', 'United States'].map(c => (
+              <button
+                key={c}
+                onClick={() => setSelectedCountry(c)}
+                style={{
+                  fontSize: '12px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  border: '1px solid',
+                  borderColor: selectedCountry === c ? '#38BDF8' : '#334155',
+                  backgroundColor: selectedCountry === c ? '#0284C7' : '#0F172A',
+                  color: selectedCountry === c ? '#FFFFFF' : '#94A3B8',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {c === 'ALL' ? 'Worldwide' : c}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Main Conversation & Timeline Area */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px'
-      }}>
+      {activeViewMode === 'CROSS_CASE_GRAPH' ? (
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <CrossCaseGraphView
+            initialQuery={lastQuery || 'robbery burglary electronics cash'}
+            selectedCaseId={activeCase?.id || null}
+            isEmbedded={true}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Main Conversation & Timeline Area */}
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
         {/* Welcome Banner if no messages */}
         {messages.length === 0 && (
           <div style={{
@@ -285,6 +335,46 @@ export default function InvestigationIntelligencePanel({ activeCase, officer, on
                 <div style={{ color: '#F1F5F9', whiteSpace: 'pre-line', marginBottom: '18px' }}>
                   {msg.data.answer}
                 </div>
+
+                {/* Phase 17 Cross-Case Graph Notice & Shortcut */}
+                {msg.data.cross_case_graph && (
+                  <div style={{
+                    marginBottom: '16px',
+                    padding: '10px 14px',
+                    backgroundColor: '#0F172A',
+                    borderRadius: '8px',
+                    border: '1px solid #1E3A8A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '10px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#0284C7', color: '#FFFFFF', fontWeight: 600 }}>
+                        NATIVE C ENGINE
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#CBD5E1' }}>
+                        Cross-case graph generated: {msg.data.cross_case_graph.nodes?.length || 0} nodes, {msg.data.cross_case_graph.edges?.length || 0} relational edges ({msg.data.patterns?.length || 0} patterns).
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setActiveViewMode('CROSS_CASE_GRAPH')}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#0284C7',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Inspect in Cross-Case Graph View ➜
+                    </button>
+                  </div>
+                )}
 
                 {/* Similar Historical Cases Section */}
                 {msg.data.similar_cases && msg.data.similar_cases.length > 0 && (
@@ -561,6 +651,8 @@ export default function InvestigationIntelligencePanel({ activeCase, officer, on
           </button>
         </form>
       </div>
+      </>
+      )}
 
       <style>{`
         @keyframes spin {

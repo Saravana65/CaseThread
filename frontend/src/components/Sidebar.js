@@ -153,6 +153,13 @@ export default function Sidebar({
           tooltip: 'Conversational Voice AI Assistant (Speech Recognition & Synthesis)'
         },
         {
+          id: 'cross_case_graph',
+          tab: 'cross_case_graph',
+          label: 'Cross-Case Graph',
+          IconComponent: GraphIcon,
+          tooltip: 'Phase 17 Native C Multi-Jurisdiction Graph & Pattern Detection'
+        },
+        {
           id: 'leads',
           tab: 'leads',
           label: 'Investigative Leads',

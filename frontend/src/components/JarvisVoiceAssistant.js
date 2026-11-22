@@ -883,6 +883,44 @@ export default function JarvisVoiceAssistant({
                         {item.data.answer}
                       </div>
 
+                      {/* Phase 17 Cross-Case Graph & Native C Engine Action */}
+                      {(item.data.cross_case_graph || item.data.patterns) && (
+                        <div
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: '#1E293B',
+                            borderRadius: '8px',
+                            border: '1px solid #334155',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '8px'
+                          }}
+                        >
+                          <span style={{ fontSize: '0.74rem', color: '#93C5FD' }}>
+                            ⚡ <strong>Native C Graph Analysis:</strong> Multi-case relational graph generated ({item.data.cross_case_graph?.nodes?.length || 0} nodes, {item.data.cross_case_graph?.edges?.length || 0} edges).
+                          </span>
+                          {onNavigateTab && (
+                            <button
+                              onClick={() => onNavigateTab('cross_case_graph')}
+                              style={{
+                                backgroundColor: '#0284C7',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '4px 8px',
+                                fontSize: '0.72rem',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Open Cross-Case Graph View ➜
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {/* Similar Historical Cases Carousel / Cards */}
                       {item.data.similar_cases && item.data.similar_cases.length > 0 && (
                         <div style={{ marginTop: '8px' }}>

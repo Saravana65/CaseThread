@@ -10,6 +10,9 @@ const { authenticateToken } = require('../middleware/auth');
 const IntelligenceService = require('../knowledge-base/intelligence/intelligenceService');
 const ConversationMemory = require('../knowledge-base/intelligence/conversation/conversationMemory');
 
+// Mount Phase 17 Cross-Case Intelligence & Graph Analysis Subsystem
+router.use('/cross-case', require('./crossCaseRoutes'));
+
 /**
  * @route POST /api/v1/intelligence/query
  * @brief Natural language investigation inquiry with evidence-grounded RAG reasoning.
