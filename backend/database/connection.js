@@ -1588,13 +1588,28 @@ class MemoryStore {
             return (this.case_members || []).some(m => m.case_id === c.case_id && m.officer_id === offId && (m.is_active === 1 || m.is_active === true));
           });
         }
-        if (sql.includes('c.status = ?')) {
+        if (sql.includes("c.status IN ('OPEN', 'UNDER_INVESTIGATION')")) {
+          matchingCases = matchingCases.filter(c => c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION');
+        } else if (sql.includes("c.status IN ('CLOSED', 'ARCHIVED')")) {
+          matchingCases = matchingCases.filter(c => c.status === 'CLOSED' || c.status === 'ARCHIVED');
+        } else if (sql.includes('c.status = ?')) {
           const stParam = params.find(p => ['OPEN', 'UNDER_INVESTIGATION', 'COLD_CASE', 'CLOSED', 'ARCHIVED'].includes(p));
           if (stParam) matchingCases = matchingCases.filter(c => c.status === stParam);
         }
         if (sql.includes('c.priority = ?')) {
           const prParam = params.find(p => ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(p));
           if (prParam) matchingCases = matchingCases.filter(c => c.priority === prParam);
+        }
+        if (sql.includes('LIKE ?')) {
+          const likeParam = params.find(p => typeof p === 'string' && p.startsWith('%') && p.endsWith('%'));
+          if (likeParam) {
+            const term = likeParam.replace(/%/g, '').toLowerCase();
+            matchingCases = matchingCases.filter(c =>
+              (c.title && c.title.toLowerCase().includes(term)) ||
+              (c.case_number && c.case_number.toLowerCase().includes(term)) ||
+              (c.incident_location && c.incident_location.toLowerCase().includes(term))
+            );
+          }
         }
         const rows = matchingCases.map(c => {
           const lead = this.officers.find(o => o.officer_id === c.lead_officer_id);
@@ -2559,8 +2574,14 @@ class MemoryStore {
       const caseId = parseInt(params[params.length - 1], 10);
       const c = this.cases.find(item => item.case_id === caseId);
       if (c) {
-        if (sql.includes('status = ?')) {
+        if (sql.includes('status = ?') && !sql.includes('title = ?')) {
           c.status = params[0];
+        } else if (sql.includes('status = ?') && sql.includes('title = ?')) {
+          c.title = params[0];
+          c.description = params[1];
+          c.incident_location = params[2];
+          c.priority = params[3];
+          c.status = params[4];
         } else {
           c.title = params[0];
           c.description = params[1];

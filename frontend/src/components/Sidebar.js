@@ -68,10 +68,17 @@ export default function Sidebar({
       heading: 'Investigations',
       items: [
         {
+          id: 'investigations',
+          tab: 'investigations',
+          label: 'Investigations',
+          IconComponent: CasesIcon,
+          tooltip: 'All Investigation Dockets & Archives'
+        },
+        {
           id: 'all_cases',
           tab: 'dossier',
           label: 'Case Dossier',
-          IconComponent: CasesIcon,
+          IconComponent: ReportIcon,
           tooltip: 'Master Case Files & Entities'
         },
         {
@@ -83,7 +90,7 @@ export default function Sidebar({
         },
         {
           id: 'active_cases',
-          tab: 'dashboard',
+          tab: 'investigations',
           caseFilter: 'ACTIVE',
           label: 'Active Cases',
           IconComponent: ActiveIcon,
@@ -91,7 +98,7 @@ export default function Sidebar({
         },
         {
           id: 'solved_cases',
-          tab: 'dashboard',
+          tab: 'investigations',
           caseFilter: 'SOLVED',
           label: 'Solved Cases',
           IconComponent: SolvedIcon,

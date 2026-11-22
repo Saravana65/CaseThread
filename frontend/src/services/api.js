@@ -67,8 +67,9 @@ class ApiService {
   }
 
   // Cases
-  getCases() {
-    return this.request('/cases');
+  getCases(params = {}) {
+    const q = new URLSearchParams(params).toString();
+    return this.request(`/cases${q ? '?' + q : ''}`);
   }
 
   getCaseById(caseId) {
@@ -79,6 +80,19 @@ class ApiService {
     return this.request('/cases', {
       method: 'POST',
       body: JSON.stringify(caseData)
+    });
+  }
+
+  updateCase(caseId, caseData) {
+    return this.request(`/cases/${caseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(caseData)
+    });
+  }
+
+  archiveCase(caseId) {
+    return this.request(`/cases/${caseId}/archive`, {
+      method: 'PATCH'
     });
   }
 

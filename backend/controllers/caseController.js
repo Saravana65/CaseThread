@@ -74,7 +74,7 @@ exports.createCase = async (req, res, next) => {
  */
 exports.listCases = async (req, res, next) => {
   try {
-    const { status, priority } = req.query;
+    const { status, priority, search, sort_by, sort_order } = req.query;
     const officer = req.officer;
 
     let sql = `
@@ -98,15 +98,36 @@ exports.listCases = async (req, res, next) => {
     }
 
     if (status) {
-      sql += ' AND c.status = ?';
-      params.push(status);
+      if (status === 'ACTIVE') {
+        sql += " AND c.status IN ('OPEN', 'UNDER_INVESTIGATION')";
+      } else if (status === 'SOLVED' || status === 'CLOSED') {
+        sql += " AND c.status IN ('CLOSED', 'ARCHIVED')";
+      } else {
+        sql += ' AND c.status = ?';
+        params.push(status);
+      }
     }
     if (priority) {
       sql += ' AND c.priority = ?';
       params.push(priority);
     }
+    if (search && search.trim()) {
+      sql += ' AND (c.title LIKE ? OR c.case_number LIKE ? OR c.incident_location LIKE ?)';
+      const term = `%${search.trim()}%`;
+      params.push(term, term, term);
+    }
 
-    sql += ' ORDER BY c.incident_date DESC';
+    const sortMap = {
+      'incident_date': 'c.incident_date',
+      'created_at': 'c.created_at',
+      'updated_at': 'c.updated_at',
+      'title': 'c.title',
+      'priority': 'c.priority',
+      'case_number': 'c.case_number'
+    };
+    const sortCol = sortMap[sort_by] || 'c.incident_date';
+    const sortDir = (sort_order && sort_order.toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+    sql += ` ORDER BY ${sortCol} ${sortDir}`;
 
     const [rows] = await execute(sql, params);
 
@@ -186,7 +207,7 @@ exports.getCaseById = async (req, res, next) => {
 exports.updateCase = async (req, res, next) => {
   try {
     const caseId = parseInt(req.params.id, 10);
-    const { title, description, incident_location, priority } = req.body;
+    const { title, description, incident_location, priority, status } = req.body;
 
     if (req.officer) {
       const access = await collaborationService.verifyCaseAccess(caseId, req.officer, 'edit_case');
@@ -198,7 +219,7 @@ exports.updateCase = async (req, res, next) => {
       }
     }
 
-    const [existing] = await execute('SELECT case_id FROM cases WHERE case_id = ?', [caseId]);
+    const [existing] = await execute('SELECT * FROM cases WHERE case_id = ?', [caseId]);
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
@@ -206,19 +227,65 @@ exports.updateCase = async (req, res, next) => {
       });
     }
 
+    const prevCase = existing[0];
+    const newTitle = title !== undefined ? title : prevCase.title;
+    const newDescription = description !== undefined ? description : prevCase.description;
+    const newLocation = incident_location !== undefined ? incident_location : prevCase.incident_location;
+    const newPriority = priority !== undefined ? priority : prevCase.priority;
+    const newStatus = status !== undefined ? status : prevCase.status;
+
     await execute(
       `UPDATE cases 
-       SET title = ?, description = ?, incident_location = ?, priority = ?
+       SET title = ?, description = ?, incident_location = ?, priority = ?, status = ?
        WHERE case_id = ?`,
-      [title, description || '', incident_location, priority || 'MEDIUM', caseId]
+      [newTitle, newDescription || '', newLocation, newPriority, newStatus, caseId]
     );
+
+    const officerId = req.officer ? req.officer.officer_id : 1;
+
+    // Audit activity logs for status and details change
+    if (prevCase.status !== newStatus) {
+      try {
+        await collaborationService.logCaseActivity(
+          caseId,
+          officerId,
+          'CASE_STATUS_CHANGED',
+          caseId,
+          { status: prevCase.status },
+          { status: newStatus },
+          `Case #${prevCase.case_number} status changed from ${prevCase.status} to ${newStatus}.`
+        );
+      } catch (logErr) {
+        console.warn('[AUDIT LOG] Failed to log status change:', logErr.message);
+      }
+    }
+
+    if (prevCase.title !== newTitle || prevCase.priority !== newPriority || prevCase.incident_location !== newLocation || prevCase.description !== newDescription) {
+      try {
+        await collaborationService.logCaseActivity(
+          caseId,
+          officerId,
+          'CASE_UPDATED',
+          caseId,
+          { title: prevCase.title, priority: prevCase.priority },
+          { title: newTitle, priority: newPriority },
+          `Investigation details updated for Case #${prevCase.case_number}.`
+        );
+      } catch (logErr) {
+        console.warn('[AUDIT LOG] Failed to log case update:', logErr.message);
+      }
+    }
 
     res.json({
       success: true,
       data: {
         case_id: caseId,
-        title,
-        priority
+        case_number: prevCase.case_number,
+        title: newTitle,
+        description: newDescription,
+        incident_location: newLocation,
+        priority: newPriority,
+        status: newStatus
       }
     });
   } catch (error) {
@@ -243,7 +310,7 @@ exports.archiveCase = async (req, res, next) => {
       }
     }
 
-    const [existing] = await execute('SELECT case_id FROM cases WHERE case_id = ?', [caseId]);
+    const [existing] = await execute('SELECT * FROM cases WHERE case_id = ?', [caseId]);
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
@@ -251,14 +318,30 @@ exports.archiveCase = async (req, res, next) => {
       });
     }
 
+    const prevCase = existing[0];
     await execute('UPDATE cases SET status = ? WHERE case_id = ?', ['ARCHIVED', caseId]);
+
+    const officerId = req.officer ? req.officer.officer_id : 1;
+    try {
+      await collaborationService.logCaseActivity(
+        caseId,
+        officerId,
+        'CASE_STATUS_CHANGED',
+        caseId,
+        { status: prevCase.status },
+        { status: 'ARCHIVED' },
+        `Case file #${prevCase.case_number} archived and moved to long-term storage.`
+      );
+    } catch (logErr) {
+      console.warn('[AUDIT LOG] Failed to log archive event:', logErr.message);
+    }
 
     res.json({
       success: true,
       data: {
         case_id: caseId,
         status: 'ARCHIVED',
-        message: `Case ${caseId} has been archived successfully.`
+        message: `Case ${prevCase.case_number} has been archived successfully.`
       }
     });
   } catch (error) {

@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginForm from './components/LoginForm';
 import Dashboard from './pages/Dashboard';
+import Investigations from './pages/Investigations';
 import CaseDetailsPanel from './components/CaseDetailsPanel';
 import GraphAnalysis from './pages/GraphAnalysis';
 import EvidenceGapPanel from './components/EvidenceGapPanel';
@@ -348,6 +349,19 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'investigations' && (
+            <Investigations
+              selectedCaseId={selectedCaseId}
+              onSelectCaseId={(id) => {
+                setSelectedCaseId(id);
+                loadCaseInfo(id);
+              }}
+              onNavigateTab={setActiveTab}
+              initialFilter={caseFilter}
+              onOpenCreateCase={() => setIsCreateCaseOpen(true)}
+            />
+          )}
+
           {activeTab === 'dossier' && (
             <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
               <CaseDetailsPanel
@@ -357,6 +371,8 @@ export default function App() {
                 onExploreGraph={() => setActiveTab('graph')}
                 onRefreshCase={loadCaseInfo}
                 onOpenReport={() => setReportModalOpen(true)}
+                onBack={() => setActiveTab('investigations')}
+                onNavigateTab={setActiveTab}
               />
             </div>
           )}

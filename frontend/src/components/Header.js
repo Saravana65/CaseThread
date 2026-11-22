@@ -28,6 +28,7 @@ export default function Header({
   // Map active tab to a readable breadcrumb label
   const tabBreadcrumbMap = {
     dashboard: { section: 'Platform', title: 'Dashboard' },
+    investigations: { section: 'Investigations', title: 'Investigations Directory' },
     dossier: { section: 'Investigations', title: 'Case Dossier & Entities' },
     collaboration: { section: 'Operations', title: 'Multi-Officer Collaboration' },
     vault: { section: 'Intelligence', title: 'Evidence Vault & Files' },
