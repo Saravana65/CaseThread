@@ -28,6 +28,12 @@ function parseArgs(args) {
     else if (arg.startsWith('--country=')) options.country = arg.split('=')[1];
     else if (arg === '--limit' && args[i + 1]) options.limit = parseInt(args[++i], 10);
     else if (arg.startsWith('--limit=')) options.limit = parseInt(arg.split('=')[1], 10);
+    else if (['--date', '--lat', '--lng', '--category', '--offset', '--primaryType'].includes(arg)) {
+      const value = args[++i];
+      if (!value || value.startsWith('--')) throw new Error(`Missing value for ${arg}`);
+      options.batch ||= {};
+      options.batch[arg.slice(2)] = value;
+    }
     else if (arg === '--dry-run') options.dryRun = true;
     else if (arg === '--force') options.force = true;
   }
@@ -119,7 +125,7 @@ async function run() {
 
     let records = [];
     try {
-      records = await connector.fetchBatch({ limit: options.limit });
+      records = await connector.fetchBatch({ ...options.batch, limit: options.limit });
       console.log(`    Retrieved ${records.length} adapted record(s) from ${srcId}.`);
       totalDiscovered += records.length;
     } catch (err) {

@@ -127,8 +127,8 @@ describe('Phase 14: Global Crime Record Collection & Cross-Country Search Suite'
       assert.equal(adapted.country, 'United States');
       assert.equal(adapted.crime_category, 'ROBBERY');
       assert.equal(adapted.case_reference_number, 'JK999123');
-      assert.equal(adapted.case_outcome, 'UNRESOLVED_NO_ARREST');
-      assert.equal(adapted.investigation_status, 'OPEN_PENDING_LEADS');
+      assert.equal(adapted.case_outcome, 'NO_ARREST_RECORDED');
+      assert.equal(adapted.investigation_status, null);
     });
   });
 

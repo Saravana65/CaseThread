@@ -45,9 +45,10 @@ class UkPoliceConnector extends BaseConnector {
    * @param {number} params.lng - Longitude (default London: -0.1278)
    */
   async fetchBatch(params = {}) {
-    const lat = params.lat || 51.5074;
-    const lng = params.lng || -0.1278;
-    const date = params.date || '2024-01';
+    const lat = params.lat ?? 51.5074;
+    const lng = params.lng ?? -0.1278;
+    const date = params.date || (await this.safeFetch(`${this.baseUrl}/crime-last-updated`)).date?.slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(date)) throw new Error('No valid publication month was returned.');
     const limit = params.limit || 50;
     const targetCategory = params.category;
 

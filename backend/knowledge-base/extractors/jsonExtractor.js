@@ -28,6 +28,11 @@ class JsonExtractor {
 
     // Extract common fields if present
     const record = Array.isArray(parsed) ? parsed[0] || {} : parsed;
+    if (!Array.isArray(parsed)) {
+      for (const field of ['title', 'country', 'source_url', 'publisher', 'stolen_property', 'crime_subtype', 'investigative_actions', 'summary']) {
+        if (typeof record[field] === 'string') metadata[field] = record[field];
+      }
+    }
 
     if (record.case_number || record.case_id || record.docket_number) {
       metadata.case_number = record.case_number || record.case_id || record.docket_number;
@@ -84,6 +89,7 @@ class JsonExtractor {
           .map(([k, v]) => `${k.toUpperCase()}: ${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}`)
           .join('\n');
       } else {
+        if (metadata.source_url) sections.push(`SOURCE: ${metadata.source_url}`);
         textRepresentation = sections.join('\n');
       }
     }

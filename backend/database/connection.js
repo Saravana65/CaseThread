@@ -108,7 +108,7 @@ async function execute(sql, params = []) {
 
   // Non-production (test or explicitly enabled local development)
   const allowMemory = isMemoryStoreAllowed();
-  if (isConnected || (!process.env.USE_MEMORY_STORE && pool)) {
+  if (isConnected || (process.env.USE_MEMORY_STORE !== 'true' && pool)) {
     try {
       return await pool.execute(sql, params);
     } catch (err) {
@@ -139,7 +139,7 @@ async function query(sql, params = []) {
   }
 
   const allowMemory = isMemoryStoreAllowed();
-  if (isConnected || (!process.env.USE_MEMORY_STORE && pool)) {
+  if (isConnected || (process.env.USE_MEMORY_STORE !== 'true' && pool)) {
     try {
       return await pool.query(sql, params);
     } catch (err) {

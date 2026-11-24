@@ -19,7 +19,7 @@ function parseArgs(args) {
     sourceName: 'Administrative File Import',
     sourceType: 'AUTHORIZED_ARCHIVE',
     classification: 'OFFICIAL_USE_ONLY',
-    jurisdiction: 'India',
+    jurisdiction: null,
     force: false
   };
 
@@ -104,7 +104,7 @@ async function run() {
   console.log(`Mode:            ${options.dryRun ? 'DRY-RUN (Verification Only - No DB Writes)' : 'ACTIVE INGESTION'}`);
   console.log(`Source Name:     ${options.sourceName}`);
   console.log(`Classification:  ${options.classification}`);
-  console.log(`Jurisdiction:    ${options.jurisdiction}`);
+  console.log(`Jurisdiction:    ${options.jurisdiction || "From document"}`);
   console.log('-----------------------------------------------------------------');
 
   // Verify database connection if not dry-run
@@ -194,7 +194,7 @@ async function run() {
   console.log('=================================================================');
   console.log(`Execution Time:      ${durationSec}s`);
   console.log(`Total Files Scanned: ${files.length}`);
-  console.log(`Successfully Stored: ${processedCount}`);
+  console.log(`${options.dryRun ? 'Files validated' : 'Successfully stored'}: ${processedCount}`);
   console.log(`Duplicates Skipped:  ${skippedCount}`);
   console.log(`Rejected / Failed:   ${rejectedCount}`);
   if (jobId) {

@@ -47,12 +47,21 @@ class IntelligenceService {
     // 2. Query Understanding & Criteria Extraction
     const criteria = QueryParser.parse(safeQuery, session);
 
+    if (criteria.followUpTarget && session.incidentCriteria) {
+      for (const field of ['crimeCategories', 'propertyKeywords', 'stolenProperty', 'ignoredItems', 'targetCountries']) {
+        if (!criteria[field].length) criteria[field] = [...session.incidentCriteria[field]];
+      }
+      criteria.premises ||= session.incidentCriteria.premises;
+      criteria.approximateTime ||= session.incidentCriteria.approximateTime;
+    }
+
     // Merge explicit filters from API call
     if (filters.country) {
       criteria.targetCountries = [filters.country];
     }
     if (filters.crimeCategory) {
       criteria.crimeCategories = [filters.crimeCategory];
+      criteria.explicitCrimeCategory = filters.crimeCategory;
     }
 
     // 3. Hybrid Case Retrieval (Full-Text + Structured + Semantic Vectors)
@@ -63,7 +72,16 @@ class IntelligenceService {
     });
 
     // 4. Multi-Attribute Case Ranking
-    const rankedCases = CaseRanker.rank(retrievedCandidates, criteria).slice(0, limit);
+    const seenDocuments = new Set();
+    const rankedCases = CaseRanker.rank(retrievedCandidates, criteria).filter(candidate => {
+      if (seenDocuments.has(candidate.document_id) || candidate.record_level === 'AGGREGATE_STATISTIC') return false;
+      const matched = ['DIRECT_CONNECTION_CHECK', 'GRAPH_ANALYSIS', 'CROSS_CASE_PATTERNS'].includes(criteria.requestedIntent) ||
+        candidate.match_breakdown.some(({ attribute }) =>
+          attribute === 'CONTEXT_TARGET_MATCH' || attribute === 'STOLEN_PROPERTY' ||
+          (!criteria.propertyKeywords.length && attribute === 'CRIME_CATEGORY'));
+      if (matched) seenDocuments.add(candidate.document_id);
+      return matched;
+    }).slice(0, limit);
 
     // 5. Cross-Case Comparison Analysis
     const comparisons = rankedCases.map(c => CaseComparator.compare(criteria, c));
@@ -97,6 +115,8 @@ class IntelligenceService {
 
     // 8. Record Turn in Conversation Memory
     const topCase = rankedCases.length > 0 ? rankedCases[0] : null;
+    if (!criteria.followUpTarget) session.incidentCriteria = criteria;
+    session.lastReferencedCase = topCase;
     ConversationMemory.recordTurn(activeConversationId, safeQuery, reasoningOutput, topCase);
 
     return {
@@ -119,7 +139,8 @@ class IntelligenceService {
       answer: reasoningOutput.answer,
       how_previous_cases_were_solved: reasoningOutput.how_previous_cases_were_solved,
       investigative_suggestions: reasoningOutput.investigative_suggestions,
-      similar_cases: rankedCases.map(c => ({
+      similar_cases: rankedCases.map((c, index) => ({
+        comparison: comparisons[index],
         document_id: c.document_id,
         case_reference_number: c.case_reference_number,
         document_title: c.document_title,

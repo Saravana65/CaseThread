@@ -22,9 +22,9 @@ class PatternDetector {
     // 1. Pattern: Commercial Night-Hour Robbery / Burglary targeting Electronics and Cash
     const electronicsRobberies = documents.filter(d => {
       const text = `${d.crime_category || ''} ${d.crime_subtype || ''} ${d.stolen_property || ''} ${d.documented_circumstances || ''}`.toLowerCase();
-      const isRobberyOrBurglary = text.includes('robbery') || text.includes('burglary') || text.includes('break-in');
-      const hasElectronicsOrCash = text.includes('electronic') || text.includes('cash') || text.includes('terminal') || text.includes('hardware');
-      return isRobberyOrBurglary && hasElectronicsOrCash;
+      const isRobberyOrBurglary = text.includes('robbery') || text.includes('burglary') || text.includes('break-in') || text.includes('theft');
+      const hasElectronicsOrCash = text.includes('electronic') || text.includes('cash') || text.includes('terminal') || text.includes('hardware') || text.includes('property') || text.includes('commercial');
+      return isRobberyOrBurglary && (hasElectronicsOrCash || !criteria.propertyKeywords?.length);
     });
 
     if (electronicsRobberies.length >= 2) {

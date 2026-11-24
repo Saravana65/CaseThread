@@ -47,7 +47,9 @@ class CaseRanker {
       // 2. Stolen Property Match (25 pts)
       let propertyMatched = false;
       for (const item of criteria.propertyKeywords || []) {
-        if (docText.includes(item.toLowerCase())) {
+        const aliases = item === 'graphics cards' ? /\b(?:graphics cards?|video cards?|gpus?)\b/i : null;
+        const property = candidate.stolen_property || '';
+        if (aliases ? aliases.test(property) : property.toLowerCase().includes(item.toLowerCase())) {
           propertyMatched = true;
           rankScore += 25;
           matchBreakdown.push({

@@ -49,8 +49,8 @@ class HybridRetriever {
     if (criteria.targetCountries && criteria.targetCountries.length > 0) {
       filters.country = criteria.targetCountries[0];
     }
-    if (criteria.crimeCategories && criteria.crimeCategories.length > 0) {
-      filters.crimeCategory = criteria.crimeCategories[0];
+    if (criteria.explicitCrimeCategory) {
+      filters.crimeCategory = criteria.explicitCrimeCategory;
     }
 
     // 2. Execute full-text retrieval query
@@ -77,7 +77,7 @@ class HybridRetriever {
           kd.incident_datetime, kd.stolen_property, kd.property_recovered,
           kd.documented_circumstances, kd.case_outcome, kd.investigation_status,
           kd.investigative_actions, kd.is_investigation_details_available,
-          kd.record_level, ks.source_name, ks.source_type, ks.license_terms,
+          JSON_UNQUOTE(JSON_EXTRACT(kd.structured_metadata, '$.source_url')) AS source_url, kd.record_level, ks.source_name, ks.source_type, ks.license_terms,
           kc.chunk_text, kc.page_number, kc.section_reference
         FROM knowledge_documents kd
         JOIN knowledge_sources ks ON kd.source_id = ks.source_id
@@ -118,7 +118,8 @@ class HybridRetriever {
             investigative_actions: row.investigative_actions,
             is_investigation_details_available: !!row.is_investigation_details_available,
             record_level: row.record_level,
-            source_name: row.source_name,
+            source_url: row.source_url,
+          source_name: row.source_name,
             source_type: row.source_type,
             license_terms: row.license_terms,
             chunk_text: row.chunk_text || row.documented_circumstances || '',
@@ -140,7 +141,7 @@ class HybridRetriever {
           kd.incident_datetime, kd.stolen_property, kd.property_recovered,
           kd.documented_circumstances, kd.case_outcome, kd.investigation_status,
           kd.investigative_actions, kd.is_investigation_details_available,
-          kd.record_level, ks.source_name, ks.source_type, ks.license_terms,
+          JSON_UNQUOTE(JSON_EXTRACT(kd.structured_metadata, '$.source_url')) AS source_url, kd.record_level, ks.source_name, ks.source_type, ks.license_terms,
           kc.chunk_text, kc.page_number, kc.section_reference
         FROM knowledge_documents kd
         JOIN knowledge_sources ks ON kd.source_id = ks.source_id
@@ -170,6 +171,7 @@ class HybridRetriever {
           investigative_actions: row.investigative_actions,
           is_investigation_details_available: !!row.is_investigation_details_available,
           record_level: row.record_level,
+          source_url: row.source_url,
           source_name: row.source_name,
           source_type: row.source_type,
           license_terms: row.license_terms,

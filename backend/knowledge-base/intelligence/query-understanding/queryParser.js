@@ -46,12 +46,12 @@ class QueryParser {
       text.includes('verify next') ||
       text.includes('what should i verify') ||
       text.includes('what next') ||
-      text.includes('next steps')
+      text.includes('next moves') || text.includes('next steps')
     );
 
     if (isFollowUp) {
       criteria.followUpTarget = conversationContext.lastReferencedCase?.case_reference_number || conversationContext.lastReferencedCase || null;
-      if (text.includes('verify') || text.includes('what next') || text.includes('next step') || text.includes('recommend')) {
+      if (text.includes('verify') || text.includes('what next') || text.includes('next step') || text.includes('next move') || text.includes('recommend')) {
         criteria.requestedIntent = 'NEXT_STEPS';
       } else if (text.includes('evidence') || text.includes('how') || text.includes('investigat') || text.includes('method') || text.includes('step')) {
         criteria.requestedIntent = 'SOLVED_METHODS';
@@ -63,7 +63,7 @@ class QueryParser {
         criteria.requestedIntent = 'DIRECT_CONNECTION_CHECK';
       } else if (text.includes('pattern')) {
         criteria.requestedIntent = 'CROSS_CASE_PATTERNS';
-      } else if (text.includes('graph')) {
+      } else if (/\bgraphs?\b/.test(text)) {
         criteria.requestedIntent = 'GRAPH_ANALYSIS';
       } else if (text.includes('missing')) {
         criteria.requestedIntent = 'MISSING_DATA';
@@ -74,7 +74,7 @@ class QueryParser {
         criteria.requestedIntent = 'CROSS_CASE_PATTERNS';
       } else if (text.includes('connected') || text.includes('direct connection') || text.includes('are these incidents directly connected')) {
         criteria.requestedIntent = 'DIRECT_CONNECTION_CHECK';
-      } else if (text.includes('graph analysis') || text.includes('shortest path') || text.includes('graph')) {
+      } else if (text.includes('graph analysis') || text.includes('shortest path') || /\bgraphs?\b/.test(text)) {
         criteria.requestedIntent = 'GRAPH_ANALYSIS';
       } else if (text.includes('missing') || text.includes('what information is missing')) {
         criteria.requestedIntent = 'MISSING_DATA';
@@ -82,12 +82,12 @@ class QueryParser {
     }
 
     // 2. Detect Crime Categories
-    if (/\b(?:robbery|robbed|armed\s+robbery|heist|mugging)\b/i.test(text)) criteria.crimeCategories.push('ROBBERY');
-    if (/\b(?:burglary|burglarized|break-in|break\s+and\s+enter|forced\s+entry)\b/i.test(text)) criteria.crimeCategories.push('BURGLARY');
-    if (/\b(?:theft|stole|stolen|stealing|larceny|shoplifting)\b/i.test(text)) criteria.crimeCategories.push('THEFT');
-    if (/\b(?:homicide|murder|manslaughter|killed|slain|fatal)\b/i.test(text)) criteria.crimeCategories.push('HOMICIDE');
+    if (/\b(?:robber(?:y|ies)|robbed|armed\s+robbery|heist|mugging)\b/i.test(text)) criteria.crimeCategories.push('ROBBERY');
+    if (/\b(?:burglar(?:y|ies)|burglarized|break-in|break\s+and\s+enter|forced\s+entry)\b/i.test(text)) criteria.crimeCategories.push('BURGLARY');
+    if (/\b(?:theft(?:s)?|stole|stolen|stealing|larceny|shoplifting)\b/i.test(text)) criteria.crimeCategories.push('THEFT');
+    if (/\b(?:homicide(?:s)?|murder(?:s)?|manslaughter|killed|slain|fatal)\b/i.test(text)) criteria.crimeCategories.push('HOMICIDE');
     if (/\b(?:cyber|phishing|ransomware|hacking|unauthorized\s+access|api\s+token|data\s+breach)\b/i.test(text)) criteria.crimeCategories.push('CYBERCRIME_AND_FRAUD');
-    if (/\b(?:fraud|cheating|embezzlement|wire\s+fraud|financial\s+fraud|scam|mule)\b/i.test(text)) criteria.crimeCategories.push('FINANCIAL_FRAUD');
+    if (/\b(?:fraud(?:s)?|cheating|embezzlement|wire\s+fraud|financial\s+fraud|scam|mule)\b/i.test(text)) criteria.crimeCategories.push('FINANCIAL_FRAUD');
     if (/\b(?:vehicle\s+theft|carjack|car\s+theft|auto\s+theft|hijack)\b/i.test(text)) criteria.crimeCategories.push('VEHICLE_THEFT');
     if (/\b(?:kidnapping|abduction|hostage|ransom)\b/i.test(text)) criteria.crimeCategories.push('KIDNAPPING');
 
@@ -128,6 +128,16 @@ class QueryParser {
       }
     }
 
+    for (const item of propertyCatalog) {
+      const aliases = item.aliases.join('|');
+      const leftInPlace = new RegExp(`\\b(?:${aliases})\\b\\s+(?:(?:was|were|had been)\\s+)?(?:not (?:stolen|taken)|untouched|left behind)\\b`, 'i');
+      if (leftInPlace.test(text) && !criteria.ignoredItems.includes(item.name)) criteria.ignoredItems.push(item.name);
+      if (criteria.ignoredItems.includes(item.name)) {
+        criteria.propertyKeywords = criteria.propertyKeywords.filter(name => name !== item.name);
+        criteria.stolenProperty = criteria.stolenProperty.filter(alias => !item.aliases.includes(alias));
+      }
+    }
+
     // 5. Detect Approximate Time & Time of Day Window
     const timeMatch = text.match(/(\d{1,2})(?::(\d{2}))?\s*(pm|am|hours|o'?clock)?/i);
     if (timeMatch) {
@@ -163,7 +173,7 @@ class QueryParser {
     // 7. Detect Target Country Filters
     if (/\b(?:india|delhi|mumbai|bengaluru|kolkata|indian)\b/i.test(text)) criteria.targetCountries.push('India');
     if (/\b(?:uk|united\s+kingdom|britain|england|london|british)\b/i.test(text)) criteria.targetCountries.push('United Kingdom');
-    if (/\b(?:us|usa|united\s+states|chicago|illinois|america|american)\b/i.test(text)) criteria.targetCountries.push('United States');
+    if (/\b(?:usa|united\s+states|chicago|illinois|america|american)\b/i.test(text) || /\bUS\b/.test(raw) || /\bthe us\b/i.test(text)) criteria.targetCountries.push('United States');
     if (/\b(?:canada|toronto|canadian)\b/i.test(text)) criteria.targetCountries.push('Canada');
     if (/\b(?:australia|sydney|nsw|australian)\b/i.test(text)) criteria.targetCountries.push('Australia');
 

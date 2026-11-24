@@ -6,9 +6,10 @@
  * @project CASETHREAD
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import speechRecognitionService from '../services/speechRecognitionService';
 import speechSynthesisService from '../services/speechSynthesisService';
+import api from '../services/api';
 import JarvisVisualizer from './JarvisVisualizer';
 import {
   MicrophoneIcon,
@@ -111,60 +112,6 @@ export default function JarvisVoiceAssistant({
   }, [dialogueHistory, assistantState]);
 
   /**
-   * Handle starting/stopping microphone listening
-   */
-  const handleToggleListening = useCallback(async () => {
-    // If currently speaking, immediately stop speech playback when investigator activates mic
-    if (speechSynthesisService.isSpeaking) {
-      speechSynthesisService.stop();
-      setIsSpeechPaused(false);
-    }
-
-    if (speechRecognitionService.isListening()) {
-      // Stop listening and finalize transcript
-      const finalCombined = speechRecognitionService.stopListening();
-      setTranscript(finalCombined || transcript);
-      setInterimText('');
-      setAudioFrequencyData(null);
-      setAssistantState('TRANSCRIPT_READY');
-      setStatusMessage('Transcript captured. Ready for verification or submission.');
-    } else {
-      // Start listening
-      setTranscript('');
-      setInterimText('');
-      setAssistantState('REQUESTING_PERMISSION');
-      setStatusMessage('Requesting microphone access...');
-
-      const success = await speechRecognitionService.startListening({
-        lang: selectedLanguage,
-        onTranscript: ({ final, interim, combined }) => {
-          setTranscript(combined);
-          setInterimText(interim);
-          setAssistantState('LISTENING');
-          setStatusMessage('Listening to your spoken inquiry...');
-        },
-        onError: ({ code, message }) => {
-          setAssistantState('ERROR');
-          setStatusMessage(message);
-          setAudioFrequencyData(null);
-        },
-        onStateChange: (state, msg) => {
-          setAssistantState(state);
-          if (msg) setStatusMessage(msg);
-        },
-        onAudioData: (data) => {
-          setAudioFrequencyData(data);
-        }
-      });
-
-      if (success) {
-        setAssistantState('LISTENING');
-        setStatusMessage('Listening... speak your investigative question.');
-      }
-    }
-  }, [transcript, selectedLanguage]);
-
-  /**
    * Submit the current transcript to Phase 15 Intelligence API
    */
   const handleSubmitQuery = async (overrideText = null) => {
@@ -201,7 +148,6 @@ export default function JarvisVoiceAssistant({
     abortControllerRef.current = new AbortController();
 
     try {
-      const token = localStorage.getItem('casethread_token') || sessionStorage.getItem('casethread_token');
       const payload = {
         query: textToQuery,
         conversationId: conversationId || undefined,
@@ -211,19 +157,13 @@ export default function JarvisVoiceAssistant({
       setAssistantState('GENERATING_ANSWER');
       setStatusMessage('Analyzing precedent patterns and synthesizing grounded reasoning...');
 
-      const response = await fetch('/api/v1/intelligence/query', {
+      const data = await api.request('/intelligence/query', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
         body: JSON.stringify(payload),
         signal: abortControllerRef.current.signal
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error?.message || data.error || 'Failed to process intelligence query.');
       }
 
@@ -281,6 +221,63 @@ export default function JarvisVoiceAssistant({
       setIsSubmitting(false);
     }
   };
+
+  /**
+   * Handle starting/stopping microphone listening
+   */
+  const handleToggleListening = async () => {
+    // If currently speaking, immediately stop speech playback when investigator activates mic
+    if (speechSynthesisService.isSpeaking) {
+      speechSynthesisService.stop();
+      setIsSpeechPaused(false);
+    }
+
+    if (speechRecognitionService.isListening()) {
+      // Stop listening and finalize transcript
+      const finalCombined = speechRecognitionService.stopListening();
+      setTranscript(finalCombined || transcript);
+      setInterimText('');
+      setAudioFrequencyData(null);
+      setAssistantState('TRANSCRIPT_READY');
+      if (finalCombined) handleSubmitQuery(finalCombined);
+    } else {
+      // Start listening
+      setTranscript('');
+      setInterimText('');
+      setAssistantState('REQUESTING_PERMISSION');
+      setStatusMessage('Requesting microphone access...');
+
+      const success = await speechRecognitionService.startListening({
+        lang: selectedLanguage,
+        onTranscript: ({ final, interim, combined }) => {
+          setTranscript(combined);
+          setInterimText(interim);
+          setAssistantState('LISTENING');
+          setStatusMessage('Listening to your spoken inquiry...');
+        },
+        onUtterance: handleSubmitQuery,
+        onError: ({ code, message }) => {
+          setAssistantState('ERROR');
+          setStatusMessage(message);
+          setAudioFrequencyData(null);
+        },
+        onStateChange: (state, msg) => {
+          setAssistantState(state);
+          if (msg) setStatusMessage(msg);
+        },
+        onAudioData: (data) => {
+          setAudioFrequencyData(data);
+        }
+      });
+
+      if (success) {
+        setAssistantState('LISTENING');
+        setStatusMessage('Listening... speak your investigative question.');
+      }
+    }
+  };
+
+
 
   /**
    * Reset session context (New Session)
@@ -951,7 +948,7 @@ export default function JarvisVoiceAssistant({
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontWeight: '700', color: '#60A5FA', fontSize: '0.82rem', fontFamily: 'monospace' }}>
-                                      {c.case_reference_number}
+                                      {c.case_reference_number || c.document_title}
                                     </span>
                                     <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
                                       {c.country} • {c.jurisdiction}
@@ -977,12 +974,12 @@ export default function JarvisVoiceAssistant({
                                 </div>
 
                                 <div style={{ fontSize: '0.78rem', color: '#D1D5DB', marginBottom: '6px' }}>
-                                  <strong>Documented Outcome:</strong> {c.case_outcome || 'Pending judicial adjudication'}
+                                  <strong>Documented Outcome:</strong> {c.case_outcome || 'Not documented'}
                                 </div>
 
                                 {/* Comparison Toggle */}
                                 <button
-                                  onClick={() => setExpandedCaseId(expandedCaseId === c.case_reference_number ? null : c.case_reference_number)}
+                                  onClick={() => setExpandedCaseId(expandedCaseId === c.document_id ? null : c.document_id)}
                                   style={{
                                     backgroundColor: 'transparent',
                                     border: 'none',
@@ -993,10 +990,10 @@ export default function JarvisVoiceAssistant({
                                     textDecoration: 'underline'
                                   }}
                                 >
-                                  {expandedCaseId === c.case_reference_number ? 'Hide Comparative Facts' : 'Inspect Similar vs Divergent Facts'}
+                                  {expandedCaseId === c.document_id ? 'Hide Comparative Facts' : 'Inspect Similar vs Divergent Facts'}
                                 </button>
 
-                                {expandedCaseId === c.case_reference_number && c.comparison && (
+                                {expandedCaseId === c.document_id && c.comparison && (
                                   <div
                                     style={{
                                       marginTop: '8px',
@@ -1020,7 +1017,7 @@ export default function JarvisVoiceAssistant({
                                     <div>
                                       <span style={{ color: '#F87171', fontWeight: '600' }}>✗ Divergent Circumstances:</span>
                                       <ul style={{ margin: '4px 0 0 16px', padding: 0, color: '#CBD5E1' }}>
-                                        {c.comparison.divergent_facts?.map((df, dfi) => (
+                                        {c.comparison.different_facts?.map((df, dfi) => (
                                           <li key={dfi}>{df}</li>
                                         ))}
                                       </ul>
@@ -1231,12 +1228,12 @@ export default function JarvisVoiceAssistant({
 
             <div style={{ fontSize: '0.82rem', color: '#CBD5E1', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div><strong>Case Reference:</strong> <span style={{ fontFamily: 'monospace', color: '#60A5FA' }}>{selectedCitation.case_reference_number}</span></div>
-              <div><strong>Document Title:</strong> {selectedCitation.title}</div>
+              <div><strong>Document Title:</strong> {selectedCitation.source_title}</div>
               <div><strong>Jurisdiction:</strong> {selectedCitation.country} • {selectedCitation.jurisdiction}</div>
               <div><strong>Publisher / Source:</strong> {selectedCitation.publisher}</div>
-              <div><strong>Data Classification:</strong> <span style={{ color: '#34D399' }}>{selectedCitation.data_classification}</span></div>
-              {selectedCitation.url && (
-                <div><strong>Source URL:</strong> <a href={selectedCitation.url} target="_blank" rel="noreferrer" style={{ color: '#38BDF8', wordBreak: 'break-all' }}>{selectedCitation.url}</a></div>
+              <div><strong>Data Classification:</strong> <span style={{ color: '#34D399' }}>{selectedCitation.access_classification}</span></div>
+              {/^https?:\/\//i.test(selectedCitation.source_url || '') && (
+                <div><strong>Source URL:</strong> <a href={selectedCitation.source_url} target="_blank" rel="noreferrer" style={{ color: '#38BDF8', wordBreak: 'break-all' }}>{selectedCitation.source_url}</a></div>
               )}
             </div>
 

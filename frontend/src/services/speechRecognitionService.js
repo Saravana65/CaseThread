@@ -58,7 +58,7 @@ class SpeechRecognitionService {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true;
+    this.recognition.continuous = false;
     this.recognition.interimResults = true;
     this.recognition.maxAlternatives = 1;
     this.recognition.lang = this.currentLanguage;
@@ -111,6 +111,8 @@ class SpeechRecognitionService {
         userFriendlyMessage = 'Network error occurred during speech recognition. Check your internet connection.';
       }
 
+      this.isListeningActive = false;
+      this._stopAudioAnalysis();
       this._notifyState('ERROR', userFriendlyMessage);
       if (this.callbacks.onError) {
         this.callbacks.onError({
@@ -126,6 +128,7 @@ class SpeechRecognitionService {
         this._stopAudioAnalysis();
         this.isListeningActive = false;
         this._notifyState('TRANSCRIPT_READY');
+        if (this.transcript.trim()) this.callbacks.onUtterance?.(this.transcript.trim());
       }
     };
   }
@@ -139,7 +142,7 @@ class SpeechRecognitionService {
    * @param {Function} options.onAudioData - Receives Uint8Array frequency data
    * @param {string} [options.lang='en-US'] - Language code (e.g. 'en-US', 'en-IN', 'hi-IN')
    */
-  async startListening({ onTranscript, onError, onStateChange, onAudioData, lang = 'en-US' } = {}) {
+  async startListening({ onTranscript, onUtterance, onError, onStateChange, onAudioData, lang = 'en-US' } = {}) {
     if (!this.isSupported()) {
       const err = {
         code: 'UNSUPPORTED_BROWSER',
@@ -150,7 +153,7 @@ class SpeechRecognitionService {
       return false;
     }
 
-    this.callbacks = { onTranscript, onError, onStateChange, onAudioData };
+    this.callbacks = { onTranscript, onUtterance, onError, onStateChange, onAudioData };
     this.currentLanguage = lang;
     this.transcript = '';
     this.interimTranscript = '';

@@ -31,7 +31,7 @@ class CitationValidator {
         case_reference_number: record.case_reference_number,
         source_title: record.document_title,
         publisher: record.source_name || 'Authorized Public Crime Archive',
-        source_url: record.source_url || 'https://data.police.uk / https://data.cityofchicago.org / https://ecourts.gov.in',
+        source_url: record.source_url || null,
         page_number: record.page_number || 1,
         section_reference: record.section_reference || 'Segment 1',
         country: record.country,

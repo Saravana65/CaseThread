@@ -43,8 +43,10 @@ class CaseComparator {
     }
 
     if (criteria.ignoredItems && criteria.ignoredItems.length > 0) {
-      if (criteria.ignoredItems.includes('cash') && histText.includes('cash')) {
-        differentFacts.push(`Property Focus: Current incident perpetrator ignored cash, whereas historical case (${historicalCase.case_reference_number}) specifically ransacked cash drawers / currency.`);
+      if (criteria.ignoredItems.includes('cash') && /\b(cash|money|currency)\b/i.test(histProperty)) {
+        differentFacts.push(`Property Focus: Current incident perpetrator ignored cash, whereas historical case (${historicalCase.case_reference_number}) lists cash among the stolen items.`);
+      } else if (criteria.ignoredItems.includes('cash')) {
+        missingOrUncertain.push('The available property fields do not establish whether cash was left behind.');
       }
     }
 
@@ -53,19 +55,19 @@ class CaseComparator {
       const histHour = new Date(historicalCase.incident_datetime).getUTCHours();
       const hourDiff = Math.abs(histHour - criteria.approximateTime.hour24);
       if (hourDiff <= 2 || hourDiff >= 22) {
-        similarFacts.push(`Temporal Pattern: Both incidents occurred during the late evening / night window (~${histHour}:00 UTC).`);
+        similarFacts.push(`Temporal Pattern: Both incidents occurred within the compared time window (~${histHour}:00 UTC).`);
       } else {
         differentFacts.push(`Time of Day: Incident occurred at ~${criteria.approximateTime.raw}, whereas historical record occurred at ${histHour}:00 UTC.`);
       }
     } else if (!historicalCase.incident_datetime) {
-      missingOrUncertain.push('Incident exact timestamp is unrecorded in source document (aggregated or monthly index only).');
+      missingOrUncertain.push('The record supplies no exact incident time for comparison.');
     }
 
     // 4. Compare Premises / Facility Type
     if (criteria.premises) {
       const premisesLabel = criteria.premises.replace(/_/g, ' ').toLowerCase();
-      if (histText.includes(premisesLabel)) {
-        similarFacts.push(`Premises Type: Consistent with commercial / distribution facility location.`);
+      if (histText.includes(premisesLabel) || (criteria.premises === 'RESIDENTIAL' && /\b(?:house|home|residence|apartment)\b/.test(histText))) {
+        similarFacts.push(`Premises Type: Consistent with the reported ${premisesLabel} location.`);
       }
     }
 
@@ -74,7 +76,7 @@ class CaseComparator {
     if (historicalCase.is_investigation_details_available && historicalCase.investigative_actions) {
       investigativeDetailsSummary = historicalCase.investigative_actions;
     } else {
-      missingOrUncertain.push('Narrative investigative case notes and forensic logs are not published in this public police street dataset (restricted under privacy statutes).');
+      missingOrUncertain.push('Investigative steps are not documented in this record.');
     }
 
     // 6. Outcome Analysis (Police vs Judicial)

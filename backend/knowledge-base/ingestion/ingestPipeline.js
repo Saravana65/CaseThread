@@ -145,8 +145,11 @@ class IngestPipeline {
 
     // 8. Resolve source record
     const sourceCountry = options.country || extraction.metadata?.country || 'India';
+    const sourceName = extraction.metadata?.publisher && (!options.sourceName || options.sourceName === 'Administrative File Import')
+      ? `${extraction.metadata.publisher} (${sourceCountry})`
+      : options.sourceName;
     const sourceId = await this.resolveSource({
-      sourceName: options.sourceName,
+      sourceName,
       sourceType: options.sourceType,
       jurisdiction: options.jurisdiction || extraction.metadata?.jurisdiction,
       country: sourceCountry,
@@ -171,8 +174,9 @@ class IngestPipeline {
         city, jurisdiction, crime_category, case_outcome, original_sha256,
         storage_path, file_size_bytes, page_count, word_count, is_ocr_required,
         language, translated_text, translation_status, record_level,
+        stolen_property, crime_subtype, investigative_actions, is_investigation_details_available, documented_circumstances,
         structured_metadata, ingestion_status, last_processed_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CASE_LEVEL', ?, 'PROCESSED', NOW())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CASE_LEVEL', ?, ?, ?, ?, ?, ?, 'PROCESSED', NOW())
     `, [
       sourceId,
       docTitle,
@@ -195,6 +199,11 @@ class IngestPipeline {
       transResult.language,
       transResult.translatedText,
       transResult.translationStatus,
+      extraction.metadata?.stolen_property || null,
+      extraction.metadata?.crime_subtype || null,
+      extraction.metadata?.investigative_actions || null,
+      Boolean(extraction.metadata?.investigative_actions),
+      extraction.metadata?.summary || null,
       JSON.stringify(extraction.metadata || {})
     ]);
 
@@ -365,7 +374,7 @@ class IngestPipeline {
       1,
       wordCount,
       false,
-      JSON.stringify({ raw_metadata: record.raw_payload || {} })
+      JSON.stringify({ source_url: record.source_url || null, raw_metadata: record.raw_payload || {} })
     ]);
 
     const documentId = docResult.insertId;
