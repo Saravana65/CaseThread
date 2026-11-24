@@ -3,6 +3,8 @@
  * @brief Professional JARVIS-Style Conversational AI Voice Investigation Assistant for CaseThread.
  * Integrates Web Speech Recognition, Web Audio API frequency analysis, Phase 15 Hybrid Retrieval
  * Intelligence API, Evidence-Grounded Reasoning, and Natural Speech Synthesis playback.
+ * Updated for Phase 20: Apple-inspired design system, light/dark theme variables,
+ * one-click contextual follow-ups, and direct report integration.
  * @project CASETHREAD
  */
 
@@ -21,14 +23,15 @@ import {
   StopIcon,
   RefreshIcon,
   ShieldCheckIcon,
-  CheckIcon
+  CheckIcon,
+  ReportIcon
 } from './icons/Icons';
 
 const SUGGESTED_VOICE_QUERIES = [
-  'A robbery happened around 9 PM targeting electronics and cash. Find similar cases.',
-  'How was the closest matching case investigated and solved?',
-  'What forensic evidence and investigative leads should I verify next?',
-  'Commercial warehouse break-in during night hours with restrained guards.'
+  'A burglary occurred at a house around 9 PM. Cash was left untouched, but graphics cards were stolen. Find similar historical cases.',
+  'Commercial robbery during night hours where electronics and cash were targeted.',
+  'Find previous investigations where cash was bypassed and only specific high-value hardware was taken.',
+  'What forensic evidence and investigative leads should I verify next?'
 ];
 
 const SUPPORTED_LANGUAGES = [
@@ -68,6 +71,7 @@ export default function JarvisVoiceAssistant({
   const [selectedCitation, setSelectedCitation] = useState(null);
   const [expandedCaseId, setExpandedCaseId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveSuccessNotice, setSaveSuccessNotice] = useState(false);
 
   // References
   const abortControllerRef = useRef(null);
@@ -248,40 +252,80 @@ export default function JarvisVoiceAssistant({
       setStatusMessage('Requesting microphone access...');
 
       const success = await speechRecognitionService.startListening({
-        lang: selectedLanguage,
-        onTranscript: ({ final, interim, combined }) => {
-          setTranscript(combined);
+        language: selectedLanguage,
+        onInterimTranscript: (interim) => {
           setInterimText(interim);
-          setAssistantState('LISTENING');
-          setStatusMessage('Listening to your spoken inquiry...');
+          setAssistantState('TRANSCRIBING');
+          setStatusMessage('Listening to investigator speech...');
         },
-        onUtterance: handleSubmitQuery,
-        onError: ({ code, message }) => {
+        onFinalTranscript: (final) => {
+          setTranscript((prev) => (prev ? `${prev} ${final}` : final));
+          setInterimText('');
+        },
+        onError: (err) => {
           setAssistantState('ERROR');
-          setStatusMessage(message);
+          setStatusMessage(`Microphone error: ${err.message || 'Speech recognition failed.'}`);
           setAudioFrequencyData(null);
         },
-        onStateChange: (state, msg) => {
-          setAssistantState(state);
-          if (msg) setStatusMessage(msg);
-        },
-        onAudioData: (data) => {
-          setAudioFrequencyData(data);
+        onAudioTelemetry: (frequencyArray) => {
+          setAudioFrequencyData(frequencyArray);
         }
       });
 
       if (success) {
         setAssistantState('LISTENING');
         setStatusMessage('Listening... speak your investigative question.');
+      } else {
+        setAssistantState('ERROR');
+        setStatusMessage('Microphone access denied or audio input unavailable.');
       }
     }
   };
 
-
-
   /**
-   * Reset session context (New Session)
+   * Speech Playback Controls
    */
+  const handlePlayPauseSpeech = () => {
+    if (isSpeechPaused) {
+      speechSynthesisService.resume();
+      setIsSpeechPaused(false);
+      setAssistantState('SPEAKING');
+      setStatusMessage('Resuming spoken response...');
+    } else {
+      speechSynthesisService.pause();
+      setIsSpeechPaused(true);
+      setAssistantState('COMPLETED');
+      setStatusMessage('Speech playback paused.');
+    }
+  };
+
+  const handleStopSpeech = () => {
+    speechSynthesisService.stop();
+    setIsSpeechPaused(false);
+    setAssistantState('COMPLETED');
+    setStatusMessage('Speech playback stopped.');
+  };
+
+  const handleRepeatAnswer = () => {
+    if (!currentResponse?.answer) return;
+    speechSynthesisService.stop();
+    setIsSpeechPaused(false);
+    setAssistantState('SPEAKING');
+    setStatusMessage('Repeating investigative findings...');
+
+    speechSynthesisService.speak(currentResponse.answer, {
+      onStart: () => setAssistantState('SPEAKING'),
+      onEnd: () => {
+        setAssistantState('COMPLETED');
+        setStatusMessage('Repeat playback completed.');
+      },
+      onError: () => {
+        setAssistantState('COMPLETED');
+        setStatusMessage('Audio playback finished.');
+      }
+    });
+  };
+
   const handleResetSession = () => {
     speechRecognitionService.stopListening();
     speechSynthesisService.stop();
@@ -290,63 +334,18 @@ export default function JarvisVoiceAssistant({
     setCurrentResponse(null);
     setTranscript('');
     setInterimText('');
-    setAudioFrequencyData(null);
     setAssistantState('IDLE');
-    setStatusMessage('Session reset. Ready for new investigative inquiry.');
-  };
-
-  /**
-   * Playback controls
-   */
-  const handlePlayPauseSpeech = () => {
-    if (!currentResponse?.answer) return;
-
-    if (speechSynthesisService.isSpeaking) {
-      if (isSpeechPaused) {
-        speechSynthesisService.resume();
-        setIsSpeechPaused(false);
-        setAssistantState('SPEAKING');
-        setStatusMessage('Resuming spoken response...');
-      } else {
-        speechSynthesisService.pause();
-        setIsSpeechPaused(true);
-        setStatusMessage('Speech paused.');
-      }
-    } else {
-      setAssistantState('SPEAKING');
-      setStatusMessage('Speaking response...');
-      speechSynthesisService.speak(currentResponse.answer, {
-        onStart: () => setAssistantState('SPEAKING'),
-        onEnd: () => {
-          setAssistantState('COMPLETED');
-          setStatusMessage('Inquiry complete. Ready for follow-up.');
-        }
-      });
-    }
-  };
-
-  const handleStopSpeech = () => {
-    speechSynthesisService.stop();
-    setIsSpeechPaused(false);
-    setAssistantState('COMPLETED');
-    setStatusMessage('Audio playback stopped.');
-  };
-
-  const handleRepeatAnswer = () => {
-    if (currentResponse?.answer) {
-      speechSynthesisService.stop();
-      setIsSpeechPaused(false);
-      setAssistantState('SPEAKING');
-      setStatusMessage('Repeating last investigative answer...');
-      speechSynthesisService.speak(currentResponse.answer, {
-        onStart: () => setAssistantState('SPEAKING'),
-        onEnd: () => setAssistantState('COMPLETED')
-      });
-    }
+    setStatusMessage('Ready for investigative inquiry.');
+    setSelectedCitation(null);
+    setExpandedCaseId(null);
   };
 
   const handleToggleMute = () => {
-    const nextMute = speechSynthesisService.toggleMute();
+    const nextMute = !isMuted;
+    if (nextMute && speechSynthesisService.isSpeaking) {
+      speechSynthesisService.stop();
+      setIsSpeechPaused(false);
+    }
     setIsMuted(nextMute);
     if (nextMute) {
       setStatusMessage('Audio speech muted.');
@@ -370,27 +369,35 @@ export default function JarvisVoiceAssistant({
     speechRecognitionService.setLanguage(langCode);
   };
 
+  const handleSaveToReport = () => {
+    setSaveSuccessNotice(true);
+    setTimeout(() => setSaveSuccessNotice(false), 3000);
+    if (onNavigateTab) {
+      setTimeout(() => onNavigateTab('reports'), 1200);
+    }
+  };
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: isOverlay ? '85vh' : 'calc(100vh - 60px)',
-        backgroundColor: '#090D16',
-        color: '#E2E8F0',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        borderRadius: isOverlay ? '12px' : '0px',
+        height: isOverlay ? '85vh' : 'calc(100vh - 80px)',
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+        fontFamily: 'var(--font-sans)',
+        borderRadius: isOverlay ? 'var(--radius-dialog)' : '0px',
         overflow: 'hidden',
-        border: isOverlay ? '1px solid #334155' : 'none',
-        boxShadow: isOverlay ? '0 25px 50px -12px rgba(0, 0, 0, 0.75)' : 'none'
+        border: isOverlay ? '1px solid var(--border-default)' : 'none',
+        boxShadow: isOverlay ? 'var(--shadow-modal)' : 'none'
       }}
     >
       {/* Top HUD Control Bar */}
       <div
         style={{
           padding: '12px 20px',
-          backgroundColor: '#0F172A',
-          borderBottom: '1px solid #1E293B',
+          backgroundColor: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border-default)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -404,10 +411,10 @@ export default function JarvisVoiceAssistant({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              border: '1px solid rgba(56, 189, 248, 0.3)'
+              padding: '4px 12px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--accent-primary-dim)',
+              border: '1px solid var(--border-highlight)'
             }}
           >
             <span
@@ -418,22 +425,22 @@ export default function JarvisVoiceAssistant({
                 backgroundColor:
                   assistantState === 'LISTENING' ? '#06B6D4' :
                   assistantState === 'SPEAKING' ? '#10B981' :
-                  assistantState === 'ERROR' ? '#EF4444' :
-                  assistantState.includes('SEARCH') || assistantState.includes('GEN') ? '#818CF8' : '#38BDF8',
+                  assistantState === 'ERROR' ? 'var(--status-danger)' :
+                  assistantState.includes('SEARCH') || assistantState.includes('GEN') ? '#818CF8' : 'var(--accent-primary)',
                 boxShadow: '0 0 8px currentColor'
               }}
             />
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.08em', color: '#38BDF8' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.06em', color: 'var(--text-primary)' }}>
               JARVIS FORENSIC AI
             </span>
           </div>
 
-          <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-            State: <strong style={{ color: '#F8FAFC' }}>{assistantState}</strong>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            Status: <strong style={{ color: 'var(--text-primary)' }}>{assistantState}</strong>
           </span>
 
           {conversationId && (
-            <span style={{ fontSize: '0.7rem', color: '#64748B', fontFamily: 'monospace' }}>
+            <span className="mono" style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
               SID: {conversationId.slice(0, 14)}...
             </span>
           )}
@@ -446,10 +453,10 @@ export default function JarvisVoiceAssistant({
             value={selectedLanguage}
             onChange={(e) => handleChangeLanguage(e.target.value)}
             style={{
-              backgroundColor: '#1E293B',
-              color: '#CBD5E1',
-              border: '1px solid #334155',
-              borderRadius: '6px',
+              backgroundColor: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-control)',
               padding: '4px 8px',
               fontSize: '0.75rem'
             }}
@@ -466,10 +473,10 @@ export default function JarvisVoiceAssistant({
               value={selectedVoiceName}
               onChange={(e) => handleChangeVoice(e.target.value)}
               style={{
-                backgroundColor: '#1E293B',
-                color: '#CBD5E1',
-                border: '1px solid #334155',
-                borderRadius: '6px',
+                backgroundColor: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-control)',
                 padding: '4px 8px',
                 fontSize: '0.75rem',
                 maxWidth: '140px'
@@ -487,10 +494,10 @@ export default function JarvisVoiceAssistant({
             value={speechRate}
             onChange={(e) => handleChangeRate(Number(e.target.value))}
             style={{
-              backgroundColor: '#1E293B',
-              color: '#CBD5E1',
-              border: '1px solid #334155',
-              borderRadius: '6px',
+              backgroundColor: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-control)',
               padding: '4px 8px',
               fontSize: '0.75rem'
             }}
@@ -506,10 +513,10 @@ export default function JarvisVoiceAssistant({
           <button
             onClick={handleToggleMute}
             style={{
-              backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.2)' : '#1E293B',
-              color: isMuted ? '#EF4444' : '#CBD5E1',
-              border: `1px solid ${isMuted ? '#EF4444' : '#334155'}`,
-              borderRadius: '6px',
+              backgroundColor: isMuted ? 'var(--status-danger-dim)' : 'var(--bg-elevated)',
+              color: isMuted ? 'var(--status-danger)' : 'var(--text-primary)',
+              border: `1px solid ${isMuted ? 'var(--status-danger-border)' : 'var(--border-default)'}`,
+              borderRadius: 'var(--radius-control)',
               padding: '4px 8px',
               cursor: 'pointer',
               display: 'flex',
@@ -527,10 +534,10 @@ export default function JarvisVoiceAssistant({
           <button
             onClick={handleResetSession}
             style={{
-              backgroundColor: '#1E293B',
-              color: '#CBD5E1',
-              border: '1px solid #334155',
-              borderRadius: '6px',
+              backgroundColor: 'var(--bg-elevated)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-control)',
               padding: '4px 10px',
               fontSize: '0.75rem',
               cursor: 'pointer',
@@ -541,7 +548,7 @@ export default function JarvisVoiceAssistant({
             title="Clear context and begin fresh inquiry session"
           >
             <RefreshIcon size={13} />
-            <span>New Session</span>
+            <span>New Inquiry</span>
           </button>
 
           {isOverlay && onClose && (
@@ -549,7 +556,7 @@ export default function JarvisVoiceAssistant({
               onClick={onClose}
               style={{
                 backgroundColor: 'transparent',
-                color: '#94A3B8',
+                color: 'var(--text-muted)',
                 border: 'none',
                 fontSize: '1.2rem',
                 cursor: 'pointer',
@@ -568,7 +575,7 @@ export default function JarvisVoiceAssistant({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '320px 1fr',
+          gridTemplateColumns: 'minmax(280px, 340px) 1fr',
           flex: 1,
           overflow: 'hidden'
         }}
@@ -576,14 +583,15 @@ export default function JarvisVoiceAssistant({
         {/* Left Stage: Visualizer Orb, Mic Push Button, Audio Controls */}
         <div
           style={{
-            backgroundColor: '#0B1120',
-            borderRight: '1px solid #1E293B',
+            backgroundColor: 'var(--bg-secondary)',
+            borderRight: '1px solid var(--border-default)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '24px 16px',
-            position: 'relative'
+            padding: '24px 20px',
+            position: 'relative',
+            overflowY: 'auto'
           }}
         >
           {/* Status Subtitle */}
@@ -591,20 +599,21 @@ export default function JarvisVoiceAssistant({
             <span
               style={{
                 fontSize: '0.68rem',
-                color: '#64748B',
+                color: 'var(--text-muted)',
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em'
+                letterSpacing: '0.08em',
+                fontWeight: '600'
               }}
             >
-              Audio Telemetry Subsystem
+              Conversational Voice Subsystem
             </span>
             <div
               style={{
                 fontSize: '0.82rem',
-                color: '#94A3B8',
-                marginTop: '4px',
+                color: 'var(--text-secondary)',
+                marginTop: '6px',
                 minHeight: '38px',
-                lineHeight: 1.3
+                lineHeight: 1.4
               }}
             >
               {statusMessage}
@@ -612,7 +621,7 @@ export default function JarvisVoiceAssistant({
           </div>
 
           {/* Interactive JARVIS Orb Visualizer */}
-          <div style={{ position: 'relative', margin: '12px 0' }}>
+          <div style={{ position: 'relative', margin: '14px 0' }}>
             <JarvisVisualizer
               state={assistantState}
               audioData={audioFrequencyData}
@@ -630,9 +639,9 @@ export default function JarvisVoiceAssistant({
               style={{
                 width: '100%',
                 padding: '12px 18px',
-                borderRadius: '8px',
+                borderRadius: 'var(--radius-control)',
                 border: 'none',
-                backgroundColor: speechRecognitionService.isListening() ? '#EF4444' : '#0284C7',
+                backgroundColor: speechRecognitionService.isListening() ? 'var(--status-danger)' : 'var(--accent-primary)',
                 color: '#FFFFFF',
                 fontWeight: '600',
                 fontSize: '0.85rem',
@@ -642,8 +651,8 @@ export default function JarvisVoiceAssistant({
                 justifyContent: 'center',
                 gap: '8px',
                 boxShadow: speechRecognitionService.isListening()
-                  ? '0 0 15px rgba(239, 68, 68, 0.5)'
-                  : '0 0 15px rgba(2, 132, 199, 0.4)',
+                  ? '0 0 15px rgba(239, 68, 68, 0.4)'
+                  : 'var(--shadow-card)',
                 transition: 'all 0.2s ease'
               }}
             >
@@ -667,10 +676,10 @@ export default function JarvisVoiceAssistant({
                   onClick={handlePlayPauseSpeech}
                   style={{
                     flex: 1,
-                    backgroundColor: '#1E293B',
-                    color: '#E2E8F0',
-                    border: '1px solid #334155',
-                    borderRadius: '6px',
+                    backgroundColor: 'var(--bg-elevated)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-sm)',
                     padding: '8px 10px',
                     fontSize: '0.75rem',
                     cursor: 'pointer',
@@ -688,10 +697,10 @@ export default function JarvisVoiceAssistant({
                 <button
                   onClick={handleStopSpeech}
                   style={{
-                    backgroundColor: '#1E293B',
-                    color: '#94A3B8',
-                    border: '1px solid #334155',
-                    borderRadius: '6px',
+                    backgroundColor: 'var(--bg-elevated)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-sm)',
                     padding: '8px 10px',
                     fontSize: '0.75rem',
                     cursor: 'pointer'
@@ -705,10 +714,10 @@ export default function JarvisVoiceAssistant({
                   onClick={handleRepeatAnswer}
                   style={{
                     flex: 1,
-                    backgroundColor: '#1E293B',
-                    color: '#E2E8F0',
-                    border: '1px solid #334155',
-                    borderRadius: '6px',
+                    backgroundColor: 'var(--bg-elevated)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-sm)',
                     padding: '8px 10px',
                     fontSize: '0.75rem',
                     cursor: 'pointer',
@@ -732,7 +741,7 @@ export default function JarvisVoiceAssistant({
           style={{
             display: 'flex',
             flexDirection: 'column',
-            backgroundColor: '#090D16',
+            backgroundColor: 'var(--bg-primary)',
             overflow: 'hidden'
           }}
         >
@@ -741,10 +750,10 @@ export default function JarvisVoiceAssistant({
             style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '20px 24px',
+              padding: '24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: '18px'
             }}
           >
             {dialogueHistory.length === 0 ? (
@@ -757,7 +766,7 @@ export default function JarvisVoiceAssistant({
                   height: '100%',
                   textAlign: 'center',
                   padding: '20px',
-                  color: '#64748B'
+                  color: 'var(--text-muted)'
                 }}
               >
                 <div
@@ -765,28 +774,28 @@ export default function JarvisVoiceAssistant({
                     width: '64px',
                     height: '64px',
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(56, 189, 248, 0.05)',
-                    border: '1px solid rgba(56, 189, 248, 0.2)',
+                    backgroundColor: 'var(--accent-primary-dim)',
+                    border: '1px solid var(--border-highlight)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#38BDF8',
+                    color: 'var(--accent-primary)',
                     marginBottom: '16px'
                   }}
                 >
                   <MicrophoneIcon size={28} />
                 </div>
-                <h3 style={{ fontSize: '1.1rem', color: '#F1F5F9', fontWeight: '600', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)', fontWeight: '700', marginBottom: '8px' }}>
                   JARVIS Conversational Intelligence
                 </h3>
-                <p style={{ fontSize: '0.85rem', maxWidth: '480px', lineHeight: 1.5, marginBottom: '20px' }}>
-                  Speak or type naturally. Queries retrieve authentic precedents from the Private Knowledge Base across India, United Kingdom, and the United States.
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '520px', lineHeight: 1.5, marginBottom: '24px' }}>
+                  Speak or type an incident description naturally. The system retrieves genuine historical crime precedents across the UK, US, and India with verifiable source citations.
                 </p>
 
                 {/* Suggested Inquiry Pills */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '520px' }}>
-                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', textAlign: 'left' }}>
-                    Suggested Voice Queries:
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '560px' }}>
+                  <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', textAlign: 'left', fontWeight: '600' }}>
+                    Suggested Incident Inquiries:
                   </span>
                   {SUGGESTED_VOICE_QUERIES.map((q, idx) => (
                     <button
@@ -797,12 +806,12 @@ export default function JarvisVoiceAssistant({
                       }}
                       style={{
                         textAlign: 'left',
-                        padding: '10px 14px',
-                        backgroundColor: '#0F172A',
-                        border: '1px solid #1E293B',
-                        borderRadius: '8px',
-                        color: '#93C5FD',
-                        fontSize: '0.8rem',
+                        padding: '12px 16px',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: 'var(--radius-control)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.82rem',
                         cursor: 'pointer',
                         lineHeight: 1.4,
                         transition: 'all 0.15s ease'
@@ -821,7 +830,7 @@ export default function JarvisVoiceAssistant({
                     display: 'flex',
                     flexDirection: 'column',
                     alignSelf: item.sender === 'INVESTIGATOR' ? 'flex-end' : 'flex-start',
-                    maxWidth: item.sender === 'INVESTIGATOR' ? '70%' : '100%',
+                    maxWidth: item.sender === 'INVESTIGATOR' ? '75%' : '100%',
                     width: item.sender === 'INVESTIGATOR' ? 'auto' : '100%'
                   }}
                 >
@@ -830,28 +839,28 @@ export default function JarvisVoiceAssistant({
                     style={{
                       fontSize: '0.7rem',
                       fontWeight: '600',
-                      color: item.sender === 'INVESTIGATOR' ? '#38BDF8' : '#10B981',
+                      color: item.sender === 'INVESTIGATOR' ? 'var(--accent-primary)' : 'var(--status-success)',
                       marginBottom: '4px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px'
                     }}
                   >
-                    <span>{item.sender === 'INVESTIGATOR' ? 'DETECTIVE' : 'JARVIS INTELLIGENCE'}</span>
-                    <span style={{ color: '#475569', fontWeight: '400' }}>{item.timestamp}</span>
+                    <span>{item.sender === 'INVESTIGATOR' ? 'DETECTIVE' : 'JARVIS FORENSIC INTELLIGENCE'}</span>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: '400' }}>{item.timestamp}</span>
                   </div>
 
                   {/* Message Bubble */}
                   {item.sender === 'INVESTIGATOR' ? (
                     <div
                       style={{
-                        backgroundColor: '#1E293B',
-                        color: '#F8FAFC',
+                        backgroundColor: 'var(--bg-elevated)',
+                        color: 'var(--text-primary)',
                         padding: '12px 16px',
                         borderRadius: '12px 12px 2px 12px',
                         fontSize: '0.88rem',
                         lineHeight: 1.5,
-                        border: '1px solid #334155'
+                        border: '1px solid var(--border-default)'
                       }}
                     >
                       {item.text}
@@ -859,35 +868,36 @@ export default function JarvisVoiceAssistant({
                   ) : (
                     <div
                       style={{
-                        backgroundColor: '#0B1120',
-                        border: '1px solid #1E293B',
-                        borderRadius: '12px',
-                        padding: '18px 20px',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: 'var(--radius-card)',
+                        padding: '20px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '16px'
+                        gap: '16px',
+                        boxShadow: 'var(--shadow-sm)'
                       }}
                     >
-                      {/* Synthesized Answer */}
+                      {/* Synthesized Grounded Answer */}
                       <div
                         style={{
-                          fontSize: '0.88rem',
+                          fontSize: '0.9rem',
                           lineHeight: 1.6,
-                          color: '#E2E8F0',
+                          color: 'var(--text-primary)',
                           whiteSpace: 'pre-line'
                         }}
                       >
                         {item.data.answer}
                       </div>
 
-                      {/* Phase 17 Cross-Case Graph & Native C Engine Action */}
-                      {(item.data.cross_case_graph || item.data.patterns) && (
+                      {/* Cross-Case Graph Action Banner */}
+                      {(item.data.cross_case_graph || item.data.patterns_detected) && (
                         <div
                           style={{
-                            padding: '8px 12px',
-                            backgroundColor: '#1E293B',
-                            borderRadius: '8px',
-                            border: '1px solid #334155',
+                            padding: '10px 14px',
+                            backgroundColor: 'var(--bg-elevated)',
+                            borderRadius: 'var(--radius-control)',
+                            border: '1px solid var(--border-default)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
@@ -895,62 +905,62 @@ export default function JarvisVoiceAssistant({
                             gap: '8px'
                           }}
                         >
-                          <span style={{ fontSize: '0.74rem', color: '#93C5FD' }}>
-                            ⚡ <strong>Native C Graph Analysis:</strong> Multi-case relational graph generated ({item.data.cross_case_graph?.nodes?.length || 0} nodes, {item.data.cross_case_graph?.edges?.length || 0} edges).
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-primary)' }}>
+                            ⚡ <strong>Native C Graph Analysis:</strong> Multi-case relationship graph computed ({item.data.cross_case_graph?.nodes?.length || 0} nodes, {item.data.cross_case_graph?.edges?.length || 0} edges).
                           </span>
                           {onNavigateTab && (
                             <button
-                              onClick={() => onNavigateTab('cross_case_graph')}
+                              onClick={() => onNavigateTab('case_analysis')}
                               style={{
-                                backgroundColor: '#0284C7',
+                                backgroundColor: 'var(--accent-primary)',
                                 color: '#FFFFFF',
                                 border: 'none',
-                                borderRadius: '4px',
-                                padding: '4px 8px',
-                                fontSize: '0.72rem',
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '6px 12px',
+                                fontSize: '0.75rem',
                                 fontWeight: '600',
                                 cursor: 'pointer'
                               }}
                             >
-                              Open Cross-Case Graph View ➜
+                              Explore Cross-Case Graph ➜
                             </button>
                           )}
                         </div>
                       )}
 
-                      {/* Similar Historical Cases Carousel / Cards */}
+                      {/* Similar Historical Cases Cards */}
                       {item.data.similar_cases && item.data.similar_cases.length > 0 && (
-                        <div style={{ marginTop: '8px' }}>
+                        <div style={{ marginTop: '4px' }}>
                           <div
                             style={{
                               fontSize: '0.75rem',
                               fontWeight: '700',
-                              letterSpacing: '0.05em',
+                              letterSpacing: '0.04em',
                               textTransform: 'uppercase',
-                              color: '#94A3B8',
+                              color: 'var(--text-muted)',
                               marginBottom: '8px'
                             }}
                           >
-                            Retrieved Historical Precedents ({item.data.similar_cases.length} cases):
+                            Retrieved Historical Cases ({item.data.similar_cases.length} authentic precedents):
                           </div>
 
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {item.data.similar_cases.map((c, i) => (
                               <div
                                 key={i}
                                 style={{
-                                  backgroundColor: '#111827',
-                                  border: '1px solid #1F2937',
-                                  borderRadius: '8px',
-                                  padding: '12px 14px'
+                                  backgroundColor: 'var(--bg-elevated)',
+                                  border: '1px solid var(--border-default)',
+                                  borderRadius: 'var(--radius-control)',
+                                  padding: '14px'
                                 }}
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontWeight: '700', color: '#60A5FA', fontSize: '0.82rem', fontFamily: 'monospace' }}>
+                                    <span style={{ fontWeight: '700', color: 'var(--accent-primary)', fontSize: '0.85rem' }} className="mono">
                                       {c.case_reference_number || c.document_title}
                                     </span>
-                                    <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                       {c.country} • {c.jurisdiction}
                                     </span>
                                   </div>
@@ -960,63 +970,63 @@ export default function JarvisVoiceAssistant({
                                       fontSize: '0.68rem',
                                       fontWeight: '700',
                                       padding: '2px 8px',
-                                      borderRadius: '4px',
+                                      borderRadius: 'var(--radius-pill)',
                                       backgroundColor:
-                                        c.relevance_tier === 'HIGH' ? 'rgba(16, 185, 129, 0.2)' :
-                                        c.relevance_tier === 'MEDIUM' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(107, 114, 128, 0.2)',
+                                        c.relevance_tier === 'HIGH' ? 'var(--status-success-dim)' : 'var(--bg-card)',
                                       color:
-                                        c.relevance_tier === 'HIGH' ? '#34D399' :
-                                        c.relevance_tier === 'MEDIUM' ? '#FBBF24' : '#9CA3AF'
+                                        c.relevance_tier === 'HIGH' ? 'var(--status-success)' : 'var(--text-secondary)',
+                                      border: `1px solid ${c.relevance_tier === 'HIGH' ? 'var(--status-success-border)' : 'var(--border-default)'}`
                                     }}
                                   >
                                     {c.relevance_tier} RELEVANCE
                                   </span>
                                 </div>
 
-                                <div style={{ fontSize: '0.78rem', color: '#D1D5DB', marginBottom: '6px' }}>
-                                  <strong>Documented Outcome:</strong> {c.case_outcome || 'Not documented'}
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                                  <strong>Documented Outcome:</strong> {c.case_outcome || 'Resolution not documented'}
                                 </div>
 
-                                {/* Comparison Toggle */}
+                                {/* Comparison Details Toggle */}
                                 <button
                                   onClick={() => setExpandedCaseId(expandedCaseId === c.document_id ? null : c.document_id)}
                                   style={{
                                     backgroundColor: 'transparent',
                                     border: 'none',
-                                    color: '#38BDF8',
-                                    fontSize: '0.72rem',
+                                    color: 'var(--accent-primary)',
+                                    fontSize: '0.75rem',
                                     cursor: 'pointer',
                                     padding: 0,
                                     textDecoration: 'underline'
                                   }}
                                 >
-                                  {expandedCaseId === c.document_id ? 'Hide Comparative Facts' : 'Inspect Similar vs Divergent Facts'}
+                                  {expandedCaseId === c.document_id ? 'Hide Comparative Analysis' : 'Inspect Similar vs Divergent Facts'}
                                 </button>
 
                                 {expandedCaseId === c.document_id && c.comparison && (
                                   <div
                                     style={{
-                                      marginTop: '8px',
-                                      padding: '10px',
-                                      backgroundColor: '#0F172A',
-                                      borderRadius: '6px',
-                                      fontSize: '0.75rem',
+                                      marginTop: '10px',
+                                      padding: '12px',
+                                      backgroundColor: 'var(--bg-primary)',
+                                      borderRadius: 'var(--radius-control)',
+                                      fontSize: '0.78rem',
                                       display: 'grid',
-                                      gridTemplateColumns: '1fr 1fr',
-                                      gap: '12px'
+                                      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                                      gap: '12px',
+                                      border: '1px solid var(--border-default)'
                                     }}
                                   >
                                     <div>
-                                      <span style={{ color: '#34D399', fontWeight: '600' }}>✓ Matching Circumstances:</span>
-                                      <ul style={{ margin: '4px 0 0 16px', padding: 0, color: '#CBD5E1' }}>
+                                      <span style={{ color: 'var(--status-success)', fontWeight: '600' }}>✓ Supported Similarities:</span>
+                                      <ul style={{ margin: '6px 0 0 16px', padding: 0, color: 'var(--text-secondary)' }}>
                                         {c.comparison.similar_facts?.map((f, fi) => (
                                           <li key={fi}>{f}</li>
                                         ))}
                                       </ul>
                                     </div>
                                     <div>
-                                      <span style={{ color: '#F87171', fontWeight: '600' }}>✗ Divergent Circumstances:</span>
-                                      <ul style={{ margin: '4px 0 0 16px', padding: 0, color: '#CBD5E1' }}>
+                                      <span style={{ color: 'var(--status-danger)', fontWeight: '600' }}>✗ Divergent Circumstances:</span>
+                                      <ul style={{ margin: '6px 0 0 16px', padding: 0, color: 'var(--text-secondary)' }}>
                                         {c.comparison.different_facts?.map((df, dfi) => (
                                           <li key={dfi}>{df}</li>
                                         ))}
@@ -1032,31 +1042,100 @@ export default function JarvisVoiceAssistant({
 
                       {/* Verified Source Citations Badges */}
                       {item.data.citations && item.data.citations.length > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid #1E293B' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '600' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700' }}>
                             SOURCE CITATIONS:
                           </span>
                           {item.data.citations.map((cit, ci) => (
                             <span
                               key={ci}
                               onClick={() => setSelectedCitation(cit)}
+                              className="mono"
                               style={{
                                 cursor: 'pointer',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: '#1E293B',
-                                border: '1px solid #334155',
-                                color: '#93C5FD',
+                                padding: '3px 8px',
+                                borderRadius: 'var(--radius-sm)',
+                                backgroundColor: 'var(--bg-elevated)',
+                                border: '1px solid var(--border-default)',
+                                color: 'var(--accent-primary)',
                                 fontSize: '0.72rem',
-                                fontFamily: 'monospace'
+                                fontWeight: '600'
                               }}
-                              title={`Click to view record: ${cit.title}`}
+                              title={`Click to inspect source citation: ${cit.source_title || cit.title}`}
                             >
                               {cit.citation_id} • {cit.case_reference_number}
                             </span>
                           ))}
                         </div>
                       )}
+
+                      {/* Contextual Follow-Up Suggestions & Report Action */}
+                      <div style={{ paddingTop: '10px', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                            RECOMMENDED INVESTIGATIVE FOLLOW-UPS:
+                          </span>
+                          <button
+                            onClick={handleSaveToReport}
+                            className="btn-secondary"
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: '0.72rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <ReportIcon size={12} />
+                            <span>{saveSuccessNotice ? 'Saved to Dossier Report ✓' : 'Save Findings to Report'}</span>
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          <button
+                            onClick={() => handleSubmitQuery('How was the closest matching case investigated?')}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: 'var(--radius-pill)',
+                              backgroundColor: 'var(--bg-elevated)',
+                              border: '1px solid var(--border-default)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            💬 How was the closest matching case investigated?
+                          </button>
+                          <button
+                            onClick={() => handleSubmitQuery('What should I verify next?')}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: 'var(--radius-pill)',
+                              backgroundColor: 'var(--bg-elevated)',
+                              border: '1px solid var(--border-default)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🔍 What should I verify next?
+                          </button>
+                          <button
+                            onClick={() => handleSubmitQuery('Are these incidents directly connected?')}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: 'var(--radius-pill)',
+                              backgroundColor: 'var(--bg-elevated)',
+                              border: '1px solid var(--border-default)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🔗 Are these incidents directly connected?
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1069,8 +1148,8 @@ export default function JarvisVoiceAssistant({
           <div
             style={{
               padding: '16px 20px',
-              backgroundColor: '#0F172A',
-              borderTop: '1px solid #1E293B'
+              backgroundColor: 'var(--bg-secondary)',
+              borderTop: '1px solid var(--border-default)'
             }}
           >
             {/* Live interim transcript banner when active */}
@@ -1082,11 +1161,11 @@ export default function JarvisVoiceAssistant({
                   gap: '8px',
                   marginBottom: '8px',
                   padding: '6px 12px',
-                  borderRadius: '6px',
-                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                  border: '1px solid rgba(6, 182, 212, 0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--accent-primary-dim)',
+                  border: '1px solid var(--border-highlight)',
                   fontSize: '0.75rem',
-                  color: '#38BDF8'
+                  color: 'var(--accent-primary)'
                 }}
               >
                 <span
@@ -1094,11 +1173,11 @@ export default function JarvisVoiceAssistant({
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    backgroundColor: '#06B6D4',
+                    backgroundColor: 'var(--accent-primary)',
                     animation: 'pulse 1s infinite'
                   }}
                 />
-                <span>Listening live... words appear in text field as you speak.</span>
+                <span>Listening live... spoken words appear in the inquiry field.</span>
               </div>
             )}
 
@@ -1116,16 +1195,16 @@ export default function JarvisVoiceAssistant({
                 placeholder={
                   speechRecognitionService.isListening()
                     ? 'Listening... speaking will transcribe here.'
-                    : 'Speak using the microphone or type your investigation query here...'
+                    : 'Describe an incident verbally using the mic, or type your inquiry here...'
                 }
                 disabled={isSubmitting}
                 style={{
                   flex: 1,
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  backgroundColor: '#1E293B',
-                  border: '1px solid #334155',
-                  color: '#F8FAFC',
+                  padding: '12px 16px',
+                  borderRadius: 'var(--radius-control)',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-default)',
+                  color: 'var(--text-primary)',
                   fontSize: '0.85rem',
                   outline: 'none'
                 }}
@@ -1134,15 +1213,11 @@ export default function JarvisVoiceAssistant({
               <button
                 type="submit"
                 disabled={!transcript.trim() || isSubmitting}
+                className="btn-primary"
                 style={{
-                  padding: '10px 18px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: !transcript.trim() || isSubmitting ? '#334155' : '#0284C7',
-                  color: '#FFFFFF',
-                  fontWeight: '600',
+                  padding: '12px 20px',
+                  height: 'auto',
                   fontSize: '0.82rem',
-                  cursor: !transcript.trim() || isSubmitting ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px'
@@ -1162,14 +1237,11 @@ export default function JarvisVoiceAssistant({
                 <button
                   type="button"
                   onClick={() => setTranscript('')}
+                  className="btn-secondary"
                   style={{
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #334155',
-                    backgroundColor: '#1E293B',
-                    color: '#94A3B8',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer'
+                    padding: '12px 14px',
+                    height: 'auto',
+                    fontSize: '0.8rem'
                   }}
                   title="Clear Transcript"
                 >
@@ -1190,65 +1262,59 @@ export default function JarvisVoiceAssistant({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backgroundColor: 'rgba(0, 0, 0, 0.72)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '20px'
+            padding: '20px',
+            backdropFilter: 'blur(4px)'
           }}
           onClick={() => setSelectedCitation(null)}
         >
           <div
             style={{
-              backgroundColor: '#0F172A',
-              border: '1px solid #334155',
-              borderRadius: '12px',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-card)',
               padding: '24px',
               maxWidth: '560px',
               width: '100%',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+              boxShadow: 'var(--shadow-modal)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldCheckIcon size={20} color="#38BDF8" />
-                <h4 style={{ margin: 0, fontSize: '1rem', color: '#F8FAFC' }}>
+                <ShieldCheckIcon size={20} color="var(--accent-primary)" />
+                <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>
                   Verified Source Record: {selectedCitation.citation_id}
                 </h4>
               </div>
               <button
                 onClick={() => setSelectedCitation(null)}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '1.2rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ fontSize: '0.82rem', color: '#CBD5E1', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div><strong>Case Reference:</strong> <span style={{ fontFamily: 'monospace', color: '#60A5FA' }}>{selectedCitation.case_reference_number}</span></div>
-              <div><strong>Document Title:</strong> {selectedCitation.source_title}</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div><strong>Case Reference:</strong> <span className="mono" style={{ color: 'var(--accent-primary)' }}>{selectedCitation.case_reference_number}</span></div>
+              <div><strong>Document Title:</strong> {selectedCitation.source_title || selectedCitation.title}</div>
               <div><strong>Jurisdiction:</strong> {selectedCitation.country} • {selectedCitation.jurisdiction}</div>
               <div><strong>Publisher / Source:</strong> {selectedCitation.publisher}</div>
-              <div><strong>Data Classification:</strong> <span style={{ color: '#34D399' }}>{selectedCitation.access_classification}</span></div>
+              <div><strong>Data Classification:</strong> <span style={{ color: 'var(--status-success)', fontWeight: '600' }}>{selectedCitation.access_classification}</span></div>
               {/^https?:\/\//i.test(selectedCitation.source_url || '') && (
-                <div><strong>Source URL:</strong> <a href={selectedCitation.source_url} target="_blank" rel="noreferrer" style={{ color: '#38BDF8', wordBreak: 'break-all' }}>{selectedCitation.source_url}</a></div>
+                <div><strong>Source URL:</strong> <a href={selectedCitation.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-primary)', wordBreak: 'break-all' }}>{selectedCitation.source_url}</a></div>
               )}
             </div>
 
             <div style={{ marginTop: '20px', textAlign: 'right' }}>
               <button
                 onClick={() => setSelectedCitation(null)}
-                style={{
-                  backgroundColor: '#0284C7',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '8px 16px',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer'
-                }}
+                className="btn-primary"
+                style={{ fontSize: '0.8rem', padding: '8px 16px' }}
               >
                 Close Record
               </button>

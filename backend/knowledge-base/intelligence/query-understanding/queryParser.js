@@ -36,11 +36,19 @@ class QueryParser {
     const isFollowUp = conversationContext && (
       text.includes('that case') ||
       text.includes('the previous case') ||
+      text.includes('previous cases') ||
       text.includes('this case') ||
+      text.includes('these cases') ||
+      text.includes('those cases') ||
+      text.includes('closest matching') ||
       text.includes('was it solved') ||
+      text.includes('were they solved') ||
       text.includes('how was it solved') ||
+      text.includes('how were they solved') ||
       text.includes('how was that case') ||
+      text.includes('how were those cases') ||
       text.includes('how was the') ||
+      text.includes('how were the') ||
       text.includes('what evidence') ||
       text.includes('did they recover') ||
       text.includes('verify next') ||

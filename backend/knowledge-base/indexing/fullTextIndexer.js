@@ -69,8 +69,13 @@ class FullTextIndexer {
 
     // Filter by country
     if (filters.country) {
-      conditions.push(`kd.country = ?`);
-      params.push(filters.country);
+      if (Array.isArray(filters.country) && filters.country.length > 0) {
+        conditions.push(`kd.country IN (${filters.country.map(() => '?').join(', ')})`);
+        params.push(...filters.country);
+      } else if (typeof filters.country === 'string') {
+        conditions.push(`kd.country = ?`);
+        params.push(filters.country);
+      }
     }
 
     // Filter by language

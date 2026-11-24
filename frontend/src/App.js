@@ -2,40 +2,61 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginForm from './components/LoginForm';
-import Dashboard from './pages/Dashboard';
 import Investigations from './pages/Investigations';
 import CaseDetailsPanel from './components/CaseDetailsPanel';
 import GraphAnalysis from './pages/GraphAnalysis';
-import EvidenceGapPanel from './components/EvidenceGapPanel';
 import EvidenceGapWorkspace from './pages/EvidenceGapWorkspace';
 import TimelinePanel from './components/TimelinePanel';
 import InvestigativeLeadsPanel from './components/InvestigativeLeadsPanel';
 import EvidenceIntegrityPanel from './components/EvidenceIntegrityPanel';
 import EvidenceVaultPanel from './components/EvidenceVaultPanel';
-import GeospatialMapPanel from './components/GeospatialMapPanel';
-import CollaborationPanel from './components/CollaborationPanel';
 import ReportExportModal from './components/ReportExportModal';
 import CreateCaseModal from './components/CreateCaseModal';
 import SettingsModal from './components/SettingsModal';
-import ValidationDashboard from './components/ValidationDashboard';
-import InvestigationLab from './pages/InvestigationLab';
 import ReportCenter from './pages/ReportCenter';
-import InvestigationIntelligencePanel from './components/InvestigationIntelligencePanel';
 import JarvisVoiceAssistant from './components/JarvisVoiceAssistant';
 import CrossCaseGraphView from './components/CrossCaseGraphView';
+import SettingsView from './pages/SettingsView';
 import api from './services/api';
 import './styles/theme.css';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Phase 20: AI Assistant is the primary workspace landing view after login
+  const [activeTab, setActiveTab] = useState('ai_assistant');
   const [selectedCaseId, setSelectedCaseId] = useState(1);
   const [caseData, setCaseData] = useState(null);
   const [analysisData, setAnalysisData] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
 
-  // Navigation & filtering state
+  // Sub-view states for consolidated sections
+  const [evidenceSubTab, setEvidenceSubTab] = useState('vault'); // 'vault' | 'integrity'
+  const [analysisSubTab, setAnalysisSubTab] = useState('gaps'); // 'gaps' | 'graph' | 'cross_case' | 'timeline'
+  const [viewingDossier, setViewingDossier] = useState(false);
   const [caseFilter, setCaseFilter] = useState('ALL');
-  const [collaborationSubTab, setCollaborationSubTab] = useState('tasks');
+
+  // Theme Management (Apple-inspired Dark Charcoal & Light Neutral)
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('casethread_theme') || 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('casethread_theme', theme);
+    } catch (e) {}
+  }, [theme]);
+
+  const handleToggleTheme = (specificTheme) => {
+    if (typeof specificTheme === 'string') {
+      setTheme(specificTheme);
+    } else {
+      setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+    }
+  };
 
   // Sidebar collapse & responsive state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -197,7 +218,9 @@ export default function App() {
     } catch (e) {
       console.warn('Could not cache officer profile in localStorage:', e);
     }
-    setActiveTab('dashboard');
+    // Landing workspace upon successful authentication is AI Assistant
+    setActiveTab('ai_assistant');
+    setViewingDossier(false);
     setCaseFilter('ALL');
   };
 
@@ -207,12 +230,12 @@ export default function App() {
       localStorage.removeItem('casethread_officer');
     } catch (e) {}
     setOfficer(null);
-    setActiveTab('dashboard');
+    setActiveTab('ai_assistant');
     setCaseData(null);
     setAnalysisData(null);
   };
 
-  // Handler for navigation selections originating from the Sidebar
+  // Handler for navigation selections originating from the Sidebar or any view
   const handleSelectNav = (tabId, options = {}) => {
     if (options.action === 'create_case') {
       setIsCreateCaseOpen(true);
@@ -222,21 +245,49 @@ export default function App() {
       setActiveTab('reports');
       return;
     }
-    if (options.action === 'open_settings') {
-      setSettingsModalOpen(true);
+    if (options.action === 'open_settings' || tabId === 'settings') {
+      setActiveTab('settings');
+      return;
+    }
+
+    if (tabId === 'dashboard' || tabId === 'investigations') {
+      setActiveTab('investigations');
+      setViewingDossier(false);
+      if (options.caseFilter !== undefined) {
+        setCaseFilter(options.caseFilter);
+      }
+      return;
+    }
+
+    if (tabId === 'dossier') {
+      setActiveTab('investigations');
+      setViewingDossier(true);
+      return;
+    }
+
+    if (tabId === 'vault' || tabId === 'integrity' || tabId === 'evidence') {
+      setActiveTab('evidence');
+      if (tabId === 'integrity') setEvidenceSubTab('integrity');
+      else setEvidenceSubTab('vault');
+      return;
+    }
+
+    if (['case_analysis', 'graph', 'gaps', 'cross_case_graph', 'timeline', 'leads'].includes(tabId)) {
+      setActiveTab('case_analysis');
+      if (tabId === 'graph') setAnalysisSubTab('graph');
+      else if (tabId === 'cross_case_graph') setAnalysisSubTab('cross_case');
+      else if (tabId === 'timeline' || tabId === 'leads') setAnalysisSubTab('timeline');
+      else setAnalysisSubTab('gaps');
+      return;
+    }
+
+    if (tabId === 'ai_assistant' || tabId === 'voice_assistant') {
+      setActiveTab('ai_assistant');
       return;
     }
 
     if (tabId) {
       setActiveTab(tabId);
-    }
-
-    if (options.caseFilter !== undefined) {
-      setCaseFilter(options.caseFilter);
-    }
-
-    if (options.subTab) {
-      setCollaborationSubTab(options.subTab);
     }
   };
 
@@ -246,7 +297,8 @@ export default function App() {
     if (newId) {
       setSelectedCaseId(newId);
       loadCaseInfo(newId);
-      setActiveTab('dossier');
+      setActiveTab('investigations');
+      setViewingDossier(true);
     }
   };
 
@@ -270,7 +322,7 @@ export default function App() {
             width: '40px',
             height: '40px',
             border: '3px solid var(--border-default)',
-            borderTopColor: 'var(--accent-red)',
+            borderTopColor: 'var(--accent-primary)',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }}
@@ -282,7 +334,7 @@ export default function App() {
     );
   }
 
-  // 2. Unauthenticated State: Render Login Portal (Sidebar strictly hidden)
+  // 2. Unauthenticated State: Render Login Portal
   if (!officer) {
     return <LoginForm onLoginSuccess={handleLoginSuccess} />;
   }
@@ -299,12 +351,11 @@ export default function App() {
         backgroundColor: 'var(--bg-primary)'
       }}
     >
-      {/* Collapsible Left Navigation Sidebar */}
+      {/* Collapsible Left Navigation Sidebar (6 canonical sections) */}
       <Sidebar
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
         activeTab={activeTab}
-        activeSubTab={collaborationSubTab}
         caseFilter={caseFilter}
         onSelectNav={handleSelectNav}
         officer={officer}
@@ -312,6 +363,8 @@ export default function App() {
         isMobile={isMobile}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main Content Area Positioned to the Right of the Sidebar */}
@@ -327,7 +380,7 @@ export default function App() {
           minWidth: 0
         }}
       >
-        {/* Top Content Header (Breadcrumbs, Case Badge, Actions) */}
+        {/* Top Content Header */}
         <Header
           officer={officer}
           activeTab={activeTab}
@@ -336,177 +389,294 @@ export default function App() {
           onOpenCreateCase={() => setIsCreateCaseOpen(true)}
           onOpenReport={() => setActiveTab('reports')}
           onOpenVoiceAssistant={() => setIsVoiceOverlayOpen(true)}
-          onOpenNotifications={() => {
-            setActiveTab('collaboration');
-            setCollaborationSubTab('notifications');
-          }}
           unreadCount={unreadNotifications}
           onToggleMobileSidebar={() => setMobileSidebarOpen((prev) => !prev)}
           isMobile={isMobile}
+          theme={theme}
+          onToggleTheme={handleToggleTheme}
         />
 
         {/* Dynamic Investigation Workspace Views */}
-        <main style={{ flex: 1, padding: '1rem 0' }}>
-          {activeTab === 'dashboard' && (
-            <Dashboard
-              selectedCaseId={selectedCaseId}
-              onSelectCaseId={setSelectedCaseId}
-              onNavigateTab={setActiveTab}
-              caseFilter={caseFilter}
-              onOpenCreateCase={() => setIsCreateCaseOpen(true)}
-            />
-          )}
-
-          {activeTab === 'investigations' && (
-            <Investigations
-              selectedCaseId={selectedCaseId}
-              onSelectCaseId={(id) => {
-                setSelectedCaseId(id);
-                loadCaseInfo(id);
-              }}
-              onNavigateTab={setActiveTab}
-              initialFilter={caseFilter}
-              onOpenCreateCase={() => setIsCreateCaseOpen(true)}
-            />
-          )}
-
-          {activeTab === 'dossier' && (
-            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
-              <CaseDetailsPanel
-                caseData={caseData}
-                onTriggerAnalysis={handleTriggerAnalysis}
-                analyzing={analyzing}
-                onExploreGraph={() => setActiveTab('graph')}
-                onRefreshCase={loadCaseInfo}
-                onOpenReport={() => setActiveTab('reports')}
-                onBack={() => setActiveTab('investigations')}
-                onNavigateTab={setActiveTab}
-              />
-            </div>
-          )}
-
-          {activeTab === 'collaboration' && (
-            <CollaborationPanel
-              caseId={selectedCaseId}
+        <main style={{ flex: 1, padding: activeTab === 'ai_assistant' ? '0' : '1.25rem 0' }}>
+          {/* 1. AI Assistant (Primary Landing Workspace) */}
+          {(activeTab === 'ai_assistant' || activeTab === 'voice_assistant') && (
+            <JarvisVoiceAssistant
+              activeCase={caseData}
               officer={officer}
-              onNotificationCountChange={setUnreadNotifications}
-              initialSubTab={collaborationSubTab}
+              onNavigateTab={handleSelectNav}
             />
           )}
 
-          {activeTab === 'vault' && (
+          {/* 2. Investigations Section */}
+          {(activeTab === 'investigations' || activeTab === 'dashboard') && (
             <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
-              <EvidenceVaultPanel
-                selectedCaseId={selectedCaseId}
-                officer={officer}
-              />
+              {viewingDossier && selectedCaseId ? (
+                <div>
+                  <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button
+                      onClick={() => setViewingDossier(false)}
+                      className="btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', padding: '6px 14px' }}
+                    >
+                      ← Back to Investigations Roster
+                    </button>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Dossier: <strong>{caseData?.case_number || `CASE #${selectedCaseId}`}</strong>
+                    </span>
+                  </div>
+                  <CaseDetailsPanel
+                    caseData={caseData}
+                    onTriggerAnalysis={handleTriggerAnalysis}
+                    analyzing={analyzing}
+                    onExploreGraph={() => handleSelectNav('graph')}
+                    onRefreshCase={loadCaseInfo}
+                    onOpenReport={() => setActiveTab('reports')}
+                    onBack={() => setViewingDossier(false)}
+                    onNavigateTab={handleSelectNav}
+                  />
+                </div>
+              ) : (
+                <Investigations
+                  selectedCaseId={selectedCaseId}
+                  onSelectCaseId={(id) => {
+                    setSelectedCaseId(id);
+                    loadCaseInfo(id);
+                    setViewingDossier(true);
+                  }}
+                  onNavigateTab={handleSelectNav}
+                  initialFilter={caseFilter}
+                  onOpenCreateCase={() => setIsCreateCaseOpen(true)}
+                />
+              )}
             </div>
           )}
 
-          {activeTab === 'geospatial' && (
-            <GeospatialMapPanel
-              selectedCaseId={selectedCaseId}
-              officer={officer}
-            />
-          )}
-
-          {activeTab === 'integrity' && (
-            <EvidenceIntegrityPanel
-              selectedCaseId={selectedCaseId}
-              officer={officer}
-              onOpenReport={() => setReportModalOpen(true)}
-            />
-          )}
-
-          {activeTab === 'graph' && (
-            <GraphAnalysis
-              initialCaseId={selectedCaseId}
-              onSelectCase={(id) => {
-                setSelectedCaseId(id);
-                loadCaseInfo(id);
-              }}
-            />
-          )}
-
-          {activeTab === 'gaps' && (
-            <EvidenceGapWorkspace
-              caseId={selectedCaseId}
-              onSelectCase={(id) => {
-                setSelectedCaseId(id);
-                loadCaseInfo(id);
-              }}
-            />
-          )}
-
-          {activeTab === 'intelligence' && (
+          {/* 3. Evidence Section (Unified Vault & Chain of Custody) */}
+          {(activeTab === 'evidence' || activeTab === 'vault' || activeTab === 'integrity') && (
             <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
-              <InvestigationIntelligencePanel
-                activeCase={caseData}
-                officer={officer}
-                onNavigateTab={setActiveTab}
-              />
-            </div>
-          )}
-
-          {activeTab === 'voice_assistant' && (
-            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 1.5rem' }}>
-              <JarvisVoiceAssistant
-                activeCase={caseData}
-                officer={officer}
-                onNavigateTab={setActiveTab}
-              />
-            </div>
-          )}
-
-          {activeTab === 'cross_case_graph' && (
-            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 1.5rem' }}>
-              <CrossCaseGraphView
-                selectedCaseId={selectedCaseId}
-                onSelectCase={(id) => {
-                  setSelectedCaseId(id);
-                  loadCaseInfo(id);
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '1.25rem',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem'
                 }}
-              />
+              >
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                    Evidence Management & Custody Vault
+                  </h2>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Cryptographic evidence vault, automated SHA-256 integrity, and court-admissible chain of custody.
+                  </p>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '4px',
+                    backgroundColor: 'var(--bg-elevated)',
+                    padding: '4px',
+                    borderRadius: 'var(--radius-control)',
+                    border: '1px solid var(--border-default)'
+                  }}
+                >
+                  <button
+                    onClick={() => setEvidenceSubTab('vault')}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      backgroundColor: evidenceSubTab === 'vault' ? 'var(--accent-primary)' : 'transparent',
+                      color: evidenceSubTab === 'vault' ? '#FFFFFF' : 'var(--text-secondary)',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Evidence Vault & Files
+                  </button>
+                  <button
+                    onClick={() => setEvidenceSubTab('integrity')}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      backgroundColor: evidenceSubTab === 'integrity' ? 'var(--accent-primary)' : 'transparent',
+                      color: evidenceSubTab === 'integrity' ? '#FFFFFF' : 'var(--text-secondary)',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Chain of Custody & Hashes
+                  </button>
+                </div>
+              </div>
+
+              {evidenceSubTab === 'vault' && (
+                <EvidenceVaultPanel
+                  selectedCaseId={selectedCaseId}
+                  officer={officer}
+                />
+              )}
+              {evidenceSubTab === 'integrity' && (
+                <EvidenceIntegrityPanel
+                  selectedCaseId={selectedCaseId}
+                  officer={officer}
+                  onOpenReport={() => setReportModalOpen(true)}
+                />
+              )}
             </div>
           )}
 
-          {activeTab === 'timeline' && (
+          {/* 4. Case Analysis Section (Gap Analysis, Graphs, Cross-Case, Timelines) */}
+          {(activeTab === 'case_analysis' || activeTab === 'graph' || activeTab === 'gaps' || activeTab === 'cross_case_graph' || activeTab === 'timeline' || activeTab === 'leads') && (
             <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
-              <TimelinePanel
-                caseId={selectedCaseId}
-                caseData={caseData}
-                onSelectCase={(id) => { setSelectedCaseId(id); loadCaseInfo(id); }}
-                onRefreshCase={() => loadCaseInfo(selectedCaseId)}
-              />
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '1.25rem',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem'
+                }}
+              >
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                    Forensic Case Analysis & Native C Graph Intelligence
+                  </h2>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Detect evidentiary contradictions, explore relational networks, and uncover cross-case patterns.
+                  </p>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '4px',
+                    backgroundColor: 'var(--bg-elevated)',
+                    padding: '4px',
+                    borderRadius: 'var(--radius-control)',
+                    border: '1px solid var(--border-default)',
+                    flexWrap: 'wrap'
+                  }}
+                >
+                  <button
+                    onClick={() => setAnalysisSubTab('gaps')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      backgroundColor: analysisSubTab === 'gaps' ? 'var(--accent-primary)' : 'transparent',
+                      color: analysisSubTab === 'gaps' ? '#FFFFFF' : 'var(--text-secondary)',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Evidence Gap Analysis
+                  </button>
+                  <button
+                    onClick={() => setAnalysisSubTab('graph')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      backgroundColor: analysisSubTab === 'graph' ? 'var(--accent-primary)' : 'transparent',
+                      color: analysisSubTab === 'graph' ? '#FFFFFF' : 'var(--text-secondary)',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Relational Graph (C-Engine)
+                  </button>
+                  <button
+                    onClick={() => setAnalysisSubTab('cross_case')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      backgroundColor: analysisSubTab === 'cross_case' ? 'var(--accent-primary)' : 'transparent',
+                      color: analysisSubTab === 'cross_case' ? '#FFFFFF' : 'var(--text-secondary)',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cross-Case Graph
+                  </button>
+                  <button
+                    onClick={() => setAnalysisSubTab('timeline')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: 'none',
+                      backgroundColor: analysisSubTab === 'timeline' ? 'var(--accent-primary)' : 'transparent',
+                      color: analysisSubTab === 'timeline' ? '#FFFFFF' : 'var(--text-secondary)',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Timeline & Priority Leads
+                  </button>
+                </div>
+              </div>
+
+              {analysisSubTab === 'gaps' && (
+                <EvidenceGapWorkspace
+                  caseId={selectedCaseId}
+                  onSelectCase={(id) => {
+                    setSelectedCaseId(id);
+                    loadCaseInfo(id);
+                  }}
+                />
+              )}
+              {analysisSubTab === 'graph' && (
+                <GraphAnalysis
+                  initialCaseId={selectedCaseId}
+                  onSelectCase={(id) => {
+                    setSelectedCaseId(id);
+                    loadCaseInfo(id);
+                  }}
+                />
+              )}
+              {analysisSubTab === 'cross_case' && (
+                <CrossCaseGraphView
+                  selectedCaseId={selectedCaseId}
+                  onSelectCase={(id) => {
+                    setSelectedCaseId(id);
+                    loadCaseInfo(id);
+                  }}
+                />
+              )}
+              {analysisSubTab === 'timeline' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <TimelinePanel
+                    caseId={selectedCaseId}
+                    caseData={caseData}
+                    onSelectCase={(id) => {
+                      setSelectedCaseId(id);
+                      loadCaseInfo(id);
+                    }}
+                    onRefreshCase={() => loadCaseInfo(selectedCaseId)}
+                  />
+                  <InvestigativeLeadsPanel
+                    leads={
+                      analysisData?.prioritized_leads && analysisData.prioritized_leads.length > 0
+                        ? analysisData.prioritized_leads
+                        : (caseData?.leads || [])
+                    }
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          {activeTab === 'leads' && (
-            <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
-              <InvestigativeLeadsPanel
-                leads={
-                  analysisData?.prioritized_leads && analysisData.prioritized_leads.length > 0
-                    ? analysisData.prioritized_leads
-                    : caseData?.leads || []
-                }
-              />
-            </div>
-          )}
-
-          {activeTab === 'validation' && (
-            <ValidationDashboard />
-          )}
-
-          {activeTab === 'lab' && (
-            <InvestigationLab
-              selectedCaseId={selectedCaseId}
-              onSelectCaseId={(id) => {
-                setSelectedCaseId(id);
-                loadCaseInfo(id);
-              }}
-            />
-          )}
-
+          {/* 5. Reports Section */}
           {activeTab === 'reports' && (
             <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 2rem' }}>
               <ReportCenter
@@ -518,6 +688,15 @@ export default function App() {
                 }}
               />
             </div>
+          )}
+
+          {/* 6. Settings Section */}
+          {activeTab === 'settings' && (
+            <SettingsView
+              officer={officer}
+              theme={theme}
+              onToggleTheme={handleToggleTheme}
+            />
           )}
         </main>
 
@@ -533,7 +712,7 @@ export default function App() {
             fontFamily: 'var(--font-mono)'
           }}
         >
-          CASETHREAD v1.0.0 • Digital Forensics Intelligence Subsystem • C-Engine Architecture (BFS • DFS • AVL • HashMaps)
+          CASETHREAD v1.0.0 • AI-First Digital Forensics Assistant • Native C DSA Engine (BFS • DFS • Dijkstra • HashMaps)
         </footer>
       </div>
 
@@ -590,7 +769,7 @@ export default function App() {
               officer={officer}
               isOverlay={true}
               onClose={() => setIsVoiceOverlayOpen(false)}
-              onNavigateTab={setActiveTab}
+              onNavigateTab={handleSelectNav}
             />
           </div>
         </div>

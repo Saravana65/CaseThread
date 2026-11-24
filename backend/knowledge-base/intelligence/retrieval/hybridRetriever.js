@@ -47,7 +47,7 @@ class HybridRetriever {
     // 1. Build search filters
     const filters = {};
     if (criteria.targetCountries && criteria.targetCountries.length > 0) {
-      filters.country = criteria.targetCountries[0];
+      filters.country = criteria.targetCountries.length === 1 ? criteria.targetCountries[0] : criteria.targetCountries;
     }
     if (criteria.explicitCrimeCategory) {
       filters.crimeCategory = criteria.explicitCrimeCategory;

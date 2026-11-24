@@ -5,7 +5,7 @@ import { MenuIcon, PlusIcon, ReportIcon, BellIcon, JarvisIcon } from './icons/Ic
  * @component Header
  * @description Apple-inspired minimalist top header bar for CASETHREAD.
  * Features: Clean typographic breadcrumb, active case context chip,
- * vector action triggers, and responsive mobile drawer toggle.
+ * theme toggle, vector action triggers, and responsive mobile drawer toggle.
  */
 export default function Header({
   officer,
@@ -18,7 +18,9 @@ export default function Header({
   onOpenVoiceAssistant,
   unreadCount = 0,
   onToggleMobileSidebar,
-  isMobile
+  isMobile,
+  theme = 'dark',
+  onToggleTheme = null
 }) {
   const currentOfficer = officer?.officer || officer?.data || officer;
   const isAuthenticated = Boolean(
@@ -26,27 +28,27 @@ export default function Header({
     (currentOfficer.badge_number || currentOfficer.officer_id || currentOfficer.full_name)
   );
 
-  // Map active tab to a readable breadcrumb label
+  // Map active tab to a readable breadcrumb label matching the 6 canonical sections
   const tabBreadcrumbMap = {
-    dashboard: { section: 'Platform', title: 'Dashboard' },
-    investigations: { section: 'Investigations', title: 'Investigations Directory' },
-    dossier: { section: 'Investigations', title: 'Case Dossier & Entities' },
-    collaboration: { section: 'Operations', title: 'Multi-Officer Collaboration' },
-    vault: { section: 'Intelligence', title: 'Evidence Vault & Files' },
-    geospatial: { section: 'Intelligence', title: 'Geospatial Intelligence Map' },
-    integrity: { section: 'Operations', title: 'Evidence Integrity & Custody' },
-    graph: { section: 'Intelligence', title: 'Evidence Relationship Graph' },
+    ai_assistant: { section: 'Workspace', title: 'AI Investigation Assistant' },
+    voice_assistant: { section: 'Workspace', title: 'AI Investigation Assistant' },
+    investigations: { section: 'Cases', title: 'Investigations Directory' },
+    dossier: { section: 'Cases', title: 'Case Master Dossier' },
+    dashboard: { section: 'Cases', title: 'Investigations' },
+    evidence: { section: 'Forensics', title: 'Evidence Management & Custody' },
+    vault: { section: 'Forensics', title: 'Evidence Vault & Files' },
+    integrity: { section: 'Forensics', title: 'Evidence Integrity & Hash Verification' },
+    case_analysis: { section: 'Intelligence', title: 'Forensic Case Analysis & Graphs' },
     gaps: { section: 'Intelligence', title: 'Evidence Gap Analysis' },
+    graph: { section: 'Intelligence', title: 'Native C Relational Graph' },
+    cross_case_graph: { section: 'Intelligence', title: 'Cross-Case Pattern Discovery' },
     timeline: { section: 'Intelligence', title: 'Chronological Timeline' },
-    intelligence: { section: 'Intelligence', title: 'AI Investigation Intelligence' },
-    voice_assistant: { section: 'Intelligence', title: 'JARVIS Conversational Voice AI' },
-    cross_case_graph: { section: 'Intelligence', title: 'Cross-Case Graph & Pattern Discovery' },
     leads: { section: 'Intelligence', title: 'Investigative Leads Ranking' },
-    lab: { section: 'System', title: 'Investigation Algorithm Lab' },
-    validation: { section: 'System', title: 'Forensic Validation Benchmarks' }
+    reports: { section: 'Documentation', title: 'Investigation Dossiers & Reports' },
+    settings: { section: 'System', title: 'System Settings & Diagnostics' }
   };
 
-  const breadcrumb = tabBreadcrumbMap[activeTab] || { section: 'Platform', title: 'Forensic Workspace' };
+  const breadcrumb = tabBreadcrumbMap[activeTab] || { section: 'Workspace', title: 'Forensic Workspace' };
 
   return (
     <header
@@ -129,7 +131,7 @@ export default function Header({
                   fontSize: '0.75rem',
                   height: '32px'
                 }}
-                title={`Active Case: ${caseData.title}`}
+                title={`Active Investigation: ${caseData.title}`}
               >
                 <span
                   style={{
@@ -150,6 +152,26 @@ export default function Header({
                   {caseData.priority || 'MEDIUM'}
                 </span>
               </div>
+            )}
+
+            {/* Theme Toggle Button */}
+            {onToggleTheme && (
+              <button
+                onClick={onToggleTheme}
+                className="btn-secondary"
+                style={{
+                  height: '32px',
+                  padding: '0 0.65rem',
+                  fontSize: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                aria-label="Toggle Theme"
+              >
+                <span>{theme === 'light' ? '🌙 Dark' : '☀️ Light'}</span>
+              </button>
             )}
 
             {/* Quick Action: New Case */}
@@ -178,8 +200,8 @@ export default function Header({
               </button>
             )}
 
-            {/* Quick Action: JARVIS Voice Assistant Launcher */}
-            {onOpenVoiceAssistant && (
+            {/* Quick Action: JARVIS Voice Assistant Overlay Launcher */}
+            {onOpenVoiceAssistant && activeTab !== 'ai_assistant' && activeTab !== 'voice_assistant' && (
               <button
                 onClick={onOpenVoiceAssistant}
                 className="btn-secondary"
@@ -189,58 +211,28 @@ export default function Header({
                   padding: '0 0.75rem',
                   backgroundColor: 'rgba(56, 189, 248, 0.1)',
                   borderColor: 'rgba(56, 189, 248, 0.35)',
-                  color: '#38BDF8',
+                  color: 'var(--accent-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px'
                 }}
-                title="Launch JARVIS Conversational AI Voice Assistant"
+                title="Open JARVIS AI Voice Overlay"
               >
-                <JarvisIcon size={14} color="#38BDF8" />
-                <span>JARVIS AI</span>
-              </button>
-            )}
-
-            {/* Notifications Bell */}
-            {onOpenNotifications && (
-              <button
-                onClick={onOpenNotifications}
-                className="btn-secondary"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  padding: 0,
-                  position: 'relative'
-                }}
-                title="Investigation Notifications & Alerts"
-                aria-label="Investigation Notifications"
-              >
-                <BellIcon size={15} color="var(--text-secondary)" />
-                {unreadCount > 0 && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '-2px',
-                      right: '-2px',
-                      backgroundColor: 'var(--status-danger)',
-                      color: '#FFFFFF',
-                      fontSize: '0.58rem',
-                      fontWeight: '700',
-                      borderRadius: 'var(--radius-pill)',
-                      padding: '0.1rem 0.35rem',
-                      lineHeight: 1
-                    }}
-                  >
-                    {unreadCount}
-                  </span>
-                )}
+                <JarvisIcon size={14} color="var(--accent-primary)" />
+                <span>Voice AI</span>
               </button>
             )}
           </>
         ) : (
-          <span className="badge badge-critical">
-            Authentication Required
-          </span>
+          <div
+            style={{
+              fontSize: '0.75rem',
+              color: 'var(--text-muted)',
+              fontFamily: 'var(--font-mono)'
+            }}
+          >
+            RESTRICTED ACCESS • OFFICIAL USE ONLY
+          </div>
         )}
       </div>
     </header>

@@ -1,22 +1,10 @@
 import React from 'react';
 import {
   LogoMark,
-  DashboardIcon,
   CasesIcon,
   NewCaseIcon,
-  ActiveIcon,
-  SolvedIcon,
   VaultIcon,
   GraphIcon,
-  TimelineIcon,
-  GapsIcon,
-  LeadsIcon,
-  GeospatialIcon,
-  OfficersIcon,
-  TasksIcon,
-  ReviewsIcon,
-  ActivityIcon,
-  ValidationIcon,
   JarvisIcon,
   ReportIcon,
   SettingsIcon,
@@ -28,245 +16,103 @@ import {
 
 /**
  * @component Sidebar
- * @description Apple-inspired minimalist navigation sidebar for CASETHREAD.
- * Features: Restrained color tokens, crisp vector SVG iconography, smooth transitions,
- * desktop collapsible drawer (240px / 68px), and mobile sheet overlay.
+ * @description Apple-inspired minimalist navigation sidebar for CASETHREAD (Phase 20).
+ * Features: 6 canonical sections (AI Assistant, Investigations, Evidence, Case Analysis, Reports, Settings),
+ * responsive desktop collapse (240px / 68px), mobile drawer overlay, theme toggle, and officer status.
  */
 export default function Sidebar({
   isCollapsed,
   onToggleCollapse,
   activeTab,
-  activeSubTab = 'tasks',
   caseFilter = 'ALL',
   onSelectNav,
   officer,
   onLogout,
   isMobile,
   mobileOpen,
-  onCloseMobile
+  onCloseMobile,
+  theme = 'dark',
+  onToggleTheme = null
 }) {
   const currentOfficer = officer?.officer || officer?.data || officer || {};
   const officerName = currentOfficer.full_name || 'Alexander Cross';
   const officerBadge = currentOfficer.badge_number || 'DET-8841';
   const officerRole = (currentOfficer.role || currentOfficer.rank_designation || 'LEAD_OFFICER').replace(/_/g, ' ');
 
-  // Navigation hierarchy structure with vector icons
-  const navigationSections = [
+  // The 6 canonical navigation sections for CaseThread
+  const navigationItems = [
     {
-      heading: 'Platform',
-      items: [
-        {
-          id: 'dashboard',
-          tab: 'dashboard',
-          caseFilter: 'ALL',
-          label: 'Dashboard',
-          IconComponent: DashboardIcon,
-          tooltip: 'Dashboard & Incident Case Roster'
-        }
-      ]
+      id: 'ai_assistant',
+      tab: 'ai_assistant',
+      label: 'AI Assistant',
+      IconComponent: JarvisIcon,
+      badge: 'VOICE & AI',
+      tooltip: 'Conversational Voice & Intelligence Assistant'
     },
     {
-      heading: 'Investigations',
-      items: [
-        {
-          id: 'investigations',
-          tab: 'investigations',
-          label: 'Investigations',
-          IconComponent: CasesIcon,
-          tooltip: 'All Investigation Dockets & Archives'
-        },
-        {
-          id: 'all_cases',
-          tab: 'dossier',
-          label: 'Case Dossier',
-          IconComponent: ReportIcon,
-          tooltip: 'Master Case Files & Entities'
-        },
-        {
-          id: 'new_case',
-          action: 'create_case',
-          label: 'New Investigation',
-          IconComponent: NewCaseIcon,
-          tooltip: 'Initiate New Investigation File'
-        },
-        {
-          id: 'active_cases',
-          tab: 'investigations',
-          caseFilter: 'ACTIVE',
-          label: 'Active Cases',
-          IconComponent: ActiveIcon,
-          tooltip: 'Filter Active & Ongoing Investigations'
-        },
-        {
-          id: 'solved_cases',
-          tab: 'investigations',
-          caseFilter: 'SOLVED',
-          label: 'Solved Cases',
-          IconComponent: SolvedIcon,
-          tooltip: 'Filter Closed & Archived Investigations'
-        }
-      ]
+      id: 'investigations',
+      tab: 'investigations',
+      label: 'Investigations',
+      IconComponent: CasesIcon,
+      tooltip: 'Investigation Dockets, Dossiers & Incident Roster'
     },
     {
-      heading: 'Intelligence',
-      items: [
-        {
-          id: 'vault',
-          tab: 'vault',
-          label: 'Evidence Vault',
-          IconComponent: VaultIcon,
-          tooltip: 'Secure Evidence Vault & Metadata Extraction'
-        },
-        {
-          id: 'graph',
-          tab: 'graph',
-          label: 'Relationship Graph',
-          IconComponent: GraphIcon,
-          tooltip: 'C-Engine Dynamic Relational Graph & Traversals'
-        },
-        {
-          id: 'timeline',
-          tab: 'timeline',
-          label: 'Timeline Analysis',
-          IconComponent: TimelineIcon,
-          tooltip: 'Chronological Events & Spatiotemporal Anomaly Detection'
-        },
-        {
-          id: 'gaps',
-          tab: 'gaps',
-          label: 'Gap Intelligence',
-          IconComponent: GapsIcon,
-          tooltip: 'Phase 12 Evidence Gap Intelligence & Explainable Assistant'
-        },
-        {
-          id: 'intelligence',
-          tab: 'intelligence',
-          label: 'AI Case Intelligence',
-          IconComponent: ValidationIcon,
-          tooltip: 'AI Precedent Search & Evidence-Grounded Reasoning'
-        },
-        {
-          id: 'voice_assistant',
-          tab: 'voice_assistant',
-          label: 'JARVIS Voice AI',
-          IconComponent: JarvisIcon,
-          tooltip: 'Conversational Voice AI Assistant (Speech Recognition & Synthesis)'
-        },
-        {
-          id: 'cross_case_graph',
-          tab: 'cross_case_graph',
-          label: 'Cross-Case Graph',
-          IconComponent: GraphIcon,
-          tooltip: 'Phase 17 Native C Multi-Jurisdiction Graph & Pattern Detection'
-        },
-        {
-          id: 'leads',
-          tab: 'leads',
-          label: 'Investigative Leads',
-          IconComponent: LeadsIcon,
-          tooltip: 'Max-Heap Ranked Detective Action Items'
-        },
-        {
-          id: 'geospatial',
-          tab: 'geospatial',
-          label: 'Geospatial Map',
-          IconComponent: GeospatialIcon,
-          tooltip: 'C Quadtree Spatial Index & Forensic Proximity Mapping'
-        }
-      ]
+      id: 'evidence',
+      tab: 'evidence',
+      label: 'Evidence',
+      IconComponent: VaultIcon,
+      tooltip: 'Evidence Vault, Cryptographic Hashes & Chain of Custody'
     },
     {
-      heading: 'Operations',
-      items: [
-        {
-          id: 'officers',
-          tab: 'collaboration',
-          subTab: 'team',
-          label: 'Case Team',
-          IconComponent: OfficersIcon,
-          tooltip: 'Case Access Roster & Detective Workload'
-        },
-        {
-          id: 'tasks',
-          tab: 'collaboration',
-          subTab: 'tasks',
-          label: 'Investigation Tasks',
-          IconComponent: TasksIcon,
-          tooltip: 'Investigation Task Lifecycle & Dependencies DAG'
-        },
-        {
-          id: 'reviews',
-          tab: 'collaboration',
-          subTab: 'reviews',
-          label: 'Evidence Reviews',
-          IconComponent: ReviewsIcon,
-          tooltip: 'Forensic Review Queue & Hash Verifications'
-        },
-        {
-          id: 'activity',
-          tab: 'collaboration',
-          subTab: 'activity',
-          label: 'Activity Stream',
-          IconComponent: ActivityIcon,
-          tooltip: 'Cryptographic Event Stream & Audit Trail'
-        }
-      ]
+      id: 'case_analysis',
+      tab: 'case_analysis',
+      label: 'Case Analysis',
+      IconComponent: GraphIcon,
+      tooltip: 'Evidence Gap Analysis & Native C Graph Traversal'
     },
     {
-      heading: 'System',
-      items: [
-        {
-          id: 'lab',
-          tab: 'lab',
-          label: 'Investigation Lab',
-          IconComponent: ValidationIcon,
-          tooltip: 'Native C Algorithm Investigation Lab & ADS Showcase'
-        },
-        {
-          id: 'validation',
-          tab: 'validation',
-          label: 'Algorithm Validation',
-          IconComponent: ValidationIcon,
-          tooltip: 'Academic Forensic Ground-Truth Benchmarks'
-        },
-        {
-          id: 'reports',
-          tab: 'reports',
-          label: 'Report Center',
-          IconComponent: ReportIcon,
-          tooltip: 'Report Center & Multi-Format Document Export'
-        },
-        {
-          id: 'settings',
-          action: 'open_settings',
-          label: 'System Diagnostics',
-          IconComponent: SettingsIcon,
-          tooltip: 'System Configuration, Diagnostics & Theme'
-        }
-      ]
+      id: 'reports',
+      tab: 'reports',
+      label: 'Reports',
+      IconComponent: ReportIcon,
+      tooltip: 'Master Investigation Dossiers & Court Exports'
+    },
+    {
+      id: 'settings',
+      tab: 'settings',
+      label: 'Settings',
+      IconComponent: SettingsIcon,
+      tooltip: 'System Configuration, Diagnostics & Appearance'
     }
   ];
 
   // Helper to determine if an item is currently selected
   const isItemActive = (item) => {
-    if (item.action) return false;
-
-    if (item.tab === 'dashboard') {
-      if (activeTab === 'dashboard') {
-        if (item.caseFilter === 'ACTIVE') return caseFilter === 'ACTIVE';
-        if (item.caseFilter === 'SOLVED') return caseFilter === 'SOLVED';
-        return caseFilter === 'ALL' || !caseFilter;
-      }
-      return false;
+    if (item.tab === 'ai_assistant') {
+      return activeTab === 'ai_assistant' || activeTab === 'voice_assistant';
     }
-
-    if (item.tab === 'collaboration') {
-      if (activeTab === 'collaboration') {
-        return activeSubTab === item.subTab;
-      }
-      return false;
+    if (item.tab === 'investigations') {
+      return activeTab === 'investigations' || activeTab === 'dossier' || activeTab === 'dashboard';
     }
-
+    if (item.tab === 'evidence') {
+      return activeTab === 'evidence' || activeTab === 'vault' || activeTab === 'integrity';
+    }
+    if (item.tab === 'case_analysis') {
+      return (
+        activeTab === 'case_analysis' ||
+        activeTab === 'gaps' ||
+        activeTab === 'graph' ||
+        activeTab === 'cross_case_graph' ||
+        activeTab === 'timeline' ||
+        activeTab === 'leads'
+      );
+    }
+    if (item.tab === 'reports') {
+      return activeTab === 'reports';
+    }
+    if (item.tab === 'settings') {
+      return activeTab === 'settings';
+    }
     return activeTab === item.tab;
   };
 
@@ -338,7 +184,7 @@ export default function Sidebar({
         >
           {/* Logo & Brand Name */}
           <div
-            onClick={() => handleItemClick({ tab: 'dashboard', caseFilter: 'ALL' })}
+            onClick={() => handleItemClick({ tab: 'ai_assistant' })}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -348,7 +194,7 @@ export default function Sidebar({
               overflow: 'hidden',
               whiteSpace: 'nowrap'
             }}
-            title="CASETHREAD Platform"
+            title="CaseThread AI Intelligence Platform"
           >
             <LogoMark size={22} color="var(--accent-primary)" />
             {!isCollapsed && (
@@ -369,7 +215,7 @@ export default function Sidebar({
                     fontSize: '0.65rem',
                     color: 'var(--text-muted)',
                     letterSpacing: '0.02em',
-                    fontWeight: '400'
+                    fontWeight: '500'
                   }}
                 >
                   Forensic Intelligence
@@ -411,263 +257,237 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* 2. Scrollable Navigation Menu Groups */}
+        {/* 2. Primary Navigation Sections (6 canonical items) */}
         <nav
           style={{
             flex: 1,
             overflowY: 'auto',
             overflowX: 'hidden',
-            padding: isCollapsed ? '0.5rem 0.35rem' : '0.65rem 0.5rem',
+            padding: isCollapsed ? '0.75rem 0.35rem' : '0.85rem 0.65rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.85rem'
+            gap: '0.35rem'
           }}
         >
-          {navigationSections.map((section, sIdx) => (
-            <div key={section.heading || sIdx} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-              {/* Section Heading */}
-              {!isCollapsed ? (
-                <div
+          {navigationItems.map((item) => {
+            const active = isItemActive(item);
+            const Icon = item.IconComponent;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleItemClick(item)}
+                className={`sidebar-nav-item ${active ? 'active' : ''}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: isCollapsed ? '0.65rem' : '0.65rem 0.85rem',
+                  borderRadius: 'var(--radius-control)',
+                  border: active ? '1px solid var(--border-highlight)' : '1px solid transparent',
+                  backgroundColor: active ? 'var(--bg-active)' : 'transparent',
+                  color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  transition: 'all var(--transition-fast)',
+                  justifyContent: isCollapsed ? 'center' : 'flex-start',
+                  position: 'relative'
+                }}
+                title={isCollapsed ? `${item.label} — ${item.tooltip}` : item.tooltip}
+              >
+                <span
                   style={{
-                    fontSize: '0.6875rem',
-                    fontWeight: '600',
-                    color: 'var(--text-muted)',
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    padding: '0.35rem 0.65rem 0.2rem',
-                    userSelect: 'none'
+                    color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
                   }}
                 >
-                  {section.heading}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    height: '1px',
-                    backgroundColor: 'var(--border-subtle)',
-                    margin: '0.35rem 0.25rem'
-                  }}
-                />
-              )}
+                  <Icon size={18} />
+                </span>
 
-              {/* Navigation Items */}
-              {section.items.map((item) => {
-                const active = isItemActive(item);
-                const Icon = item.IconComponent;
-
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleItemClick(item)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: isCollapsed ? '0' : '0.65rem',
-                      justifyContent: isCollapsed ? 'center' : 'flex-start',
-                      width: '100%',
-                      height: '34px',
-                      padding: isCollapsed ? '0' : '0 0.65rem',
-                      borderRadius: 'var(--radius-control)',
-                      border: 'none',
-                      backgroundColor: active ? 'var(--bg-elevated)' : 'transparent',
-                      color: active ? '#FFFFFF' : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      fontSize: '0.8125rem',
-                      fontWeight: active ? '600' : '400',
-                      transition: 'background var(--transition-fast), color var(--transition-fast)',
-                      position: 'relative'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                        e.currentTarget.style.color = 'var(--text-primary)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = 'var(--text-secondary)';
-                      }
-                    }}
-                    title={isCollapsed ? `${item.label} — ${item.tooltip}` : item.tooltip}
-                    aria-label={item.label}
-                  >
-                    {/* Active Accent Indicator Bar on Left */}
-                    {active && (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          left: '2px',
-                          top: '7px',
-                          bottom: '7px',
-                          width: '3px',
-                          borderRadius: '2px',
-                          backgroundColor: 'var(--accent-primary)'
-                        }}
-                      />
-                    )}
-
-                    {/* Vector Icon */}
+                {!isCollapsed && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1, minWidth: 0 }}>
                     <span
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        transition: 'color var(--transition-fast)'
+                        fontSize: '0.82rem',
+                        fontWeight: active ? '600' : '500',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                       }}
                     >
-                      <Icon size={16} />
+                      {item.label}
                     </span>
-
-                    {/* Label */}
-                    {!isCollapsed && (
+                    {item.badge && (
                       <span
                         style={{
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          flex: 1
+                          fontSize: '0.6rem',
+                          padding: '1px 6px',
+                          borderRadius: 'var(--radius-pill)',
+                          backgroundColor: 'var(--accent-primary-dim)',
+                          color: 'var(--accent-primary)',
+                          fontWeight: '700',
+                          letterSpacing: '0.04em'
                         }}
                       >
-                        {item.label}
+                        {item.badge}
                       </span>
                     )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Quick Action: New Investigation */}
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+            <button
+              onClick={() => handleItemClick({ action: 'create_case' })}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                padding: isCollapsed ? '0.65rem' : '0.55rem 0.75rem',
+                borderRadius: 'var(--radius-control)',
+                border: '1px solid var(--border-default)',
+                backgroundColor: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                width: '100%',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                transition: 'background-color var(--transition-fast)'
+              }}
+              title="Create New Investigation Docket"
+            >
+              <span style={{ color: 'var(--accent-primary)', display: 'flex' }}>
+                <NewCaseIcon size={16} />
+              </span>
+              {!isCollapsed && <span>New Investigation</span>}
+            </button>
+          </div>
         </nav>
 
-        {/* 3. Bottom User Profile & Session Section */}
+        {/* 3. Footer: Theme Toggle & Investigator Profile */}
         <div
           style={{
+            padding: isCollapsed ? '0.65rem 0.35rem' : '0.75rem 0.85rem',
             borderTop: '1px solid var(--border-default)',
             backgroundColor: 'var(--bg-secondary)',
-            padding: isCollapsed ? '0.5rem 0.25rem' : '0.65rem 0.75rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.45rem',
+            gap: '0.5rem',
             flexShrink: 0
           }}
         >
-          {/* User Profile Summary */}
+          {/* Theme Quick Toggle */}
+          {onToggleTheme && !isCollapsed && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.35rem 0.5rem',
+                borderRadius: 'var(--radius-control)',
+                backgroundColor: 'var(--bg-elevated)',
+                fontSize: '0.72rem',
+                color: 'var(--text-secondary)'
+              }}
+            >
+              <span>Appearance:</span>
+              <button
+                onClick={onToggleTheme}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--accent-primary)',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '0.72rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                {theme === 'light' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+              </button>
+            </div>
+          )}
+
+          {/* Officer Details & Sign Out */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: isCollapsed ? '0' : '0.6rem',
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
-              padding: isCollapsed ? '0.2rem 0' : '0.3rem 0.4rem',
-              borderRadius: 'var(--radius-control)',
-              backgroundColor: isCollapsed ? 'transparent' : 'rgba(255, 255, 255, 0.02)',
-              border: isCollapsed ? 'none' : '1px solid var(--border-subtle)',
-              overflow: 'hidden'
+              justifyContent: isCollapsed ? 'center' : 'space-between',
+              gap: '0.5rem'
             }}
-            title={isCollapsed ? `${officerName} (${officerBadge}) • ${officerRole}` : 'Active Detective Session'}
           >
-            {/* Initials Avatar */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-default)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.72rem',
-                  fontWeight: '600',
-                  color: 'var(--text-primary)'
-                }}
-              >
-                {officerName
-                  .split(' ')
-                  .map((n) => n[0])
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .join('')
-                  .toUpperCase() || 'CT'}
-              </div>
-              {/* Online Green Status Dot */}
-              <span
-                style={{
-                  position: 'absolute',
-                  bottom: '-1px',
-                  right: '-1px',
-                  width: '7px',
-                  height: '7px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--status-success)',
-                  border: '1.5px solid var(--bg-secondary)'
-                }}
-                title="Active Session"
-              />
-            </div>
-
-            {/* Officer Details (Expanded) */}
-            {!isCollapsed && (
-              <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', flex: 1 }}>
+            {!isCollapsed ? (
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     fontSize: '0.78rem',
                     fontWeight: '600',
                     color: 'var(--text-primary)',
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   {officerName}
                 </div>
                 <div
+                  className="mono"
                   style={{
-                    fontSize: '0.67rem',
-                    color: 'var(--text-muted)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    fontSize: '0.68rem',
+                    color: 'var(--text-muted)'
                   }}
                 >
                   {officerBadge} • {officerRole}
                 </div>
               </div>
+            ) : (
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--bg-elevated)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  color: 'var(--text-primary)'
+                }}
+                title={`${officerName} (${officerBadge})`}
+              >
+                {officerName.charAt(0)}
+              </div>
             )}
-          </div>
 
-          {/* Logout Action Button */}
-          <button
-            onClick={onLogout}
-            className="btn-ghost"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
-              gap: isCollapsed ? '0' : '0.5rem',
-              width: '100%',
-              height: '32px',
-              padding: isCollapsed ? '0' : '0 0.5rem',
-              borderRadius: 'var(--radius-control)',
-              color: 'var(--text-muted)',
-              fontSize: '0.75rem',
-              fontWeight: '500'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--status-danger)';
-              e.currentTarget.style.backgroundColor = 'var(--status-danger-dim)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-muted)';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-            title={isCollapsed ? 'Sign out of investigation session' : ''}
-            aria-label="Sign out of investigation session"
-          >
-            <SignOutIcon size={14} />
-            {!isCollapsed && <span>Sign Out</span>}
-          </button>
+            <button
+              onClick={onLogout}
+              className="btn-ghost"
+              style={{
+                width: '28px',
+                height: '28px',
+                padding: 0,
+                borderRadius: 'var(--radius-control)',
+                color: 'var(--status-danger)',
+                flexShrink: 0
+              }}
+              title="Sign Out of Session"
+              aria-label="Sign Out"
+            >
+              <SignOutIcon size={14} />
+            </button>
+          </div>
         </div>
       </aside>
     </>
