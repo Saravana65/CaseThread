@@ -1,0 +1,103 @@
+# ==============================================================================
+# CASETHREAD STAGING ORCHESTRATION DOCKER COMPOSE
+# Isolated staging environment for pre-release verification and end-to-end testing
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: casethread-staging-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${STAGING_MYSQL_ROOT_PASSWORD:-StagingRootSecret2026!}
+      MYSQL_DATABASE: ${STAGING_DB_NAME:-casethread_staging_db}
+      MYSQL_USER: ${STAGING_DB_USER:-casethread_staging_user}
+      MYSQL_PASSWORD: ${STAGING_DB_PASSWORD:-StagingDbSecret2026!}
+    # Restricted strictly to local interface
+    ports:
+      - "127.0.0.1:${STAGING_DB_PORT:-3307}:3306"
+    volumes:
+      - staging_db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    networks:
+      - staging-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: casethread-staging-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${STAGING_PORT:-5001}:5000"
+    environment:
+      NODE_ENV: staging
+      PORT: 5000
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_USER: ${STAGING_DB_USER:-casethread_staging_user}
+      DB_PASSWORD: ${STAGING_DB_PASSWORD:-StagingDbSecret2026!}
+      DB_NAME: ${STAGING_DB_NAME:-casethread_staging_db}
+      JWT_SECRET: ${STAGING_JWT_SECRET:-StagingJwtSecretKeyMustBe32CharsLong2026!}
+      JWT_EXPIRES_IN: 8h
+      C_ENGINE_TIMEOUT_MS: 8000
+      CLIENT_ORIGIN: http://localhost:3001,http://127.0.0.1:3001
+      EVIDENCE_VAULT_PATH: /app/storage/vault
+      KNOWLEDGE_VAULT_PATH: /app/storage/private_knowledge_vault
+      MAX_FILE_SIZE_MB: 50
+      INGESTION_WORKER_ENABLED: "false"
+      METRICS_ENABLED: "true"
+    volumes:
+      - staging_evidence_vault:/app/storage/vault
+      - staging_knowledge_vault:/app/storage/private_knowledge_vault
+    networks:
+      - staging-net
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/v1/health/liveness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: casethread-staging-frontend
+    restart: unless-stopped
+    ports:
+      - "${STAGING_FRONTEND_PORT:-3001}:3000"
+    networks:
+      - staging-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  staging_db_data:
+    driver: local
+  staging_evidence_vault:
+    driver: local
+  staging_knowledge_vault:
+    driver: local
+
+networks:
+  staging-net:
+    driver: bridge

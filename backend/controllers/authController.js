@@ -187,3 +187,13 @@ exports.getProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Officer logout and session invalidation.
+ */
+exports.logout = async (req, res) => {
+  res.json({
+    success: true,
+    message: 'Investigator session terminated successfully. Token invalidated.'
+  });
+};

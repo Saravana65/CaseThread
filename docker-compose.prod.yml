@@ -1,0 +1,102 @@
+# ==============================================================================
+# CASETHREAD PRODUCTION ORCHESTRATION DOCKER COMPOSE
+# Hardened production profile with zero external DB exposure and Nginx reverse proxy
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: casethread-prod-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-casethread_db}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    # Zero host port mapping: MySQL is reachable strictly across internal container network
+    volumes:
+      - prod_db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    networks:
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: casethread-prod-backend
+    restart: always
+    # Backend port is accessible only through internal reverse proxy network
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-casethread_db}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      C_ENGINE_TIMEOUT_MS: ${C_ENGINE_TIMEOUT_MS:-8000}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN}
+      EVIDENCE_VAULT_PATH: /app/storage/vault
+      KNOWLEDGE_VAULT_PATH: /app/storage/private_knowledge_vault
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-50}
+      INGESTION_WORKER_ENABLED: ${INGESTION_WORKER_ENABLED:-true}
+      METRICS_ENABLED: "true"
+      ALLOW_MEMORY_STORE: "false"
+      USE_MEMORY_STORE: "false"
+    volumes:
+      - prod_evidence_vault:/app/storage/vault
+      - prod_knowledge_vault:/app/storage/private_knowledge_vault
+    networks:
+      - prod-net
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/v1/health/liveness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: casethread-prod-frontend
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - prod-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  prod_db_data:
+    driver: local
+  prod_evidence_vault:
+    driver: local
+  prod_knowledge_vault:
+    driver: local
+
+networks:
+  prod-net:
+    driver: bridge

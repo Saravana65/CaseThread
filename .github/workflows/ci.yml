@@ -1,0 +1,138 @@
+name: CaseThread CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Native C Core DSA Engine Compilation & Algorithm Tests
+  native-c-engine:
+    name: Native C Engine Build & DSA Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install C Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential gcc make libc6-dev binutils
+
+      - name: Compile Native C Core Engine
+        working-directory: core-engine
+        run: |
+          make clean
+          make all
+          strip --strip-unneeded bin/casethread_engine
+          chmod +x bin/casethread_engine
+
+      - name: Run Core DSA Automated Tests
+        working-directory: core-engine
+        run: |
+          ./bin/test_dsa
+          ./bin/test_dsa_deep
+          ./bin/test_quadtree
+
+  # Job 2: Backend Integration & AI Intelligence Test Suites
+  backend-test:
+    name: Backend API & AI Intelligence Tests
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: TestRootPassword2026!
+          MYSQL_DATABASE: casethread_db
+          MYSQL_USER: casethread_user
+          MYSQL_PASSWORD: TestDbPassword2026!
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package.json
+
+      - name: Compile Native C Engine for Linux Environment
+        working-directory: core-engine
+        run: |
+          make clean
+          make all
+          chmod +x bin/casethread_engine
+
+      - name: Initialize Database Schema
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -u root -pTestRootPassword2026! casethread_db < database/schema.sql
+
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run Backend Integration & Intelligence Tests
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: casethread_user
+          DB_PASSWORD: TestDbPassword2026!
+          DB_NAME: casethread_db
+          JWT_SECRET: TestJwtSecretKeyMustBeAtLeast32CharactersLong2026!
+        run: |
+          npm test
+          node --test tests/intelligence.test.js
+          node --test tests/cross_case_intelligence.test.js
+          node --test tests/voice_assistant.test.js
+          node --test tests/knowledge_base.test.js
+
+  # Job 3: Frontend Compilation & Production Build
+  frontend-build:
+    name: Frontend Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Compile Optimized Production Build
+        working-directory: frontend
+        run: npm run build
+
+  # Job 4: Container Configuration & Security Linting
+  container-validation:
+    name: Container Configuration Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          docker compose config -q
+          docker compose -f docker-compose.staging.yml config -q
+          docker compose -f docker-compose.prod.yml config -q
+
+      - name: Scan Secrets & Excluded Patterns
+        run: |
+          # Verify that .env files and private vaults are not tracked in git
+          ! git ls-files | grep -E '^(\.env|\.env\.staging|\.env\.production)$'
+          ! git ls-files | grep -E '^backend/storage/'
+          echo "Secret scanning and storage isolation checks passed."

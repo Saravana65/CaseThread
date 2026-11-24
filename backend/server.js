@@ -14,7 +14,10 @@ const errorHandler = require('./middleware/errorHandler');
 const { globalLimiter, authLimiter, analysisLimiter } = require('./middleware/rateLimiter');
 const cEngineService = require('./services/cEngineService');
 const vaultService = require('./services/vaultService');
+const metricsService = require('./services/metricsService');
+const { ingestionWorker } = require('./knowledge-base/ingestion/ingestionWorker');
 
+const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
 const caseRoutes = require('./routes/caseRoutes');
 const suspectRoutes = require('./routes/suspectRoutes');
@@ -67,11 +70,12 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Forensic Request Audit Logger
+// Forensic Request Audit Logger & Telemetry Metrics
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const elapsed = Date.now() - start;
+    metricsService.recordHttpRequest(res.statusCode, elapsed);
     if (process.env.NODE_ENV !== 'test') {
       console.log(`[HTTP] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${elapsed}ms)`);
     }
@@ -79,48 +83,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health & System Info Route
-// Composite health assessment: Database, Native C Algorithm Engine, and Digital Vault Storage
-app.get('/api/v1/health', async (req, res) => {
-  const dbStart = Date.now();
-  const dbStatus = await testConnection();
-  const dbLatencyMs = Date.now() - dbStart;
-
-  const cEngineHealth = cEngineService.checkEngineReadiness();
-  const storageHealth = vaultService.checkStorageHealth();
-
-  const isProduction = process.env.NODE_ENV === 'production';
-  const allServicesHealthy = dbStatus && cEngineHealth.available && storageHealth.writable;
-
-  const healthPayload = {
-    status: allServicesHealthy ? 'ONLINE' : 'UNHEALTHY',
-    service: 'CASETHREAD Intelligence API',
-    version: '1.0.0-phase11',
-    checks: {
-      database: {
-        status: dbStatus ? 'UP' : 'DOWN',
-        latency_ms: dbLatencyMs
-      },
-      c_engine: cEngineHealth,
-      storage_vault: storageHealth
-    },
-    uptime_seconds: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString()
-  };
-
-  if (isProduction) {
-    if (!allServicesHealthy) {
-      healthPayload.error = 'One or more mission-critical forensic services are unavailable.';
-      return res.status(503).json(healthPayload);
-    }
-    return res.status(200).json(healthPayload);
-  }
-
-  // Non-production (development or test)
-  const isHealthy = dbStatus || process.env.NODE_ENV === 'test' || process.env.USE_MEMORY_STORE === 'true';
-  healthPayload.status = isHealthy ? 'ONLINE' : 'UNHEALTHY';
-  return res.status(isHealthy ? 200 : 503).json(healthPayload);
-});
+// Health, Readiness, Liveness & Operational Metrics
+app.use('/api/v1/health', healthRoutes);
 
 // Global Rate Limiting across all API routes
 app.use('/api/v1', globalLimiter);
@@ -191,11 +155,13 @@ if (require.main === module) {
       console.error('[DATABASE CRITICAL] Production server startup failed: MySQL database is unreachable.');
       process.exit(1);
     }
+    ingestionWorker.startScheduler();
   });
 
   // Graceful Shutdown Handler
   function gracefulShutdown(signal) {
     console.log(`\n[SHUTDOWN] Received ${signal}. Initiating graceful termination...`);
+    ingestionWorker.stop();
     if (serverInstance) {
       serverInstance.close(async () => {
         console.log('[SHUTDOWN] HTTP listener closed. Closing MySQL connection pool...');

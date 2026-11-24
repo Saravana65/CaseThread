@@ -34,8 +34,8 @@ RUN npm ci --omit=dev
 WORKDIR /app
 COPY backend/ ./backend/
 
-# Setup persistent storage vault directory and set permissions
-RUN mkdir -p /app/storage/vault && \
+# Setup persistent storage vault directories (evidence vault and private knowledge vault)
+RUN mkdir -p /app/storage/vault /app/storage/private_knowledge_vault && \
     chown -R node:node /app
 
 WORKDIR /app/backend
@@ -47,9 +47,10 @@ EXPOSE 5000
 
 ENV NODE_ENV=production \
     PORT=5000 \
-    EVIDENCE_VAULT_PATH=/app/storage/vault
+    EVIDENCE_VAULT_PATH=/app/storage/vault \
+    KNOWLEDGE_VAULT_PATH=/app/storage/private_knowledge_vault
 
 HEALTHCHECK --interval=20s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:5000/api/v1/health || exit 1
+    CMD curl -f http://localhost:5000/api/v1/health/liveness || exit 1
 
 CMD ["node", "server.js"]

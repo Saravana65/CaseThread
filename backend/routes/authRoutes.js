@@ -11,6 +11,7 @@ const { validate, officerRegisterRules, officerLoginRules } = require('../middle
 
 router.post('/register', officerRegisterRules, validate, authController.register);
 router.post('/login', officerLoginRules, validate, authController.login);
+router.post('/logout', authenticateToken, authController.logout);
 router.get('/profile', authenticateToken, authController.getProfile);
 
 module.exports = router;

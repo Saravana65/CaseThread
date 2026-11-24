@@ -79,6 +79,11 @@ function validateConfig(env = process.env) {
     if (env.MAX_FILE_SIZE_MB && (isNaN(Number(env.MAX_FILE_SIZE_MB)) || Number(env.MAX_FILE_SIZE_MB) <= 0)) {
       errors.push('MAX_FILE_SIZE_MB must be a positive number.');
     }
+
+    // 7. Knowledge Vault Security Boundary
+    if (env.KNOWLEDGE_VAULT_PATH && (typeof env.KNOWLEDGE_VAULT_PATH !== 'string' || env.KNOWLEDGE_VAULT_PATH.trim().length === 0)) {
+      errors.push('KNOWLEDGE_VAULT_PATH must be a valid directory path string when configured.');
+    }
   }
 
   return {

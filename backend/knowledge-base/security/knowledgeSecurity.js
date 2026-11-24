@@ -16,7 +16,9 @@ const CLASSIFICATION_HIERARCHY = {
 
 const ALLOWED_EXTENSIONS = new Set(['.pdf', '.docx', '.txt', '.json', '.csv']);
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
-const PRIVATE_VAULT_ROOT = path.resolve(__dirname, '../../storage/private_knowledge_vault');
+const PRIVATE_VAULT_ROOT = process.env.KNOWLEDGE_VAULT_PATH
+  ? path.resolve(process.env.KNOWLEDGE_VAULT_PATH)
+  : path.resolve(__dirname, '../../storage/private_knowledge_vault');
 
 class KnowledgeSecurity {
   /**
@@ -99,6 +101,33 @@ class KnowledgeSecurity {
       .replace(/['";\\]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  /**
+   * Evaluates private knowledge vault directory readiness and write permissions.
+   * @returns {{ status: string, writable: boolean, path: string, error?: string }}
+   */
+  static checkKnowledgeVaultHealth() {
+    try {
+      if (!fs.existsSync(PRIVATE_VAULT_ROOT)) {
+        fs.mkdirSync(PRIVATE_VAULT_ROOT, { recursive: true });
+      }
+      const probeFile = path.join(PRIVATE_VAULT_ROOT, `.kb_probe_${Date.now()}`);
+      fs.writeFileSync(probeFile, 'health-check');
+      fs.unlinkSync(probeFile);
+      return {
+        status: 'UP',
+        writable: true,
+        path: PRIVATE_VAULT_ROOT
+      };
+    } catch (err) {
+      return {
+        status: 'DEGRADED',
+        writable: false,
+        path: PRIVATE_VAULT_ROOT,
+        error: err.message
+      };
+    }
   }
 }
 

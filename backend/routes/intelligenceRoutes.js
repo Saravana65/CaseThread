@@ -75,4 +75,40 @@ router.get('/conversations/:id', authenticateToken, (req, res) => {
   });
 });
 
+/**
+ * @route GET /api/v1/intelligence/ingestion/status
+ * @brief Retrieves background data ingestion worker operational status and telemetry.
+ */
+router.get('/ingestion/status', authenticateToken, (req, res) => {
+  const { ingestionWorker } = require('../knowledge-base/ingestion/ingestionWorker');
+  return res.status(200).json({
+    success: true,
+    data: ingestionWorker.getStatus()
+  });
+});
+
+/**
+ * @route POST /api/v1/intelligence/ingestion/sync
+ * @brief Manually triggers controlled synchronization of permitted historical crime data.
+ */
+router.post('/ingestion/sync', authenticateToken, async (req, res, next) => {
+  try {
+    const { sourceId, maxRecords } = req.body;
+    const { ingestionWorker } = require('../knowledge-base/ingestion/ingestionWorker');
+
+    if (sourceId) {
+      const result = await ingestionWorker.syncSource(sourceId, { maxRecords: parseInt(maxRecords, 10) || 5 });
+      return res.status(200).json({ success: true, data: result });
+    }
+
+    const summary = await ingestionWorker.syncAllOperational({
+      trigger: 'MANUAL_ADMIN',
+      maxRecords: parseInt(maxRecords, 10) || 5
+    });
+    return res.status(200).json(summary);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
