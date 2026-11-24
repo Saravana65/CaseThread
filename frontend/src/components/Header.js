@@ -40,6 +40,7 @@ export default function Header({
     timeline: { section: 'Intelligence', title: 'Chronological Timeline' },
     intelligence: { section: 'Intelligence', title: 'AI Investigation Intelligence' },
     voice_assistant: { section: 'Intelligence', title: 'JARVIS Conversational Voice AI' },
+    cross_case_graph: { section: 'Intelligence', title: 'Cross-Case Graph & Pattern Discovery' },
     leads: { section: 'Intelligence', title: 'Investigative Leads Ranking' },
     lab: { section: 'System', title: 'Investigation Algorithm Lab' },
     validation: { section: 'System', title: 'Forensic Validation Benchmarks' }

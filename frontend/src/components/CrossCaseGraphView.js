@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import api from '../services/api';
 import {
   GraphIcon,
   ShieldCheckIcon,
@@ -48,13 +49,8 @@ export default function CrossCaseGraphView({
   const fetchCrossCaseAnalysis = async (algo = algorithm) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('casethread_token') || sessionStorage.getItem('casethread_token');
-      const response = await fetch('/api/v1/intelligence/cross-case/analyze', {
+      const data = await api.request('/intelligence/cross-case/analyze', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
         body: JSON.stringify({
           query: initialQuery,
           caseId: selectedCaseId,
@@ -67,7 +63,6 @@ export default function CrossCaseGraphView({
         })
       });
 
-      const data = await response.json();
       if (data.success && data.cross_case_graph) {
         setGraphData(data.cross_case_graph);
         setPatterns(data.patterns_detected || []);
@@ -135,20 +130,14 @@ export default function CrossCaseGraphView({
   const handleFindPath = async () => {
     if (!pathSource || !pathTarget) return;
     try {
-      const token = localStorage.getItem('casethread_token') || sessionStorage.getItem('casethread_token');
-      const response = await fetch('/api/v1/intelligence/cross-case/path', {
+      const resJson = await api.request('/intelligence/cross-case/path', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
         body: JSON.stringify({
           sourceCaseRef: pathSource,
           targetCaseRef: pathTarget
         })
       });
 
-      const resJson = await response.json();
       if (resJson.success && resJson.data?.found) {
         setPathResult(resJson.data);
         const pathNodeLabels = new Set(resJson.data.path_nodes.map(pn => pn.label));
