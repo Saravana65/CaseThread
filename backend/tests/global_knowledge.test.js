@@ -6,7 +6,7 @@
  * @project CASETHREAD
  */
 
-const { describe, it, before } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
 
@@ -267,5 +267,10 @@ describe('Phase 14: Global Crime Record Collection & Cross-Country Search Suite'
       });
       assert.equal(analystRes.access_clearance, 'OFFICIAL_USE_ONLY');
     });
+  });
+
+  after(async () => {
+    const { closePool } = require('../database/connection');
+    await closePool();
   });
 });

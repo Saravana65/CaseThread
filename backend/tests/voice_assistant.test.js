@@ -235,4 +235,9 @@ describe('Phase 16: JARVIS Conversational AI Voice Assistant Suite', () => {
       assert.strictEqual(res.answer.includes('secret'), false, 'Must not output secrets');
     });
   });
+
+  after(async () => {
+    const { closePool } = require('../database/connection');
+    await closePool();
+  });
 });

@@ -6,7 +6,7 @@
  * @project CASETHREAD
  */
 
-const { describe, it, before } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { testConnection } = require('../database/connection');
@@ -240,5 +240,10 @@ describe('Phase 15: AI Investigation Intelligence & Evidence-Grounded Reasoning 
       assert.equal(followUpResponse.query_understanding.follow_up_target, 'CRL-REV-P-442-2023');
       assert.ok(followUpResponse.answer.includes('CRL-REV-P-442-2023'));
     });
+  });
+
+  after(async () => {
+    const { closePool } = require('../database/connection');
+    await closePool();
   });
 });

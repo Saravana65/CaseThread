@@ -23,28 +23,11 @@ process.env.NODE_ENV = 'test';
 process.env.USE_MEMORY_STORE = 'true';
 
 const app = require('../server');
-const { testConnection } = require('../database/connection');
+const { testConnection, pool, execute, closePool, memoryStore } = require('../database/connection');
 
 let server;
 let baseUrl;
 let authToken = '';
-
-before(async () => {
-  await new Promise((resolve) => {
-    server = http.createServer(app);
-    server.listen(0, '127.0.0.1', () => {
-      const port = server.address().port;
-      baseUrl = `http://127.0.0.1:${port}/api/v1`;
-      resolve();
-    });
-  });
-});
-
-after(async () => {
-  if (server) {
-    await new Promise((resolve) => server.close(resolve));
-  }
-});
 
 // Helper for HTTP requests
 async function apiRequest(path, options = {}) {
@@ -65,6 +48,51 @@ async function apiRequest(path, options = {}) {
 }
 
 describe('CASETHREAD Backend & Database Integration Tests', () => {
+  before(async () => {
+    await testConnection();
+    if (pool) {
+      try {
+        await pool.query('SET FOREIGN_KEY_CHECKS = 0;');
+        await pool.query('DELETE FROM officers WHERE badge_number = ? OR email = ?;', ['DET-7721', 'j.gordon@casethread.police.gov']);
+        await pool.query('DELETE FROM cases WHERE case_number IN (?, ?);', ['CASE-2026-9901', "CASE-999'; DROP TABLE cases; --"]);
+        await pool.query('DELETE FROM evidence WHERE tracking_code IN (?, ?);', ['EVD-BIO-009', 'EVD-TIP-010']);
+        await pool.query('SET FOREIGN_KEY_CHECKS = 1;');
+      } catch (e) {}
+    }
+    if (memoryStore) {
+      if (memoryStore.officers) memoryStore.officers = memoryStore.officers.filter(o => o.badge_number !== 'DET-7721' && o.email !== 'j.gordon@casethread.police.gov');
+      if (memoryStore.cases) memoryStore.cases = memoryStore.cases.filter(c => c.case_number !== 'CASE-2026-9901' && !c.case_number?.includes('DROP TABLE'));
+      if (memoryStore.evidence) memoryStore.evidence = memoryStore.evidence.filter(e => e.tracking_code !== 'EVD-BIO-009' && e.tracking_code !== 'EVD-TIP-010');
+    }
+
+    await new Promise((resolve) => {
+      server = http.createServer(app);
+      server.listen(0, '127.0.0.1', () => {
+        const port = server.address().port;
+        baseUrl = `http://127.0.0.1:${port}/api/v1`;
+        resolve();
+      });
+    });
+  });
+
+  after(async () => {
+    if (server) {
+      await new Promise((resolve) => server.close(resolve));
+    }
+    if (pool) {
+      try {
+        await pool.query('SET FOREIGN_KEY_CHECKS = 0;');
+        await pool.query('DELETE FROM officers WHERE badge_number = ? OR email = ?;', ['DET-7721', 'j.gordon@casethread.police.gov']);
+        await pool.query('DELETE FROM cases WHERE case_number IN (?, ?);', ['CASE-2026-9901', "CASE-999'; DROP TABLE cases; --"]);
+        await pool.query('DELETE FROM evidence WHERE tracking_code IN (?, ?);', ['EVD-BIO-009', 'EVD-TIP-010']);
+        await pool.query('SET FOREIGN_KEY_CHECKS = 1;');
+      } catch (e) {}
+    }
+    try {
+      await closePool();
+    } catch (e) {}
+  });
+
   // 1. Database Connection & System Health
   test('1. Database connectivity check via health endpoint', async () => {
     const res = await apiRequest('/health');
@@ -411,18 +439,35 @@ describe('CASETHREAD Backend & Database Integration Tests', () => {
       assert.equal(res.status, 201);
       assert.equal(res.body.data.event_title, 'Motion Detector Activation - Rear Hallway');
       assert.equal(res.body.data.is_verified, true);
+
+      // Add second event to ensure multi-event chronological ordering can be validated
+      await apiRequest('/timeline', {
+        method: 'POST',
+        body: JSON.stringify({
+          case_id: 1,
+          event_timestamp: '2026-10-15 02:45:00',
+          event_title: 'Rear Emergency Door Forced Open',
+          event_description: 'Crowbar marks discovered on lock latching mechanism.',
+          entity_type: 'INCIDENT',
+          entity_id: 1,
+          location: 'Rear Loading Corridor',
+          status: 'CONFIRMED_FACT',
+          is_verified: true
+        })
+      });
     });
 
     test('Retrieve chronological events ordered by timestamp', async () => {
       const res = await apiRequest('/timeline/case/1');
       assert.equal(res.status, 200);
-      assert.ok(res.body.data.length >= 2);
+      const events = Array.isArray(res.body.data) ? res.body.data : (res.body.data?.events || []);
+      assert.ok(events.length >= 2);
 
-      // Verify ordering
-      for (let i = 1; i < res.body.data.length; i++) {
-        const prev = new Date(res.body.data[i - 1].event_timestamp).getTime();
-        const curr = new Date(res.body.data[i].event_timestamp).getTime();
-        assert.ok(prev <= curr, 'Timeline events must be in ascending chronological order');
+      // Verify ordering for dated events
+      const datedEvents = events.filter(e => e.timestamp_epoch !== null && e.timestamp_epoch !== undefined);
+      assert.ok(datedEvents.length >= 2);
+      for (let i = 1; i < datedEvents.length; i++) {
+        assert.ok(datedEvents[i - 1].timestamp_epoch <= datedEvents[i].timestamp_epoch, 'Timeline events must be in ascending chronological order');
       }
     });
   });

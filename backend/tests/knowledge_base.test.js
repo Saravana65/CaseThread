@@ -252,4 +252,9 @@ Timestamps corroborate suspect whereabouts between 22:00 and 23:30 hours.`;
       assert.ok(Math.abs(simOpposite - (-1.0)) < 0.0001);
     });
   });
+
+  after(async () => {
+    const { closePool } = require('../database/connection');
+    await closePool();
+  });
 });

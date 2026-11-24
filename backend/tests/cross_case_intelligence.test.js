@@ -5,7 +5,7 @@
  * @project CASETHREAD
  */
 
-const { describe, it, before } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('http');
 const { testConnection } = require('../database/connection');
@@ -332,5 +332,10 @@ describe('Phase 17: Global Cross-Case Intelligence & Native C Graph Analysis Sui
 
       assert.strictEqual(status, 401);
     });
+  });
+
+  after(async () => {
+    const { closePool } = require('../database/connection');
+    await closePool();
   });
 });

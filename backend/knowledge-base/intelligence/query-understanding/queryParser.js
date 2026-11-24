@@ -59,7 +59,7 @@ class QueryParser {
         criteria.requestedIntent = 'RECOVERY_STATUS';
       } else if (text.includes('solved') || text.includes('outcome') || text.includes('verdict')) {
         criteria.requestedIntent = 'OUTCOME_DETAILS';
-      } else if (text.includes('connected') || text.includes('direct') || text.includes('link')) {
+      } else if (text.includes('connected') || text.includes('direct') || text.includes('link') || text.includes('same person') || text.includes('same perpetrator') || text.includes('same offender') || text.includes('syndicate') || text.includes('same gang')) {
         criteria.requestedIntent = 'DIRECT_CONNECTION_CHECK';
       } else if (text.includes('pattern')) {
         criteria.requestedIntent = 'CROSS_CASE_PATTERNS';
@@ -72,7 +72,7 @@ class QueryParser {
       // Direct inquiry intents without conversational context
       if (text.includes('pattern') || text.includes('patterns do these')) {
         criteria.requestedIntent = 'CROSS_CASE_PATTERNS';
-      } else if (text.includes('connected') || text.includes('direct connection') || text.includes('are these incidents directly connected')) {
+      } else if (text.includes('connected') || text.includes('direct connection') || text.includes('are these incidents directly connected') || text.includes('same syndicate') || text.includes('same gang') || text.includes('same perpetrator') || text.includes('same offender') || text.includes('syndicate') || text.includes('linked')) {
         criteria.requestedIntent = 'DIRECT_CONNECTION_CHECK';
       } else if (text.includes('graph analysis') || text.includes('shortest path') || /\bgraphs?\b/.test(text)) {
         criteria.requestedIntent = 'GRAPH_ANALYSIS';
